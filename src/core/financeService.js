@@ -219,7 +219,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.2';
+    return '1.0.3';
   }
 
   getAppBuildDate() {
@@ -993,6 +993,7 @@ class FinanceService {
       reminderDays: parseInt(data.reminderDays !== undefined ? data.reminderDays : 3),
       cardBrand: data.cardBrand || 'mastercard',
       isDefault: !!data.isDefault,
+      ownerRole: data.ownerRole || 'p1', // 'p1' | 'p2' | 'joint'
       color: data.color || '#3b82f6'
     };
     this._touchEntity(account);
@@ -1040,6 +1041,9 @@ class FinanceService {
     }
     if (data.color !== undefined) {
       account.color = data.color;
+    }
+    if (data.ownerRole !== undefined) {
+      account.ownerRole = data.ownerRole;
     }
     this._touchEntity(account);
     await this.save();

@@ -125,7 +125,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.0.2</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.0.3</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -2398,6 +2398,29 @@
             <input type="color" id="accColor" class="form-control" value="#820ad1"
               style="height: 42px; width: 52px; padding: 3px; cursor: pointer;" title="Personalizar cor">
           </div>
+        </div>
+
+        <!-- Titularidade da Conta / Cartão (Finanças do Casal) -->
+        <div class="form-group" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 10px; padding: 0.65rem 0.8rem;">
+          <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+            <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-main);">Titular / Pertence a:</span>
+            <span style="font-size: 0.7rem; color: var(--text-muted);">Organização do casal & automação</span>
+          </label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.45rem;">
+            <button type="button" class="btn btn-outline acc-owner-btn active" data-owner="p1" id="btnAccOwnerP1" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(59, 130, 246, 0.4); color: #3b82f6;">
+              <i data-lucide="user" style="width: 14px; height: 14px;"></i>
+              <span id="labelAccOwnerP1">Você</span>
+            </button>
+            <button type="button" class="btn btn-outline acc-owner-btn" data-owner="p2" id="btnAccOwnerP2" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(236, 72, 153, 0.4); color: #ec4899;">
+              <i data-lucide="heart" style="width: 14px; height: 14px;"></i>
+              <span id="labelAccOwnerP2">Parceiro(a)</span>
+            </button>
+            <button type="button" class="btn btn-outline acc-owner-btn" data-owner="joint" id="btnAccOwnerJoint" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+              <i data-lucide="home" style="width: 14px; height: 14px;"></i>
+              <span>Conjunta</span>
+            </button>
+          </div>
+          <input type="hidden" id="accOwnerRole" value="p1">
         </div>
 
         <!-- Campos específicos de Conta Bancária / Carteira -->

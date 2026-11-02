@@ -1,14 +1,14 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.2 - Ergonomia, Atalhos de Teclado & Fila Mutex QA",
+  "title": "Valore v1.0.3 - Titularidade Inteligente de Contas & Cartões para Casais",
   "notes": [
-    "Atalhos de teclado universais no Desktop: Ctrl+N / N (Novo Lançamento), Esc (Fechar) e Enter inteligente.",
-    "Autofocus imediato com seleção automática do campo de valor ao abrir o formulário.",
-    "Menu lateral reorganizado em 3 blocos lógicos: Operação Diária, Planejamento e Gestão & Casal.",
-    "Fila de Mutex transacional em disco contra concorrência e race conditions.",
-    "Otimização de renderização de ícones SVG e desempenho do DOM."
+    "Titularidade nativa de Contas e Cartões: defina quem é o dono (Você, Parceiro(a) ou Conta Conjunta/Casa).",
+    "Badges visuais elegantes em cada cartão de crédito e conta bancária identificando o titular.",
+    "Preenchimento inteligente de pagador: ao selecionar uma conta/cartão, o responsável pelo pagamento é atribuído automaticamente.",
+    "Contas conjuntas ativam a partilha proporcional automaticamente ao serem selecionadas nos lançamentos.",
+    "Identificação clara de titularidade em todos os menus suspensos de seleção de contas."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
