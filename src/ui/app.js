@@ -605,6 +605,40 @@ function getBankBadgeHtml(bankId, size = 42, customColor = null) {
   `;
 }
 
+// Retorna o ícone Lucide moderno para categorias com fallback semântico
+function resolveCategoryIcon(name, existingIcon = '') {
+  if (existingIcon && existingIcon !== 'tag') return existingIcon;
+  const n = (name || '').toLowerCase();
+  if (n.includes('moradia') || n.includes('aluguel') || n.includes('condom') || n.includes('casa') || n.includes('imovel') || n.includes('imóvel')) return 'home';
+  if (n.includes('alimenta') || n.includes('mercado') || n.includes('supermercado') || n.includes('feira') || n.includes('compras do mês')) return 'shopping-cart';
+  if (n.includes('restaurante') || n.includes('lanche') || n.includes('refeição') || n.includes('refeicao') || n.includes('comida') || n.includes('ifood') || n.includes('pizza') || n.includes('bar')) return 'utensils';
+  if (n.includes('transporte') || n.includes('veículo') || n.includes('veiculo') || n.includes('carro') || n.includes('uber') || n.includes('táxi') || n.includes('taxi') || n.includes('gasolina') || n.includes('combust')) return 'car';
+  if (n.includes('streaming') || n.includes('digital') || n.includes('netflix') || n.includes('spotify') || n.includes('assinatura') || n.includes('tv')) return 'tv';
+  if (n.includes('lazer') || n.includes('viagen') || n.includes('viagem') || n.includes('passeio') || n.includes('hotel') || n.includes('turismo') || n.includes('praia')) return 'plane';
+  if (n.includes('anuidade') || n.includes('taxa') || n.includes('tarifa') || n.includes('imposto') || n.includes('tributo') || n.includes('iof') || n.includes('juros')) return 'badge-percent';
+  if (n.includes('saúde') || n.includes('saude') || n.includes('cuidado') || n.includes('farmácia') || n.includes('farmacia') || n.includes('médic') || n.includes('medic') || n.includes('hospital') || n.includes('exame') || n.includes('dentista')) return 'heart-pulse';
+  if (n.includes('educa') || n.includes('escola') || n.includes('faculdade') || n.includes('curso') || n.includes('livro') || n.includes('treinamento')) return 'graduation-cap';
+  if (n.includes('vestuário') || n.includes('vestuario') || n.includes('roupa') || n.includes('calçado') || n.includes('calcado') || n.includes('moda')) return 'shirt';
+  if (n.includes('pet') || n.includes('veterin') || n.includes('animal') || n.includes('ração') || n.includes('racao')) return 'dog';
+  if (n.includes('boleto') || n.includes('conta')) return 'receipt';
+  if (n.includes('invest') || n.includes('dividendo') || n.includes('rendimento')) return 'trending-up';
+  if (n.includes('salário') || n.includes('salario') || n.includes('renda') || n.includes('provento')) return 'wallet';
+  return existingIcon || 'tag';
+}
+
+function getCategoryBadgeHtml(cat, size = 34) {
+  const catColor = cat.color || '#3b82f6';
+  const catAccent = typeof getReadableAccentColor === 'function' ? getReadableAccentColor(catColor) : catColor;
+  const iconName = resolveCategoryIcon(cat.name, cat.icon);
+  const iconSize = Math.round(size * 0.52);
+
+  return `
+    <div class="category-badge-box" style="width: ${size}px; height: ${size}px; min-width: ${size}px; border-radius: 9px; background: ${catAccent}15; border: 1px solid ${catAccent}30; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 6px ${catAccent}15;" title="${cat.name || 'Categoria'}">
+      <i data-lucide="${iconName}" style="width: ${iconSize}px; height: ${iconSize}px; color: ${catAccent}; stroke-width: 2.2;"></i>
+    </div>
+  `;
+}
+
 // Sistema de Gerenciamento de Temas (Claro, Escuro e Automático por Horário/SO)
 function setupThemeManager() {
   const themeBtns = document.querySelectorAll('.theme-btn');
@@ -3809,9 +3843,7 @@ function renderMonthlyAuditReport() {
       return `
         <div class="audit-item-row">
           <div style="display: flex; align-items: center; gap: 0.65rem; flex: 1; min-width: 0; width: 100%;">
-            <div style="width: 32px; height: 32px; border-radius: 8px; background: ${catAccent}22; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: ${catAccent};"></span>
-            </div>
+            ${getCategoryBadgeHtml(cat, 34)}
             <div style="flex: 1; min-width: 0;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem;">
                 <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${cat.name}</span>

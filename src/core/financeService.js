@@ -4184,16 +4184,25 @@ class FinanceService {
     );
 
     const categoryMap = {};
-    const addToCat = (categoryId, amount, fallbackName, fallbackColor) => {
-      const cat = this.state.categories.find(c => c.id === categoryId) || { name: fallbackName, color: fallbackColor };
-      if (!categoryMap[cat.name]) categoryMap[cat.name] = { total: 0, color: cat.color || fallbackColor, count: 0 };
+    const addToCat = (categoryId, amount, fallbackName, fallbackColor, fallbackIcon = 'tag') => {
+      const cat = this.state.categories.find(c => c.id === categoryId) || { id: categoryId, name: fallbackName, color: fallbackColor, icon: fallbackIcon };
+      if (!categoryMap[cat.name]) {
+        categoryMap[cat.name] = {
+          id: cat.id || categoryId,
+          name: cat.name,
+          color: cat.color || fallbackColor,
+          icon: cat.icon || fallbackIcon,
+          total: 0,
+          count: 0
+        };
+      }
       categoryMap[cat.name].total += amount;
       categoryMap[cat.name].count++;
     };
 
-    expenses.forEach(t => addToCat(t.categoryId, t.amount, 'Outros', '#94a3b8'));
+    expenses.forEach(t => addToCat(t.categoryId, t.amount, 'Outros', '#94a3b8', 'tag'));
     // Boletos pendentes do mês entram na categoria do agendamento
-    this.getMonthBills(targetMonth, targetYear).pending.forEach(b => addToCat(b.categoryId, b.amount, 'Boletos & Contas', '#f59e0b'));
+    this.getMonthBills(targetMonth, targetYear).pending.forEach(b => addToCat(b.categoryId, b.amount, 'Boletos & Contas', '#f59e0b', 'receipt'));
 
     Object.keys(categoryMap).forEach(key => {
       categoryMap[key].total = round2(categoryMap[key].total);
@@ -4336,9 +4345,11 @@ class FinanceService {
         paid: nextMonthBills.paid
       },
       categories: Object.entries(byCategory).map(([name, data]) => ({
+        id: data.id,
         name,
-        total: data.total,
         color: data.color,
+        icon: data.icon || 'tag',
+        total: data.total,
         count: data.count,
         percent: summary.totalExpense > 0 ? +((data.total / summary.totalExpense) * 100).toFixed(1) : 0
       })).sort((a, b) => b.total - a.total)
