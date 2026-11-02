@@ -1,12 +1,12 @@
 {
-  "version": "1.2.3",
+  "version": "1.2.4",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.3 - Correção Definitiva do Atualizador Online",
+  "title": "Valore v1.2.4 - Blindagem da Sidebar Retrátil e Auditoria de Precedência CSS",
   "notes": [
-    "Fim do Looping de Atualização: eliminação total de reuso de APK antigo no armazenamento do Android. Toda atualização sempre baixa 100% do novo binário.",
-    "API em Tempo Real e Zero Cache: integração direta com a API do GitHub Releases e cache-buster com timestamp.",
-    "Limpeza Preventiva no Desktop: exclusão automática de instaladores temporários anteriores antes de novos downloads.",
+    "Sidebar Retrátil Blindada: eliminação da colisão de transform no CSS móvel, garantindo retração perfeita no toque e início limpo do app.",
+    "Auditoria de Precedência de CSS: novo teste automatizado que valida a cascata computada da interface antes de qualquer release.",
+    "Fluidez Contínua no Mobile: operação estável em 60 FPS sem travamentos ou aquecimento do aparelho.",
     "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",

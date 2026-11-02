@@ -1068,16 +1068,23 @@ function setupNavigation() {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // Drawer Mobile (Abrir / Fechar)
+    // Drawer Mobile (Abrir / Fechar)
   function openMobileDrawer() {
-    if (sidebar) sidebar.classList.add('mobile-open');
-    if (backdrop) backdrop.classList.add('active');
+    const sb = document.getElementById('appSidebar') || sidebar;
+    const bd = document.getElementById('sidebarBackdrop') || backdrop;
+    if (sb) sb.classList.add('mobile-open');
+    if (bd) bd.classList.add('active');
   }
 
   function closeMobileDrawer() {
-    if (sidebar) sidebar.classList.remove('mobile-open');
-    if (backdrop) backdrop.classList.remove('active');
+    const sb = document.getElementById('appSidebar') || sidebar;
+    const bd = document.getElementById('sidebarBackdrop') || backdrop;
+    if (sb) sb.classList.remove('mobile-open');
+    if (bd) bd.classList.remove('active');
   }
+
+  window.openMobileDrawer = openMobileDrawer;
+  window.closeMobileDrawer = closeMobileDrawer;
 
   if (btnOpenMenu) btnOpenMenu.addEventListener('click', openMobileDrawer);
   if (btnCloseMenu) btnCloseMenu.addEventListener('click', closeMobileDrawer);

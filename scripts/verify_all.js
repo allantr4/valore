@@ -160,6 +160,19 @@ if (fs.existsSync(cssPath)) {
   } else {
     logFail('Classes .switch / .slider ausentes no CSS! Switches podem ficar invisíveis ou inertes.');
   }
+
+  // G. Auditoria Estrita de Precedência e Retração da Sidebar Mobile
+  const hasHiddenState = cssContent.includes('transform: translateX(-100%) !important');
+  const hasOpenState = cssContent.includes('transform: translateX(0) !important');
+  const hasConflict = /.sidebars*{[^}]*transform:s*translateZ/i.test(cssContent);
+
+  if (hasHiddenState && hasOpenState && !hasConflict) {
+    logPass('Sidebar mobile devidamente blindada com translateX(-100%) e sem colisões na cascata CSS');
+  } else {
+    if (!hasHiddenState) logFail('Sidebar mobile sem transform: translateX(-100%) !important! Risco de ficar fixa na tela.');
+    if (!hasOpenState) logFail('Sidebar mobile sem .sidebar.mobile-open com transform: translateX(0) !important!');
+    if (hasConflict) logFail('Detectada sobrescrita nociva de transform na Sidebar (ex: translateZ)!');
+  }
 } else {
   logFail('src/ui/styles.css não encontrado!');
 }
