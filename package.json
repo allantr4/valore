@@ -5,7 +5,8 @@
   "main": "src/main/main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron ."
+    "dev": "electron .",
+    "test:verify": "node scripts/verify_all.js"
   },
   "keywords": [
     "finance",
