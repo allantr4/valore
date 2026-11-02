@@ -1,12 +1,12 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.1.2 - Atualizador Embutido In-App no Android (One-Click APK)",
+  "title": "Valore v1.1.3 - Foco Automático no Campo Descrição na Criação de Transações",
   "notes": [
-    "Atualizador Embutido no Android: download nativo do APK com barra de progresso em tempo real e abertura direta do instalador do sistema.",
-    "Eliminação da necessidade de abrir o navegador externo para atualizar no smartphone.",
-    "Permissão REQUEST_INSTALL_PACKAGES e FileProvider configurados para instalação fluida de pacotes.",
+    "Foco Automático Inteligente: ao clicar no botão '+' de nova transação, o cursor e teclado vão diretamente para o campo 'Descrição'.",
+    "Melhoria de usabilidade e agilidade no preenchimento de lançamentos financeiros.",
+    "Integração contínua com a sugestão inteligente de categorias durante a digitação.",
     "Paridade e sincronização total entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",

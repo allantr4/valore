@@ -4576,10 +4576,10 @@ function setupModals() {
     txModal.classList.add('open');
     if (window.lucide) lucide.createIcons({ root: txModal });
     setTimeout(() => {
-      const activeAmountInput = (singleAmountGroup && singleAmountGroup.style.display !== 'none') ? txAmountInput : txInstallmentAmountInput;
-      if (activeAmountInput) {
-        activeAmountInput.focus();
-        if (typeof activeAmountInput.select === 'function') activeAmountInput.select();
+      const descInput = document.getElementById('txDesc');
+      if (descInput) {
+        descInput.focus();
+        if (typeof descInput.select === 'function') descInput.select();
       }
     }, 70);
   });
