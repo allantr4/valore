@@ -39,11 +39,13 @@ try {
     Write-Host "Release '$TagName' já existe (ID: $($release.id))." -ForegroundColor Green
 } catch {
     Write-Host "Criando nova Release '$TagName'..." -ForegroundColor Yellow
-    $bodyText = "# 💎 Valore - Gestor Financeiro $TagName`n`nLançamento oficial da versão multiplataforma do **Valore**.`n`n### 🌟 Destaques:`n- Desktop Windows, Android e iOS com paridade total.`n- CRUD avançado de Contas e Cartões com abas dedicadas e limites.`n- Sincronização e Backup com criptografia AES-GCM.`n- Importação/Exportação Excel (.xlsx) e Mercado Pago.`n- Leitor de Boletos e QR Code PIX integrado.`n- Atualização Online contínua integrada."
+    $verData = Get-Content "version.json" -Raw | ConvertFrom-Json
+    $notesFormatted = ($verData.notes | ForEach-Object { "- $_" }) -join "`n"
+    $bodyText = "# 💎 $($verData.title)`n`n### 🌟 Destaques desta Versão:`n$notesFormatted`n`n### 📦 Downloads Disponíveis:`n- **Desktop Windows (Instalador Oficial):** [Instalador Valore Financeiro.exe](https://github.com/allantr4/valore/releases/download/$TagName/Instalador%20Valore%20Financeiro.exe)`n- **Mobile Android (APK Direto):** [Valore.apk](https://github.com/allantr4/valore/releases/download/$TagName/Valore.apk)`n"
     
     $payloadObj = @{
         tag_name = $TagName
-        name = $ReleaseName
+        name = if ($ReleaseName -ne "Valore v1.0.0 - Versão Oficial Multiplataforma") { $ReleaseName } else { $verData.title }
         body = $bodyText
         draft = $false
         prerelease = $false
