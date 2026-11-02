@@ -640,27 +640,73 @@ function getCategoryBadgeHtml(cat, size = 34) {
 }
 
 // Retorna badge visual de titularidade da conta/cartão (Finanças do Casal)
+const AVAILABLE_COUPLE_AVATARS = [
+  { id: 'user', label: 'Rapaz', icon: 'user' },
+  { id: 'user-round', label: 'Moça', icon: 'user-round' },
+  { id: 'heart', label: 'Coração', icon: 'heart' },
+  { id: 'sparkles', label: 'Brilho', icon: 'sparkles' },
+  { id: 'smile', label: 'Sorriso', icon: 'smile' },
+  { id: 'heart-handshake', label: 'Parceria', icon: 'heart-handshake' },
+  { id: 'crown', label: 'Coroa', icon: 'crown' },
+  { id: 'gem', label: 'Joia', icon: 'gem' }
+];
+
+const AVAILABLE_COUPLE_COLORS = [
+  '#3b82f6', // Azul
+  '#ec4899', // Rosa
+  '#10b981', // Verde Esmeralda
+  '#8b5cf6', // Roxo
+  '#f59e0b', // Âmbar
+  '#06b6d4', // Ciano
+  '#6366f1', // Índigo
+  '#f43f5e'  // Coral
+];
+
+function getAvatarEmoji(avatarId) {
+  const map = {
+    'user': '👤',
+    'user-round': '👩',
+    'heart': '❤️',
+    'sparkles': '✨',
+    'smile': '😊',
+    'heart-handshake': '🤝',
+    'crown': '👑',
+    'gem': '💎'
+  };
+  return map[avatarId] || '👤';
+}
+
 function getAccountOwnerBadgeHtml(ownerRole) {
+  const isCouple = (typeof finance !== 'undefined' && finance.isCoupleEnabled) ? finance.isCoupleEnabled() : true;
+  if (!isCouple) return '';
   const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
   const p1Name = (couple && couple.partner1 && couple.partner1.name) ? couple.partner1.name : 'Você';
   const p2Name = (couple && couple.partner2 && couple.partner2.name) ? couple.partner2.name : 'Parceiro(a)';
+  const p1Color = (couple && couple.partner1 && couple.partner1.color) ? couple.partner1.color : '#3b82f6';
+  const p2Color = (couple && couple.partner2 && couple.partner2.color) ? couple.partner2.color : '#ec4899';
+  const p1Avatar = (couple && couple.partner1 && couple.partner1.avatar) ? couple.partner1.avatar : 'user';
+  const p2Avatar = (couple && couple.partner2 && couple.partner2.avatar) ? couple.partner2.avatar : 'heart';
 
   if (ownerRole === 'p2') {
-    return `<span class="badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;" title="Titular: ${escapeHtml(p2Name)}"><i data-lucide="heart" style="width: 11px; height: 11px;"></i> ${escapeHtml(p2Name)}</span>`;
+    return `<span class="badge" style="background: ${p2Color}22; color: ${p2Color}; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;" title="Titular: ${escapeHtml(p2Name)}"><i data-lucide="${p2Avatar}" style="width: 11px; height: 11px;"></i> ${escapeHtml(p2Name)}</span>`;
   }
   if (ownerRole === 'joint') {
     return `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;" title="Conta Conjunta / Casa"><i data-lucide="home" style="width: 11px; height: 11px;"></i> Conjunta</span>`;
   }
-  return `<span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;" title="Titular: ${escapeHtml(p1Name)}"><i data-lucide="user" style="width: 11px; height: 11px;"></i> ${escapeHtml(p1Name)}</span>`;
+  return `<span class="badge" style="background: ${p1Color}22; color: ${p1Color}; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; display: inline-flex; align-items: center; gap: 4px;" title="Titular: ${escapeHtml(p1Name)}"><i data-lucide="${p1Avatar}" style="width: 11px; height: 11px;"></i> ${escapeHtml(p1Name)}</span>`;
 }
 
 function getAccountOwnerLabel(ownerRole) {
+  const isCouple = (typeof finance !== 'undefined' && finance.isCoupleEnabled) ? finance.isCoupleEnabled() : true;
+  if (!isCouple) return '';
   const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
   const p1Name = (couple && couple.partner1 && couple.partner1.name) ? couple.partner1.name : 'Você';
   const p2Name = (couple && couple.partner2 && couple.partner2.name) ? couple.partner2.name : 'Parceiro(a)';
-  if (ownerRole === 'p2') return ` [❤️ ${p2Name}]`;
+  const p1Avatar = (couple && couple.partner1 && couple.partner1.avatar) ? couple.partner1.avatar : 'user';
+  const p2Avatar = (couple && couple.partner2 && couple.partner2.avatar) ? couple.partner2.avatar : 'heart';
+  if (ownerRole === 'p2') return ` [${getAvatarEmoji(p2Avatar)} ${p2Name}]`;
   if (ownerRole === 'joint') return ` [🏠 Conjunta]`;
-  return ` [👤 ${p1Name}]`;
+  return ` [${getAvatarEmoji(p1Avatar)} ${p1Name}]`;
 }
 
 // Sistema de Gerenciamento de Temas (Claro, Escuro e Automático por Horário/SO)
@@ -3985,6 +4031,162 @@ window.handleAuditDismiss = async function(issueId) {
 };
 
 // Configuração de Modais e Ações
+// --- SISTEMA UNIVERSAL DE IDENTIDADE DO CASAL & MODO DE GESTÃO ---
+function renderAvatarPickers(p1Selected = 'user', p2Selected = 'heart', p1Color = '#3b82f6', p2Color = '#ec4899') {
+  const c1 = document.getElementById('avatarPickerP1');
+  const c2 = document.getElementById('avatarPickerP2');
+  if (c1) {
+    c1.innerHTML = AVAILABLE_COUPLE_AVATARS.map(av => {
+      const isSel = av.id === p1Selected;
+      return `<button type="button" class="avatar-opt-btn" onclick="window.selectAvatar('p1', '${av.id}')" style="width: 28px; height: 28px; border-radius: 8px; border: ${isSel ? `2px solid ${p1Color}` : '1px solid var(--border-color)'}; background: ${isSel ? `${p1Color}25` : 'var(--bg-surface)'}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;" title="${av.label}"><i data-lucide="${av.icon}" style="width: 14px; height: 14px; color: ${isSel ? p1Color : 'var(--text-muted)'};"></i></button>`;
+    }).join('');
+  }
+  if (c2) {
+    c2.innerHTML = AVAILABLE_COUPLE_AVATARS.map(av => {
+      const isSel = av.id === p2Selected;
+      return `<button type="button" class="avatar-opt-btn" onclick="window.selectAvatar('p2', '${av.id}')" style="width: 28px; height: 28px; border-radius: 8px; border: ${isSel ? `2px solid ${p2Color}` : '1px solid var(--border-color)'}; background: ${isSel ? `${p2Color}25` : 'var(--bg-surface)'}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;" title="${av.label}"><i data-lucide="${av.icon}" style="width: 14px; height: 14px; color: ${isSel ? p2Color : 'var(--text-muted)'};"></i></button>`;
+    }).join('');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderColorPickers(p1Selected = '#3b82f6', p2Selected = '#ec4899') {
+  const c1 = document.getElementById('colorPickerP1');
+  const c2 = document.getElementById('colorPickerP2');
+  if (c1) {
+    c1.innerHTML = AVAILABLE_COUPLE_COLORS.map(col => {
+      const isSel = col.toLowerCase() === p1Selected.toLowerCase();
+      return `<button type="button" onclick="window.selectColor('p1', '${col}')" style="width: 22px; height: 22px; border-radius: 50%; background: ${col}; border: ${isSel ? '2px solid #fff' : '2px solid transparent'}; outline: ${isSel ? `2px solid ${col}` : 'none'}; cursor: pointer; padding: 0; transition: transform 0.15s ease; ${isSel ? 'transform: scale(1.15);' : ''}"></button>`;
+    }).join('');
+  }
+  if (c2) {
+    c2.innerHTML = AVAILABLE_COUPLE_COLORS.map(col => {
+      const isSel = col.toLowerCase() === p2Selected.toLowerCase();
+      return `<button type="button" onclick="window.selectColor('p2', '${col}')" style="width: 22px; height: 22px; border-radius: 50%; background: ${col}; border: ${isSel ? '2px solid #fff' : '2px solid transparent'}; outline: ${isSel ? `2px solid ${col}` : 'none'}; cursor: pointer; padding: 0; transition: transform 0.15s ease; ${isSel ? 'transform: scale(1.15);' : ''}"></button>`;
+    }).join('');
+  }
+}
+
+window.selectAvatar = function(partner, avatarId) {
+  const hiddenInput = document.getElementById(partner === 'p1' ? 'coupleP1Avatar' : 'coupleP2Avatar');
+  if (hiddenInput) hiddenInput.value = avatarId;
+  const p1Av = document.getElementById('coupleP1Avatar')?.value || 'user';
+  const p2Av = document.getElementById('coupleP2Avatar')?.value || 'heart';
+  const p1Col = document.getElementById('coupleP1Color')?.value || '#3b82f6';
+  const p2Col = document.getElementById('coupleP2Color')?.value || '#ec4899';
+  renderAvatarPickers(p1Av, p2Av, p1Col, p2Col);
+};
+
+window.selectColor = function(partner, colorHex) {
+  const hiddenInput = document.getElementById(partner === 'p1' ? 'coupleP1Color' : 'coupleP2Color');
+  if (hiddenInput) hiddenInput.value = colorHex;
+  const p1Av = document.getElementById('coupleP1Avatar')?.value || 'user';
+  const p2Av = document.getElementById('coupleP2Avatar')?.value || 'heart';
+  const p1Col = document.getElementById('coupleP1Color')?.value || '#3b82f6';
+  const p2Col = document.getElementById('coupleP2Color')?.value || '#ec4899';
+  renderColorPickers(p1Col, p2Col);
+  renderAvatarPickers(p1Av, p2Av, p1Col, p2Col);
+
+  const box1 = document.getElementById('boxCouplePartner1');
+  const box2 = document.getElementById('boxCouplePartner2');
+  if (partner === 'p1' && box1) {
+    box1.style.borderColor = `${colorHex}40`;
+    box1.style.background = `${colorHex}08`;
+  } else if (partner === 'p2' && box2) {
+    box2.style.borderColor = `${colorHex}40`;
+    box2.style.background = `${colorHex}08`;
+  }
+};
+
+window.applyCouplePresetUI = function(presetKey) {
+  let p1Av = 'user', p2Av = 'heart', p1Col = '#3b82f6', p2Col = '#ec4899';
+
+  if (presetKey === 'hetero') {
+    p1Av = 'user'; p1Col = '#3b82f6';
+    p2Av = 'heart'; p2Col = '#ec4899';
+  } else if (presetKey === 'gay_male') {
+    p1Av = 'user'; p1Col = '#3b82f6';
+    p2Av = 'sparkles'; p2Col = '#10b981';
+  } else if (presetKey === 'lesbian_female') {
+    p1Av = 'user-round'; p1Col = '#a855f7';
+    p2Av = 'heart'; p2Col = '#ec4899';
+  }
+
+  const elP1Av = document.getElementById('coupleP1Avatar');
+  const elP2Av = document.getElementById('coupleP2Avatar');
+  const elP1Col = document.getElementById('coupleP1Color');
+  const elP2Col = document.getElementById('coupleP2Color');
+
+  if (elP1Av) elP1Av.value = p1Av;
+  if (elP2Av) elP2Av.value = p2Av;
+  if (elP1Col) elP1Col.value = p1Col;
+  if (elP2Col) elP2Col.value = p2Col;
+
+  ['Hetero', 'GayMale', 'LesbianFemale', 'Custom'].forEach(k => {
+    const btn = document.getElementById(`btnPreset${k}`);
+    if (btn) btn.classList.toggle('active', k.toLowerCase() === presetKey.replace('_', '').toLowerCase());
+  });
+
+  renderAvatarPickers(p1Av, p2Av, p1Col, p2Col);
+  renderColorPickers(p1Col, p2Col);
+};
+
+window.applyCoupleModeVisibility = function() {
+  const isCouple = (typeof finance !== 'undefined' && finance.isCoupleEnabled) ? finance.isCoupleEnabled() : true;
+
+  const navCouple = document.getElementById('navItemCouple');
+  const navSectionCouple = document.getElementById('navSectionTitleCouple');
+  const navActivateCouple = document.getElementById('navItemActivateCouple');
+
+  if (navCouple) navCouple.style.display = isCouple ? 'flex' : 'none';
+  if (navSectionCouple) navSectionCouple.textContent = isCouple ? 'Gestão & Casal' : 'Gestão Pessoal';
+  if (navActivateCouple) navActivateCouple.style.display = !isCouple ? 'flex' : 'none';
+
+  const btnHeaderDevice = document.getElementById('btnHeaderDeviceOwner');
+  if (btnHeaderDevice) btnHeaderDevice.style.display = isCouple ? 'inline-flex' : 'none';
+
+  const txCoupleGroup = document.getElementById('txCoupleSplitGroup');
+  const txAuthorGroup = document.getElementById('txAuthorFieldGroup');
+  if (txCoupleGroup) txCoupleGroup.style.display = isCouple ? 'block' : 'none';
+  if (txAuthorGroup) txAuthorGroup.style.display = isCouple ? 'block' : 'none';
+
+  const accOwnerGroup = document.getElementById('accOwnerGroup');
+  if (accOwnerGroup) accOwnerGroup.style.display = isCouple ? 'block' : 'none';
+
+  const coupleFields = document.getElementById('coupleSettingsFieldsContainer');
+  if (coupleFields) coupleFields.style.display = isCouple ? 'flex' : 'none';
+
+  const btnModeInd = document.getElementById('btnModeIndividual');
+  const btnModeCpl = document.getElementById('btnModeCouple');
+  if (btnModeInd && btnModeCpl) {
+    btnModeInd.className = !isCouple ? 'btn btn-primary' : 'btn btn-outline';
+    btnModeCpl.className = isCouple ? 'btn btn-primary' : 'btn btn-outline';
+  }
+
+  if (isCouple && window.syncDeviceIdentityUI) {
+    window.syncDeviceIdentityUI();
+  }
+};
+
+window.setAppManagementMode = async function(mode) {
+  const isCouple = mode === 'couple';
+  await finance.setCoupleEnabled(isCouple);
+  window.applyCoupleModeVisibility();
+  if (!isCouple && currentTab === 'couple') {
+    switchTab('dashboard');
+  } else if (isCouple && currentTab === 'couple') {
+    renderCoupleView();
+  }
+  if (currentTab === 'accounts') renderAccountsView();
+  showToast(isCouple ? 'Modo Casal ativado com sucesso!' : 'Modo Individual ativado! Interface simplificada.', 'success');
+  if (window.lucide) lucide.createIcons();
+};
+
+window.openCoupleSettingsModalDirect = function() {
+  const btnOpen = document.getElementById('btnOpenCoupleSettingsModal');
+  if (btnOpen) btnOpen.click();
+};
+
 function setupModals() {
   // Modal Transação
   const txModal = document.getElementById('txModal');
@@ -5951,26 +6153,24 @@ function refreshAllViewsAfterSync() {
 // --- IDENTIDADE DO APARELHO & AUTOR DOS LANÇAMENTOS (4 DISPOSITIVOS) ---
 // =========================================================================
 window.syncDeviceIdentityUI = function() {
-  if (!finance || typeof finance.getDeviceIdentity !== 'function') return;
   const info = finance.getDeviceIdentity();
+  const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
+  const p1Avatar = (couple && couple.partner1 && couple.partner1.avatar) ? couple.partner1.avatar : 'user';
+  const p2Avatar = (couple && couple.partner2 && couple.partner2.avatar) ? couple.partner2.avatar : 'heart';
+  const p1Color = (couple && couple.partner1 && couple.partner1.color) ? couple.partner1.color : '#3b82f6';
+  const p2Color = (couple && couple.partner2 && couple.partner2.color) ? couple.partner2.color : '#ec4899';
 
-  // 1. Atualiza crachá no topo do aplicativo
+  // 1. Atualiza pílula no cabeçalho
   const headerBtn = document.getElementById('btnHeaderDeviceOwner');
   const headerIcon = document.getElementById('headerDeviceOwnerIcon');
   const headerName = document.getElementById('headerDeviceOwnerName');
   if (headerIcon) headerIcon.textContent = info.deviceIcon;
   if (headerName) headerName.textContent = info.ownerName;
   if (headerBtn) {
-    if (info.ownerRole === 'p2') {
-      headerBtn.style.background = 'rgba(236, 72, 153, 0.14)';
-      headerBtn.style.borderColor = 'rgba(236, 72, 153, 0.4)';
-      headerBtn.style.color = '#ec4899';
-    } else {
-      headerBtn.style.background = 'rgba(59, 130, 246, 0.12)';
-      headerBtn.style.borderColor = 'rgba(59, 130, 246, 0.35)';
-      headerBtn.style.color = 'var(--primary)';
-    }
-    headerBtn.title = `Aparelho configurado como: ${info.deviceIcon} ${info.ownerName} (${info.deviceType === 'mobile' ? 'Celular' : 'PC'}). Clique para alterar.`;
+    headerBtn.style.background = `${info.ownerColor}20`;
+    headerBtn.style.borderColor = `${info.ownerColor}60`;
+    headerBtn.style.color = info.ownerColor;
+    headerBtn.title = `Aparelho configurado como: ${info.deviceIcon} ${info.ownerName} (${info.deviceType === 'mobile' ? 'Celular' : 'PC'}). Clique para gerenciar.`;
   }
 
   // 2. Atualiza card de identidade dentro do Valore Sync Hub
@@ -5978,46 +6178,67 @@ window.syncDeviceIdentityUI = function() {
   const btnP2 = document.getElementById('btnDeviceOwnerP2');
   const lblP1 = document.getElementById('lblDeviceOwnerP1Name');
   const lblP2 = document.getElementById('lblDeviceOwnerP2Name');
-  const subP1 = document.getElementById('lblDeviceOwnerP1Sub');
-  const subP2 = document.getElementById('lblDeviceOwnerP2Sub');
+  const iconP1 = document.getElementById('iconDeviceOwnerP1');
+  const iconP2 = document.getElementById('iconDeviceOwnerP2');
   const inP1 = document.getElementById('inputIdentityP1Name');
   const inP2 = document.getElementById('inputIdentityP2Name');
+  const badgeDev = document.getElementById('deviceIdentityCurrentBadge');
 
   if (lblP1) lblP1.textContent = info.p1Name;
   if (lblP2) lblP2.textContent = info.p2Name;
-  if (subP1) subP1.textContent = `${info.deviceType === 'mobile' ? 'Meu Celular' : 'Meu PC'} (${info.p1Name})`;
-  if (subP2) subP2.textContent = `${info.deviceType === 'mobile' ? 'Celular Dela' : 'PC Dela'} (${info.p2Name})`;
+  if (iconP1) iconP1.textContent = getAvatarEmoji(p1Avatar);
+  if (iconP2) iconP2.textContent = getAvatarEmoji(p2Avatar);
+  if (badgeDev) {
+    badgeDev.textContent = `${info.deviceIcon} Este aparelho: ${info.ownerName}`;
+    badgeDev.style.background = `${info.ownerColor}22`;
+    badgeDev.style.color = info.ownerColor;
+  }
   if (inP1 && document.activeElement !== inP1) inP1.value = info.p1Name;
   if (inP2 && document.activeElement !== inP2) inP2.value = info.p2Name;
 
   if (btnP1 && btnP2) {
-    if (info.ownerRole === 'p2') {
-      btnP2.style.border = '2px solid #ec4899';
-      btnP2.style.background = 'rgba(236, 72, 153, 0.14)';
-      btnP2.style.color = '#ec4899';
-      btnP1.style.border = '1px solid var(--border-color)';
-      btnP1.style.background = 'var(--bg-surface)';
-      btnP1.style.color = 'var(--text-secondary)';
-    } else {
-      btnP1.style.border = '2px solid #3b82f6';
-      btnP1.style.background = 'rgba(59, 130, 246, 0.14)';
-      btnP1.style.color = '#3b82f6';
-      btnP2.style.border = '1px solid var(--border-color)';
-      btnP2.style.background = 'var(--bg-surface)';
-      btnP2.style.color = 'var(--text-secondary)';
-    }
+    const isP2 = info.ownerRole === 'p2';
+    btnP1.style.border = !isP2 ? `2px solid ${p1Color}` : '1px solid var(--border-color)';
+    btnP1.style.background = !isP2 ? `${p1Color}22` : 'var(--bg-surface)';
+    btnP1.style.color = !isP2 ? p1Color : 'var(--text-secondary)';
+
+    btnP2.style.border = isP2 ? `2px solid ${p2Color}` : '1px solid var(--border-color)';
+    btnP2.style.background = isP2 ? `${p2Color}22` : 'var(--bg-surface)';
+    btnP2.style.color = isP2 ? p2Color : 'var(--text-secondary)';
   }
 
-  // 3. Atualiza botões de Autor no modal de Nova Transação (#txModal) e pagadores
+  // 3. Atualiza botões de Autor no modal de Nova Transação (#txModal)
   const btnTxAuthorP1 = document.getElementById('btnTxAuthorP1');
   const btnTxAuthorP2 = document.getElementById('btnTxAuthorP2');
-  if (btnTxAuthorP1) btnTxAuthorP1.textContent = `👤 ${info.p1Name}`;
-  if (btnTxAuthorP2) btnTxAuthorP2.textContent = `❤️ ${info.p2Name}`;
+  const lblTxAuthorP1 = document.getElementById('lblTxAuthorP1');
+  const lblTxAuthorP2 = document.getElementById('lblTxAuthorP2');
+  const iconTxAuthorP1 = document.getElementById('iconTxAuthorP1');
+  const iconTxAuthorP2 = document.getElementById('iconTxAuthorP2');
 
-  const btnTxPayerP1 = document.getElementById('btnTxPayerP1');
-  const btnTxPayerP2 = document.getElementById('btnTxPayerP2');
-  if (btnTxPayerP1) btnTxPayerP1.textContent = info.p1Name;
-  if (btnTxPayerP2) btnTxPayerP2.textContent = info.p2Name;
+  if (lblTxAuthorP1) lblTxAuthorP1.textContent = info.p1Name;
+  if (lblTxAuthorP2) lblTxAuthorP2.textContent = info.p2Name;
+  if (iconTxAuthorP1) iconTxAuthorP1.textContent = getAvatarEmoji(p1Avatar);
+  if (iconTxAuthorP2) iconTxAuthorP2.textContent = getAvatarEmoji(p2Avatar);
+
+  // 4. Atualiza botões de Quem Pagou no modal de Nova Transação (#txModal)
+  const lblTxPayerP1 = document.getElementById('lblTxPayerP1');
+  const lblTxPayerP2 = document.getElementById('lblTxPayerP2');
+  const iconTxPayerP1 = document.getElementById('iconTxPayerP1');
+  const iconTxPayerP2 = document.getElementById('iconTxPayerP2');
+  if (lblTxPayerP1) lblTxPayerP1.textContent = info.p1Name;
+  if (lblTxPayerP2) lblTxPayerP2.textContent = info.p2Name;
+  if (iconTxPayerP1) iconTxPayerP1.textContent = getAvatarEmoji(p1Avatar);
+  if (iconTxPayerP2) iconTxPayerP2.textContent = getAvatarEmoji(p2Avatar);
+
+  // 5. Atualiza botões no modal de Contas e Cartões
+  const lblAccP1 = document.getElementById('labelAccOwnerP1');
+  const lblAccP2 = document.getElementById('labelAccOwnerP2');
+  const iconAccP1 = document.getElementById('iconAccOwnerP1');
+  const iconAccP2 = document.getElementById('iconAccOwnerP2');
+  if (lblAccP1) lblAccP1.textContent = info.p1Name;
+  if (lblAccP2) lblAccP2.textContent = info.p2Name;
+  if (iconAccP1) iconAccP1.textContent = getAvatarEmoji(p1Avatar);
+  if (iconAccP2) iconAccP2.textContent = getAvatarEmoji(p2Avatar);
 };
 
 window.handleSelectDeviceOwner = async function(role) {
@@ -10556,6 +10777,31 @@ function setupCoupleModule() {
       document.getElementById('coupleP2Income').value = formatCurrencyInput(couple.partner2.monthlyIncome);
       document.getElementById('coupleP2Pix').value = couple.partner2.pixKey || '';
 
+      const p1Av = couple.partner1.avatar || 'user';
+      const p2Av = couple.partner2.avatar || 'heart';
+      const p1Col = couple.partner1.color || '#3b82f6';
+      const p2Col = couple.partner2.color || '#ec4899';
+
+      const elP1Av = document.getElementById('coupleP1Avatar');
+      const elP2Av = document.getElementById('coupleP2Avatar');
+      const elP1Col = document.getElementById('coupleP1Color');
+      const elP2Col = document.getElementById('coupleP2Color');
+      if (elP1Av) elP1Av.value = p1Av;
+      if (elP2Av) elP2Av.value = p2Av;
+      if (elP1Col) elP1Col.value = p1Col;
+      if (elP2Col) elP2Col.value = p2Col;
+
+      renderAvatarPickers(p1Av, p2Av, p1Col, p2Col);
+      renderColorPickers(p1Col, p2Col);
+
+      const preset = couple.preset || 'hetero';
+      ['Hetero', 'GayMale', 'LesbianFemale', 'Custom'].forEach(k => {
+        const btn = document.getElementById(`btnPreset${k}`);
+        if (btn) btn.classList.toggle('active', k.toLowerCase() === preset.replace('_', '').toLowerCase());
+      });
+
+      window.applyCoupleModeVisibility();
+
       document.getElementById('coupleSplitModeSelect').value = couple.splitMode || 'proportional';
       updateCoupleRatioPreview();
       settingsModal.classList.add('open');
@@ -10596,21 +10842,26 @@ function setupCoupleModule() {
       const p1Name = (document.getElementById('coupleP1Name').value || 'Você').trim();
       const p1Income = parseCurrencyInput(document.getElementById('coupleP1Income').value);
       const p1Pix = (document.getElementById('coupleP1Pix').value || '').trim();
+      const p1Av = document.getElementById('coupleP1Avatar')?.value || 'user';
+      const p1Col = document.getElementById('coupleP1Color')?.value || '#3b82f6';
 
       const p2Name = (document.getElementById('coupleP2Name').value || 'Parceiro(a)').trim();
       const p2Income = parseCurrencyInput(document.getElementById('coupleP2Income').value);
       const p2Pix = (document.getElementById('coupleP2Pix').value || '').trim();
+      const p2Av = document.getElementById('coupleP2Avatar')?.value || 'heart';
+      const p2Col = document.getElementById('coupleP2Color')?.value || '#ec4899';
 
       const splitMode = document.getElementById('coupleSplitModeSelect').value;
 
       await finance.updateCoupleSettings({
         enabled: true,
         splitMode: splitMode,
-        partner1: { name: p1Name, monthlyIncome: p1Income, pixKey: p1Pix },
-        partner2: { name: p2Name, monthlyIncome: p2Income, pixKey: p2Pix }
+        partner1: { name: p1Name, monthlyIncome: p1Income, pixKey: p1Pix, avatar: p1Av, color: p1Col },
+        partner2: { name: p2Name, monthlyIncome: p2Income, pixKey: p2Pix, avatar: p2Av, color: p2Col }
       });
 
       showToast('Configurações do casal atualizadas com sucesso!', 'success');
+      window.applyCoupleModeVisibility();
       if (window.syncDeviceIdentityUI) window.syncDeviceIdentityUI();
       closeSettings();
       renderCoupleView();

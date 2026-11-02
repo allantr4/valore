@@ -69,10 +69,14 @@
           <span>Liberdade Financeira</span>
         </li>
 
-        <li class="nav-section-title">Gestão & Casal</li>
-        <li class="nav-item" data-tab="couple">
+        <li class="nav-section-title" id="navSectionTitleCouple">Gestão & Casal</li>
+        <li class="nav-item" data-tab="couple" id="navItemCouple">
           <i data-lucide="heart-handshake"></i>
           <span>Finanças a Dois</span>
+        </li>
+        <li class="nav-item" id="navItemActivateCouple" onclick="window.openCoupleSettingsModalDirect()" style="display: none; background: rgba(236, 72, 153, 0.08); color: #ec4899; border: 1px dashed rgba(236, 72, 153, 0.35); border-radius: 8px; cursor: pointer;">
+          <i data-lucide="heart"></i>
+          <span>Ativar Modo Casal</span>
         </li>
         <li class="nav-item" data-tab="assets">
           <i data-lucide="landmark"></i>
@@ -125,7 +129,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.0.4</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.0.5</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -1955,18 +1959,20 @@
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0;">
+                    <div class="form-group" style="margin-bottom: 0;" id="txAuthorFieldGroup">
             <label style="font-size: 0.8rem; font-weight: 600;">Quem Inseriu / Autor</label>
             <div style="display: flex; gap: 0.4rem; min-height: 38px;">
               <button type="button" class="btn btn-outline couple-payer-btn active" id="btnTxAuthorP1"
                 data-author="p1" onclick="window.selectTxAuthor('p1')"
-                style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 700; justify-content: center;">
-                👤 Você
+                style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 700; justify-content: center; display: flex; align-items: center; gap: 4px;">
+                <span id="iconTxAuthorP1">👤</span>
+                <span id="lblTxAuthorP1">Você</span>
               </button>
               <button type="button" class="btn btn-outline couple-payer-btn" id="btnTxAuthorP2"
                 data-author="p2" onclick="window.selectTxAuthor('p2')"
-                style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 700; justify-content: center;">
-                ❤️ Parceiro(a)
+                style="flex: 1; padding: 0.35rem 0.5rem; font-size: 0.78rem; font-weight: 700; justify-content: center; display: flex; align-items: center; gap: 4px;">
+                <span id="iconTxAuthorP2">❤️</span>
+                <span id="lblTxAuthorP2">Parceiro(a)</span>
               </button>
             </div>
             <input type="hidden" id="txCreatedBy" value="p1">
@@ -2002,9 +2008,15 @@
                   <div style="display: flex; gap: 0.4rem;">
                     <button type="button" class="btn btn-outline couple-payer-btn active" id="btnTxPayerP1"
                       data-payer="p1"
-                      style="flex: 1; padding: 0.35rem; font-size: 0.78rem; font-weight: 700;">Você</button>
+                      style="flex: 1; padding: 0.35rem; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span id="iconTxPayerP1">👤</span>
+                      <span id="lblTxPayerP1">Você</span>
+                    </button>
                     <button type="button" class="btn btn-outline couple-payer-btn" id="btnTxPayerP2" data-payer="p2"
-                      style="flex: 1; padding: 0.35rem; font-size: 0.78rem; font-weight: 700;">Parceiro(a)</button>
+                      style="flex: 1; padding: 0.35rem; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;">
+                      <span id="iconTxPayerP2">❤️</span>
+                      <span id="lblTxPayerP2">Parceiro(a)</span>
+                    </button>
                   </div>
                   <input type="hidden" id="txPaidBy" value="p1">
                 </div>
@@ -2401,19 +2413,19 @@
         </div>
 
         <!-- Titularidade da Conta / Cartão (Finanças do Casal) -->
-        <div class="form-group" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 10px; padding: 0.65rem 0.8rem;">
+        <div class="form-group" id="accOwnerGroup" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 10px; padding: 0.65rem 0.8rem;">
           <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
             <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-main);">Titular / Pertence a:</span>
             <span style="font-size: 0.7rem; color: var(--text-muted);">Organização do casal & automação</span>
           </label>
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.45rem;">
-            <button type="button" class="btn btn-outline acc-owner-btn active" data-owner="p1" id="btnAccOwnerP1" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(59, 130, 246, 0.4); color: #3b82f6;">
-              <i data-lucide="user" style="width: 14px; height: 14px;"></i>
-              <span id="labelAccOwnerP1">Você</span>
+            <button type="button" class="btn btn-outline acc-owner-btn active" data-owner="p1" id="btnAccOwnerP1" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+              <span id="iconAccOwnerP1">👤</span>
+              <span id="labelAccOwnerP1">Parceiro 1</span>
             </button>
-            <button type="button" class="btn btn-outline acc-owner-btn" data-owner="p2" id="btnAccOwnerP2" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(236, 72, 153, 0.4); color: #ec4899;">
-              <i data-lucide="heart" style="width: 14px; height: 14px;"></i>
-              <span id="labelAccOwnerP2">Parceiro(a)</span>
+            <button type="button" class="btn btn-outline acc-owner-btn" data-owner="p2" id="btnAccOwnerP2" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem;">
+              <span id="iconAccOwnerP2">❤️</span>
+              <span id="labelAccOwnerP2">Parceiro 2</span>
             </button>
             <button type="button" class="btn btn-outline acc-owner-btn" data-owner="joint" id="btnAccOwnerJoint" style="font-size: 0.78rem; padding: 0.4rem 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.35rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
               <i data-lucide="home" style="width: 14px; height: 14px;"></i>
@@ -3081,40 +3093,42 @@
           style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(236, 72, 153, 0.08)); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 12px; padding: 0.9rem 1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.55rem;">
             <div style="display: flex; align-items: center; gap: 0.45rem; font-weight: 800; font-size: 0.9rem; color: var(--text-main);">
-              <i data-lucide="users" style="width: 17px; height: 17px; color: var(--primary);"></i>
-              <span>Quem utiliza este aparelho? (Identificação Automática)</span>
+              <i data-lucide="smartphone" style="width: 17px; height: 17px; color: var(--primary);"></i>
+              <span>Quem utiliza este aparelho no dia a dia?</span>
             </div>
             <span id="deviceIdentityCurrentBadge" class="badge"
               style="background: rgba(59, 130, 246, 0.18); color: #3b82f6; font-size: 0.72rem; font-weight: 800;">
-              💻 Este aparelho: Você
+              📱 Este aparelho: Você
             </span>
           </div>
           <p style="font-size: 0.74rem; color: var(--text-secondary); margin: 0 0 0.65rem; line-height: 1.35;">
-            Escolha de quem é este aparelho (seu PC/Celular ou PC/Celular da esposa). Todos os dados inseridos aqui receberão automaticamente o selo colorido com o nome e o ícone (💻 PC ou 📱 Celular):
+            Toque abaixo para definir quem está utilizando este dispositivo. Todos os lançamentos inseridos aqui receberão automaticamente sua assinatura e cor:
           </p>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.6rem;">
             <button type="button" id="btnDeviceOwnerP1" onclick="window.handleSelectDeviceOwner('p1')"
               class="btn btn-outline couple-payer-btn active" data-payer="p1"
-              style="justify-content: center; padding: 0.5rem 0.65rem; font-size: 0.8rem; font-weight: 800;">
-              <span>👤 Meu Aparelho (<span id="lblDeviceOwnerP1Name">Você</span>)</span>
+              style="justify-content: center; padding: 0.5rem 0.65rem; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+              <span id="iconDeviceOwnerP1">👤</span>
+              <span id="lblDeviceOwnerP1Name">Parceiro 1</span>
             </button>
             <button type="button" id="btnDeviceOwnerP2" onclick="window.handleSelectDeviceOwner('p2')"
               class="btn btn-outline couple-payer-btn" data-payer="p2"
-              style="justify-content: center; padding: 0.5rem 0.65rem; font-size: 0.8rem; font-weight: 800;">
-              <span>❤️ Aparelho Dela (<span id="lblDeviceOwnerP2Name">Esposa</span>)</span>
+              style="justify-content: center; padding: 0.5rem 0.65rem; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+              <span id="iconDeviceOwnerP2">❤️</span>
+              <span id="lblDeviceOwnerP2Name">Parceiro 2</span>
             </button>
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end;">
             <div>
-              <label style="font-size: 0.68rem; font-weight: 700; color: #3b82f6; display: block; margin-bottom: 0.2rem;">Seu Nome (Azul)</label>
+              <label id="lblInputIdentityP1" style="font-size: 0.68rem; font-weight: 700; color: #3b82f6; display: block; margin-bottom: 0.2rem;">Nome do(a) Parceiro(a) 1</label>
               <input type="text" id="inputIdentityP1Name" class="form-control" placeholder="Ex: Allan"
                 style="padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 700;">
             </div>
             <div>
-              <label style="font-size: 0.68rem; font-weight: 700; color: #ec4899; display: block; margin-bottom: 0.2rem;">Nome da Esposa (Rosa)</label>
-              <input type="text" id="inputIdentityP2Name" class="form-control" placeholder="Ex: Esposa"
+              <label id="lblInputIdentityP2" style="font-size: 0.68rem; font-weight: 700; color: #ec4899; display: block; margin-bottom: 0.2rem;">Nome do(a) Parceiro(a) 2</label>
+              <input type="text" id="inputIdentityP2Name" class="form-control" placeholder="Ex: Mariana"
                 style="padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 700;">
             </div>
             <button type="button" class="btn btn-primary" id="btnSaveIdentityNames" onclick="window.handleSaveIdentityNames()"
@@ -4063,89 +4077,164 @@
         </button>
       </div>
 
-      <form id="coupleSettingsForm" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 0.5rem;">
+      <form id="coupleSettingsForm" style="display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.5rem;">
 
-        <!-- Parceiro 1 -->
-        <div
-          style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
-          <div
-            style="font-size: 0.82rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.35rem;">
-            <i data-lucide="user" style="width: 15px; height: 15px;"></i>
-            <span>Parceiro(a) 1 (Você)</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+        <!-- Seletor de Modo de Uso: Individual vs Casal -->
+        <div style="background: rgba(99, 102, 241, 0.08); border: 1.5px solid rgba(99, 102, 241, 0.25); border-radius: 12px; padding: 0.75rem 0.9rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
             <div>
-              <label style="font-size: 0.74rem; font-weight: 600;">Seu Nome / Apelido</label>
-              <input type="text" id="coupleP1Name" class="form-control" placeholder="Ex: Allan" autocapitalize="sentences" autocorrect="on" spellcheck="true" required>
+              <span style="font-size: 0.82rem; font-weight: 800; color: var(--text-main); display: block;">Modo de Gestão</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Solteiro (Individual) ou a Dois (Casal)</span>
             </div>
-            <div>
-              <label style="font-size: 0.74rem; font-weight: 600;">Renda Líquida Mensal (R$)</label>
-              <input type="text" inputmode="numeric" autocomplete="off" id="coupleP1Income" class="form-control mask-money-input"
-                placeholder="0,00" required>
+            <div style="display: flex; gap: 0.35rem;">
+              <button type="button" class="btn btn-outline" id="btnModeIndividual" onclick="window.setAppManagementMode('individual')" style="font-size: 0.74rem; font-weight: 700; padding: 0.3rem 0.6rem;">👤 Solteiro</button>
+              <button type="button" class="btn btn-primary" id="btnModeCouple" onclick="window.setAppManagementMode('couple')" style="font-size: 0.74rem; font-weight: 700; padding: 0.3rem 0.6rem;">💑 Casal</button>
             </div>
-          </div>
-          <div style="margin-top: 0.5rem;">
-            <label style="font-size: 0.74rem; font-weight: 600;">Sua Chave Pix (para receber reembolsos)</label>
-            <input type="text" id="coupleP1Pix" class="form-control"
-              placeholder="CPF, e-mail, telefone ou chave aleatória">
           </div>
         </div>
 
-        <!-- Parceiro 2 -->
-        <div
-          style="background: rgba(236, 72, 153, 0.06); border: 1px solid rgba(236, 72, 153, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
-          <div
-            style="font-size: 0.82rem; font-weight: 700; color: #ec4899; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.35rem;">
-            <i data-lucide="heart" style="width: 15px; height: 15px;"></i>
-            <span>Parceiro(a) 2 (Cônjuge)</span>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
-            <div>
-              <label style="font-size: 0.74rem; font-weight: 600;">Nome do(a) Parceiro(a)</label>
-              <input type="text" id="coupleP2Name" class="form-control" placeholder="Ex: Mariana" autocapitalize="sentences" autocorrect="on" spellcheck="true" required>
+        <div id="coupleSettingsFieldsContainer" style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <!-- Presets Rápidos do Casal -->
+          <div id="couplePresetsContainer">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">
+              Modelo de Casal (1 Toque)
+            </label>
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem;">
+              <button type="button" class="btn btn-outline couple-preset-btn active" id="btnPresetHetero" onclick="window.applyCouplePresetUI('hetero')" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 700; flex-direction: column; gap: 2px;">
+                <span style="font-size: 1.1rem;">👫</span>
+                <span>Ele & Ela</span>
+              </button>
+              <button type="button" class="btn btn-outline couple-preset-btn" id="btnPresetGayMale" onclick="window.applyCouplePresetUI('gay_male')" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 700; flex-direction: column; gap: 2px;">
+                <span style="font-size: 1.1rem;">👨‍❤️‍👨</span>
+                <span>Ele & Ele</span>
+              </button>
+              <button type="button" class="btn btn-outline couple-preset-btn" id="btnPresetLesbianFemale" onclick="window.applyCouplePresetUI('lesbian_female')" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 700; flex-direction: column; gap: 2px;">
+                <span style="font-size: 1.1rem;">👩‍❤️‍👩</span>
+                <span>Ela & Ela</span>
+              </button>
+              <button type="button" class="btn btn-outline couple-preset-btn" id="btnPresetCustom" onclick="window.applyCouplePresetUI('custom')" style="padding: 0.4rem 0.25rem; font-size: 0.72rem; font-weight: 700; flex-direction: column; gap: 2px;">
+                <span style="font-size: 1.1rem;">🧑‍🤝‍🧑</span>
+                <span>Livre</span>
+              </button>
             </div>
+          </div>
+
+          <!-- Parceiro 1 -->
+          <div id="boxCouplePartner1"
+            style="background: rgba(59, 130, 246, 0.06); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
+            <div
+              style="font-size: 0.82rem; font-weight: 700; color: #3b82f6; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 0.35rem;">
+                <span id="badgeIconCoupleP1">👤</span>
+                <span id="titleCoupleP1">Parceiro(a) 1</span>
+              </div>
+              <span id="badgeTagCoupleP1" style="font-size: 0.68rem; font-weight: 600; opacity: 0.8;">Você</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.5rem;">
+              <div>
+                <label style="font-size: 0.74rem; font-weight: 600;">Nome / Apelido</label>
+                <input type="text" id="coupleP1Name" class="form-control" placeholder="Ex: Allan" required>
+              </div>
+              <div>
+                <label style="font-size: 0.74rem; font-weight: 600;">Renda Líquida Mensal (R$)</label>
+                <input type="text" inputmode="numeric" autocomplete="off" id="coupleP1Income" class="form-control mask-money-input"
+                  placeholder="0,00" required>
+              </div>
+            </div>
+
+            <!-- Avatar & Cor Parceiro 1 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.5rem;">
+              <div>
+                <label style="font-size: 0.7rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Avatar</label>
+                <div id="avatarPickerP1" style="display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
+                <input type="hidden" id="coupleP1Avatar" value="user">
+              </div>
+              <div>
+                <label style="font-size: 0.7rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Cor</label>
+                <div id="colorPickerP1" style="display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
+                <input type="hidden" id="coupleP1Color" value="#3b82f6">
+              </div>
+            </div>
+
             <div>
-              <label style="font-size: 0.74rem; font-weight: 600;">Renda Líquida Mensal (R$)</label>
-              <input type="text" inputmode="numeric" autocomplete="off" id="coupleP2Income" class="form-control mask-money-input"
-                placeholder="0,00" required>
+              <label style="font-size: 0.72rem; font-weight: 600;">Chave Pix (Reembolsos)</label>
+              <input type="text" id="coupleP1Pix" class="form-control" placeholder="CPF, e-mail, telefone ou chave aleatória">
             </div>
           </div>
-          <div style="margin-top: 0.5rem;">
-            <label style="font-size: 0.74rem; font-weight: 600;">Chave Pix do(a) Parceiro(a)</label>
-            <input type="text" id="coupleP2Pix" class="form-control"
-              placeholder="CPF, e-mail, telefone ou chave aleatória">
+
+          <!-- Parceiro 2 -->
+          <div id="boxCouplePartner2"
+            style="background: rgba(236, 72, 153, 0.06); border: 1px solid rgba(236, 72, 153, 0.25); border-radius: 12px; padding: 0.85rem 1rem;">
+            <div
+              style="font-size: 0.82rem; font-weight: 700; color: #ec4899; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 0.35rem;">
+                <span id="badgeIconCoupleP2">❤️</span>
+                <span id="titleCoupleP2">Parceiro(a) 2</span>
+              </div>
+              <span id="badgeTagCoupleP2" style="font-size: 0.68rem; font-weight: 600; opacity: 0.8;">Cônjuge</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.5rem;">
+              <div>
+                <label style="font-size: 0.74rem; font-weight: 600;">Nome / Apelido</label>
+                <input type="text" id="coupleP2Name" class="form-control" placeholder="Ex: Mariana" required>
+              </div>
+              <div>
+                <label style="font-size: 0.74rem; font-weight: 600;">Renda Líquida Mensal (R$)</label>
+                <input type="text" inputmode="numeric" autocomplete="off" id="coupleP2Income" class="form-control mask-money-input"
+                  placeholder="0,00" required>
+              </div>
+            </div>
+
+            <!-- Avatar & Cor Parceiro 2 -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.5rem;">
+              <div>
+                <label style="font-size: 0.7rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Avatar</label>
+                <div id="avatarPickerP2" style="display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
+                <input type="hidden" id="coupleP2Avatar" value="heart">
+              </div>
+              <div>
+                <label style="font-size: 0.7rem; font-weight: 600; display: block; margin-bottom: 0.2rem;">Cor</label>
+                <div id="colorPickerP2" style="display: flex; gap: 0.3rem; flex-wrap: wrap;"></div>
+                <input type="hidden" id="coupleP2Color" value="#ec4899">
+              </div>
+            </div>
+
+            <div>
+              <label style="font-size: 0.72rem; font-weight: 600;">Chave Pix (Reembolsos)</label>
+              <input type="text" id="coupleP2Pix" class="form-control" placeholder="CPF, e-mail, telefone ou chave aleatória">
+            </div>
+          </div>
+
+          <!-- Regra de Rateio Padrão -->
+          <div class="form-group" style="margin: 0;">
+            <label style="font-size: 0.78rem; font-weight: 700;">Modelo de Divisão Padrão do Casal</label>
+            <select id="coupleSplitModeSelect" class="form-control">
+              <option value="proportional">Proporcional à Renda (Equity Split - Recomendado)</option>
+              <option value="equal">50% / 50% (Meio a Meio Exato)</option>
+              <option value="fixed_quota">Fundo Comum com Cota Fixa Mensal</option>
+            </select>
+          </div>
+
+          <!-- Banner com a prévia do cálculo da divisão proporcional -->
+          <div id="coupleRatioPreviewBanner"
+            style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.75rem 0.95rem;">
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700;">
+              <span id="couplePreviewP1Ratio" style="color: #3b82f6;">Você: 60%</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted);">Divisão Justa Calculada</span>
+              <span id="couplePreviewP2Ratio" style="color: #ec4899;">Parceiro(a): 40%</span>
+            </div>
+            <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0.35rem 0 0;">
+              Calculado automaticamente a partir das rendas informadas acima.
+            </p>
           </div>
         </div>
 
-        <!-- Regra de Rateio Padrão -->
-        <div class="form-group" style="margin: 0;">
-          <label style="font-size: 0.78rem; font-weight: 700;">Modelo de Divisão Padrão do Casal</label>
-          <select id="coupleSplitModeSelect" class="form-control">
-            <option value="proportional">Proporcional à Renda (Equity Split - Recomendado)</option>
-            <option value="equal">50% / 50% (Meio a Meio Exato)</option>
-            <option value="fixed_quota">Fundo Comum com Cota Fixa Mensal</option>
-          </select>
-        </div>
-
-        <!-- Banner com a prévia do cálculo da divisão proporcional -->
-        <div id="coupleRatioPreviewBanner"
-          style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.75rem 0.95rem;">
-          <div
-            style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700;">
-            <span id="couplePreviewP1Ratio" style="color: #3b82f6;">Você: 60%</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">Divisão Justa Calculada</span>
-            <span id="couplePreviewP2Ratio" style="color: #ec4899;">Parceiro(a): 40%</span>
-          </div>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin: 0.35rem 0 0;">
-            Quem ganha mais contribui proporcionalmente mais para manter o mesmo padrão de vida e tranquilidade de
-            ambos.
-          </p>
-        </div>
-
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;">
           <button type="button" class="btn btn-outline" id="btnCancelCoupleSettings">Cancelar</button>
-          <button type="submit" class="btn btn-primary"
-            style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none;">Salvar Configurações</button>
+          <button type="submit" class="btn btn-primary" id="btnSaveCoupleSettings" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none;">Salvar Configurações</button>
         </div>
       </form>
     </div>

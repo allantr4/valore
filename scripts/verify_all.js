@@ -119,3 +119,4 @@ if (hasErrors) {
   console.log('\x1b[32m🎉 TODOS OS TESTES PASSARAM! Sistema 100% pronto e íntegro.\x1b[0m');
   process.exit(0);
 }
+

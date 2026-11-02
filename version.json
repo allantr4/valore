@@ -1,15 +1,14 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.5",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.4 - Correção Crítica de Inicialização & Titularidade Inteligente",
+  "title": "Valore v1.0.5 - Modo Individual (Solteiro), Identidade Universal & Ícone HD Mobile",
   "notes": [
-    "Correção crítica de integridade no carregamento do aplicativo Desktop e Mobile (resolução de congelamento na inicialização).",
-    "Titularidade nativa de Contas e Cartões: defina quem é o dono (Você, Parceiro(a) ou Conta Conjunta/Casa).",
-    "Badges visuais elegantes em cada cartão de crédito e conta bancária identificando o titular.",
-    "Preenchimento inteligente de pagador: ao selecionar uma conta/cartão, o responsável pelo pagamento é atribuído automaticamente.",
-    "Contas conjuntas ativam a partilha proporcional automaticamente ao serem selecionadas nos lançamentos.",
-    "Identificação clara de titularidade em todos os menus suspensos de seleção de contas."
+    "Chave Mestre de Modo de Gestão: Modo Individual (Solteiro) 100% limpo e sem distrações ou Modo Casal.",
+    "Identidade Universal e Inclusiva para Casais: Presets rápidos em 1 toque (Ele & Ela, Ele & Ele, Ela & Ela e Personalizado).",
+    "Galeria de Avatares e Cores de destaque personalizáveis para cada parceiro.",
+    "Identificação direta e sem atrito de aparelhos ('Quem utiliza este aparelho no dia a dia?').",
+    "Novo Ícone Oficial em Alta Definição (HD) para Mobile Android em todas as resoluções mipmap e web assets."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",

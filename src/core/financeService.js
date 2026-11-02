@@ -103,9 +103,14 @@ class FinanceService {
     const couple = (this.state && this.state.couple) ? this.state.couple : null;
     const p1Name = (couple && couple.partner1 && couple.partner1.name) ? couple.partner1.name : 'Você';
     const p2Name = (couple && couple.partner2 && couple.partner2.name) ? couple.partner2.name : 'Parceiro(a)';
+    const p1Color = (couple && couple.partner1 && couple.partner1.color) ? couple.partner1.color : '#3b82f6';
+    const p2Color = (couple && couple.partner2 && couple.partner2.color) ? couple.partner2.color : '#ec4899';
+    const p1Avatar = (couple && couple.partner1 && couple.partner1.avatar) ? couple.partner1.avatar : 'user';
+    const p2Avatar = (couple && couple.partner2 && couple.partner2.avatar) ? couple.partner2.avatar : 'heart';
 
     const ownerName = ownerRole === 'p2' ? p2Name : p1Name;
-    const ownerColor = ownerRole === 'p2' ? '#ec4899' : '#3b82f6';
+    const ownerColor = ownerRole === 'p2' ? p2Color : p1Color;
+    const ownerAvatar = ownerRole === 'p2' ? p2Avatar : p1Avatar;
     const deviceIcon = deviceType === 'mobile' ? '📱' : '💻';
     const deviceLabel = deviceType === 'mobile' ? 'Celular' : 'PC';
 
@@ -113,11 +118,17 @@ class FinanceService {
       ownerRole,
       ownerName,
       ownerColor,
+      ownerAvatar,
       deviceType,
       deviceIcon,
       deviceLabel,
       p1Name,
-      p2Name
+      p2Name,
+      p1Color,
+      p2Color,
+      p1Avatar,
+      p2Avatar,
+      coupleEnabled: couple ? couple.enabled !== false : true
     };
   }
 
@@ -219,7 +230,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.4';
+    return '1.0.5';
   }
 
   getAppBuildDate() {
@@ -4835,6 +4846,40 @@ class FinanceService {
       };
     }
 
+    await this.save();
+    return couple;
+  }
+
+  isCoupleEnabled() {
+    return !!(this.state && this.state.couple && this.state.couple.enabled !== false);
+  }
+
+  async setCoupleEnabled(enabled) {
+    const couple = this.getCoupleSettings();
+    couple.enabled = !!enabled;
+    await this.save();
+    return couple.enabled;
+  }
+
+  async applyCouplePreset(presetKey) {
+    const couple = this.getCoupleSettings();
+    couple.preset = presetKey;
+    if (presetKey === 'hetero') {
+      couple.partner1.avatar = 'user';
+      couple.partner1.color = '#3b82f6';
+      couple.partner2.avatar = 'heart';
+      couple.partner2.color = '#ec4899';
+    } else if (presetKey === 'gay_male') {
+      couple.partner1.avatar = 'user';
+      couple.partner1.color = '#3b82f6';
+      couple.partner2.avatar = 'sparkles';
+      couple.partner2.color = '#10b981';
+    } else if (presetKey === 'lesbian_female') {
+      couple.partner1.avatar = 'user-round';
+      couple.partner1.color = '#a855f7';
+      couple.partner2.avatar = 'heart';
+      couple.partner2.color = '#ec4899';
+    }
     await this.save();
     return couple;
   }
