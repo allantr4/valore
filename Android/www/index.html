@@ -129,7 +129,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.0.7</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.0.8</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -1755,7 +1755,9 @@
         <input type="hidden" id="txEditId" value="">
         <div class="form-group">
           <label>Descrição</label>
-          <input type="text" id="txDesc" name="txDesc" class="form-control" placeholder="Ex: Supermercado, Aluguel, Salário" autocapitalize="sentences" autocorrect="on" autocomplete="on" spellcheck="true" required>
+          <input type="text" id="txDesc" name="txDesc" class="form-control" placeholder="Ex: Supermercado, Aluguel, Salário" autocapitalize="sentences" autocorrect="on" autocomplete="off" spellcheck="true" required>
+          <div id="txSuggestionsContainer" class="tx-suggestions-pills" style="display: none; margin-top: 0.35rem; gap: 0.35rem; flex-wrap: wrap;"></div>
+          <div id="txAutoCategoryBadge" class="auto-category-hint" style="display: none; margin-top: 0.35rem; font-size: 0.72rem; color: var(--primary); font-weight: 600; align-items: center; gap: 4px;"></div>
         </div>
 
         <!-- Campos de Transação Normal -->
@@ -2092,7 +2094,9 @@
         <div class="form-group">
           <label>Descrição da Conta / Boleto</label>
           <input type="text" id="schDesc" class="form-control"
-            placeholder="Ex: Claro Internet, Enel Energia, Aluguel, Sabesp" autocapitalize="sentences" autocorrect="on" spellcheck="true" required>
+            placeholder="Ex: Claro Internet, Enel Energia, Aluguel, Sabesp" autocapitalize="sentences" autocorrect="on" autocomplete="off" spellcheck="true" required>
+          <div id="schSuggestionsContainer" class="tx-suggestions-pills" style="display: none; margin-top: 0.35rem; gap: 0.35rem; flex-wrap: wrap;"></div>
+          <div id="schAutoCategoryBadge" class="auto-category-hint" style="display: none; margin-top: 0.35rem; font-size: 0.72rem; color: var(--primary); font-weight: 600; align-items: center; gap: 4px;"></div>
         </div>
 
         <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">

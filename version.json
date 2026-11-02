@@ -1,14 +1,14 @@
 {
-  "version": "1.0.7",
+  "version": "1.0.8",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.7 - Correção de Enquadramento, Scrollbar Visível e Auditoria de UI",
+  "title": "Valore v1.0.8 - Sugestão Preditiva de Categorias & Ícones Elegantes de Categoria",
   "notes": [
-    "Scrollbar estilizada de alta visibilidade e ergonomia no container principal do Desktop.",
-    "Respiro inferior amplo (Safe Bottom Clearance) garantindo visão 100% livre de sobreposição ou cortes.",
-    "Enquadramento dinâmico e inteligente para telas e monitores compactos na vertical (@media max-height: 740px).",
-    "Sidebar com rolagem flexível evitando sufocamento de menus em janelas baixas.",
-    "Nova etapa obrigatória 4/4 no verificador pré-commit: Auditoria de Enquadramento, Scroll e CSS."
+    "Inteligência Preditiva de Categorias: auto-seleção automática da categoria e conta ao digitar despesas habituais.",
+    "Chips de Histórico em 1 Toque: sugestões rápidas de lançamentos frequentes (ex: Abastecimento, Mercado, Contas).",
+    "Ícones Elegantes de Categorias em Transações: pílulas no estilo premium do Cofrinho com ícones oficiais Lucide e cores suaves translúcidas.",
+    "Categorias visualmente identificáveis na Tabela do Dashboard, Transações e Agendamentos.",
+    "Paridade e sincronização total entre Desktop (Windows) e Mobile (Android & iOS)."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",

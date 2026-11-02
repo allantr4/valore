@@ -247,7 +247,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.7';
+    return '1.0.8';
   }
 
   getAppBuildDate() {
@@ -5474,6 +5474,141 @@ class FinanceService {
       accountsCount: this.state.accounts.length,
       syncedAt: this.state.syncMeta.lastSyncAt
     };
+  }
+
+  /**
+   * Sugestão Preditiva Inteligente de Categoria e Conta baseada em Histórico e Dicionário Semântico Local.
+   * Retorna { categoryId, categoryName, categoryIcon, categoryColor, accountId, accountName, confidence }
+   */
+  predictCategoryAndAccount(rawDescription, type = 'expense') {
+    if (!rawDescription || typeof rawDescription !== 'string') return null;
+    const clean = rawDescription.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (clean.length < 2) return null;
+
+    // 1. Busca no histórico de transações reais (ponderando frequência e recência)
+    const matches = {};
+    const txs = this.state.transactions || [];
+    const len = txs.length;
+    
+    for (let i = len - 1; i >= 0; i--) {
+      const t = txs[i];
+      if (!t.description) continue;
+      if (type && t.type !== type && t.type !== 'transfer') continue;
+
+      const tDesc = t.description.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (tDesc.includes(clean) || clean.includes(tDesc)) {
+        const catId = t.categoryId;
+        if (!catId) continue;
+        const key = `${catId}|${t.accountId || ''}`;
+        if (!matches[key]) {
+          matches[key] = {
+            categoryId: catId,
+            accountId: t.accountId || null,
+            count: 0,
+            lastDate: t.date || '',
+            score: 0
+          };
+        }
+        matches[key].count++;
+        // Correspondência exata no início dá bônus
+        const isPrefix = tDesc.startsWith(clean) || clean.startsWith(tDesc);
+        matches[key].score += isPrefix ? 3 : 1;
+      }
+    }
+
+    const sortedHistory = Object.values(matches).sort((a, b) => b.score - a.score || b.count - a.count);
+    if (sortedHistory.length > 0) {
+      const top = sortedHistory[0];
+      const cat = (this.state.categories || []).find(c => c.id === top.categoryId);
+      const acc = (this.state.accounts || []).find(a => a.id === top.accountId);
+      return {
+        categoryId: top.categoryId,
+        categoryName: cat ? cat.name : '',
+        categoryIcon: cat ? (cat.icon || 'tag') : 'tag',
+        categoryColor: cat ? cat.color : '#6366f1',
+        accountId: top.accountId,
+        accountName: acc ? acc.name : '',
+        confidence: top.count >= 2 ? 'high' : 'medium'
+      };
+    }
+
+    // 2. Dicionário Semântico Inteligente de Fábrica (Léxico Brasileiro)
+    const semanticRules = [
+      { pattern: /abastec|gasolin|combust|posto|etanol|diesel|ipiranga|shell|br\s?distribuidora/, catKey: 'transporte', defaultIcon: 'car' },
+      { pattern: /uber|99\s?app|99pop|taxi|pedagio|sem\s?parar|veloe|estacionamento|estapar/, catKey: 'transporte', defaultIcon: 'car' },
+      { pattern: /supermerc|mercado|atacadao|assai|carrefour|pao\s?de\s?acucar|hortifruti|acougue|padaria|feira/, catKey: 'alimenta', defaultIcon: 'shopping-cart' },
+      { pattern: /ifood|rappi|restaurante|lanchonete|hamburguer|pizza|mcdonald|burguer|almoco|jantar|subway/, catKey: 'alimenta', defaultIcon: 'utensils' },
+      { pattern: /farmacia|drogaria|drogasil|pacheco|remedio|medicamento|consulta|medico|dentista|hospital|exame|laboratorio/, catKey: 'saude', defaultIcon: 'activity' },
+      { pattern: /aluguel|condominio|iptu|enel|energia|luz|sabesp|agua|gas|comgas|claro|vivo|oi|tim|internet|fibra/, catKey: 'moradia', defaultIcon: 'home' },
+      { pattern: /netflix|spotify|amazon\s?prime|hbo|disney|apple|youtube|cinema|steam|playstation|xbox|jogos/, catKey: 'streaming|lazer', defaultIcon: 'tv' },
+      { pattern: /salario|pro-labore|remuneracao|adiantamento|holerite/, catKey: 'salario', defaultIcon: 'wallet', type: 'income' },
+      { pattern: /dividendo|jcp|rendimento|fii|cdi|tesouro|poupanca|selic/, catKey: 'invest', defaultIcon: 'trending-up', type: 'income' }
+    ];
+
+    for (const rule of semanticRules) {
+      if (rule.pattern.test(clean)) {
+        const cat = (this.state.categories || []).find(c => {
+          const cName = c.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const keys = rule.catKey.split('|');
+          return keys.some(k => cName.includes(k));
+        });
+        if (cat) {
+          return {
+            categoryId: cat.id,
+            categoryName: cat.name,
+            categoryIcon: cat.icon || rule.defaultIcon,
+            categoryColor: cat.color || '#6366f1',
+            accountId: null,
+            accountName: '',
+            confidence: 'semantic'
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Retorna os top lançamentos anteriores similares ao termo digitado para preenchimento em 1 toque.
+   */
+  getRecentDescriptionSuggestions(query = '', type = 'expense', limit = 4) {
+    if (!query || typeof query !== 'string') return [];
+    const clean = query.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (clean.length < 2) return [];
+
+    const map = new Map();
+    const txs = this.state.transactions || [];
+
+    for (let i = txs.length - 1; i >= 0; i--) {
+      const t = txs[i];
+      if (!t.description) continue;
+      if (type && t.type !== type && t.type !== 'transfer') continue;
+
+      const descNorm = t.description.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (descNorm.includes(clean)) {
+        const cleanOriginalDesc = (t.installmentTotal > 1) 
+          ? (t.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '').trim()
+          : t.description.trim();
+
+        if (!map.has(cleanOriginalDesc.toLowerCase())) {
+          const cat = (this.state.categories || []).find(c => c.id === t.categoryId);
+          const acc = (this.state.accounts || []).find(a => a.id === t.accountId);
+          map.set(cleanOriginalDesc.toLowerCase(), {
+            description: cleanOriginalDesc,
+            categoryId: t.categoryId,
+            categoryName: cat ? cat.name : '',
+            categoryIcon: cat ? (cat.icon || 'tag') : 'tag',
+            categoryColor: cat ? cat.color : '#6366f1',
+            accountId: t.accountId,
+            accountName: acc ? acc.name : ''
+          });
+          if (map.size >= limit) break;
+        }
+      }
+    }
+
+    return Array.from(map.values());
   }
 }
 
