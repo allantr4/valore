@@ -1,14 +1,14 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.7",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.6 - Personalização Direta de Avatares e Cores no Sync Hub",
+  "title": "Valore v1.0.7 - Correção de Enquadramento, Scrollbar Visível e Auditoria de UI",
   "notes": [
-    "Personalização de Avatar e Cores diretamente no card 'Quem utiliza este aparelho no dia a dia?' do Sync Hub.",
-    "Seletores visuais instantâneos para Parceiro 1 e Parceiro 2 com atualização em tempo real.",
-    "Botão 'Salvar Perfil & Cores' sincronizado automaticamente com todo o ecossistema e relatórios.",
-    "Atalho direto para Presets Rápidos e alternância entre Modo Individual e Casal.",
-    "Paridade e sincronização total entre Desktop (Windows) e Mobile (Android & iOS)."
+    "Scrollbar estilizada de alta visibilidade e ergonomia no container principal do Desktop.",
+    "Respiro inferior amplo (Safe Bottom Clearance) garantindo visão 100% livre de sobreposição ou cortes.",
+    "Enquadramento dinâmico e inteligente para telas e monitores compactos na vertical (@media max-height: 740px).",
+    "Sidebar com rolagem flexível evitando sufocamento de menus em janelas baixas.",
+    "Nova etapa obrigatória 4/4 no verificador pré-commit: Auditoria de Enquadramento, Scroll e CSS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",

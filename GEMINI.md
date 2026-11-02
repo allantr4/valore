@@ -27,9 +27,11 @@ Antes de realizar qualquer `git commit`, criação de tag ou envio de release pa
    Executar verificação com `node --check` ou `npm run test:verify` em todos os arquivos de script tocados (`src/ui/app.js`, `src/core/financeService.js`, `src/main/main.js`, `Android/www/app.js`, `IOs/www/app.js`).
 2. **Teste de Inicialização e Integridade Estrutural:**
    Verificar se o ponto de entrada principal (`DOMContentLoaded` com chamada para `initApp()`), as chaves de fechamento de blocos e estruturas assíncronas (`try/catch/finally`) estão intactos e sem truncamentos.
-3. **Fluxo de Correção Imediata:**
+3. **Auditoria Obrigatória de Enquadramento, Scrollbar & Ergonomia de UI:**
+   Garantir a presença de scrollbar de alta visibilidade no `.main-content`, safe bottom clearance (`padding-bottom >= 4.5rem`), suporte a janelas compactas na vertical (`@media max-height`) e ausência de scrolls bloqueados.
+4. **Fluxo de Correção Imediata:**
    Caso qualquer teste ou validação acuse erro ou inconformidade, você DEVE OBRIGATORIAMENTE corrigir o código imediatamente e rodar a bateria de testes novamente até que todos passem com 100% de sucesso (código de retorno 0).
-4. **Liberação Somente com Sucesso:**
+5. **Liberação Somente com Sucesso:**
    É estritamente proibido realizar commit, gerar instalador ou publicar release enquanto houver qualquer pendência ou erro não sanado.
 
 

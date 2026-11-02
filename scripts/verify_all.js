@@ -1,6 +1,7 @@
 /**
  * Valore - Verificador Automatizado de Integridade Pré-Commit & Pré-Release
- * Executa checagem de sintaxe, integridade de inicialização e paridade de versões.
+ * Executa checagem de sintaxe, integridade de inicialização, paridade de versões
+ * e auditoria estática de enquadramento, visibilidade de scrollbars e ergonomia de UI.
  */
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +24,7 @@ console.log('   💎 Valore - Verificação Pré-Commit & Pré-Release   ');
 console.log('======================================================\n');
 
 // 1. Verificação de Sintaxe de Scripts
-console.log('[1/3] Validando sintaxe e parsing JavaScript...');
+console.log('[1/4] Validando sintaxe e parsing JavaScript...');
 const scriptsToValidate = [
   'src/ui/app.js',
   'src/core/financeService.js',
@@ -51,7 +52,7 @@ for (const relPath of scriptsToValidate) {
 }
 
 // 2. Verificação de Integridade Estrutural do app.js
-console.log('\n[2/3] Validando inicialização e pontos de entrada (app.js)...');
+console.log('\n[2/4] Validando inicialização e pontos de entrada (app.js)...');
 const appJsPath = path.join(rootDir, 'src/ui/app.js');
 if (fs.existsSync(appJsPath)) {
   const appContent = fs.readFileSync(appJsPath, 'utf8');
@@ -78,7 +79,7 @@ if (fs.existsSync(appJsPath)) {
 }
 
 // 3. Verificação de Paridade de Versões
-console.log('\n[3/3] Validando paridade de versões entre arquivos...');
+console.log('\n[3/4] Validando paridade de versões entre arquivos...');
 let versionJsonVer = null;
 try {
   const vJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'version.json'), 'utf8'));
@@ -111,6 +112,51 @@ try {
   logFail(`Erro ao validar financeService.js: ${e.message}`);
 }
 
+// 4. Verificação de Enquadramento, Scrollbar & Responsividade (UI Layout Audit)
+console.log('\n[4/4] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
+const cssPath = path.join(rootDir, 'src/ui/styles.css');
+if (fs.existsSync(cssPath)) {
+  const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+  // A. Scrollbar visível em .main-content
+  if (cssContent.includes('.main-content::-webkit-scrollbar') && cssContent.includes('.main-content::-webkit-scrollbar-thumb')) {
+    logPass('Scrollbar estilizada de alta visibilidade presente em .main-content');
+  } else {
+    logFail('Ausência de estilização explícita de scrollbar em .main-content! Risco de interface parecer cortada.');
+  }
+
+  // B. Estabilidade de rolagem
+  if (cssContent.includes('scrollbar-gutter: stable') || cssContent.includes('scrollbar-width: thin')) {
+    logPass('Controles de estabilidade de rolagem (scrollbar-gutter / thin) configurados');
+  } else {
+    logFail('Falta scrollbar-gutter ou scrollbar-width para rolagem estável.');
+  }
+
+  // C. Respiro inferior no Desktop (Safe Bottom Clearance)
+  const viewContainerMatch = cssContent.match(/\.view-container\s*\{[^}]*padding:[^}]*\}/);
+  if (viewContainerMatch && (viewContainerMatch[0].includes('4.') || viewContainerMatch[0].includes('5.') || viewContainerMatch[0].includes('6.'))) {
+    logPass('Safe bottom clearance amplo configurado em .view-container (>= 4.5rem)');
+  } else {
+    logFail('.view-container com padding-bottom insuficiente para evitar cortes no botão flutuante e fim de página.');
+  }
+
+  // D. Breakpoint para telas compactas na vertical (max-height)
+  if (cssContent.includes('@media (max-height:')) {
+    logPass('Regras de enquadramento adaptativo para janelas baixas (@media max-height) presentes');
+  } else {
+    logFail('Ausência de regras para janelas de altura compacta (@media max-height)!');
+  }
+
+  // E. Rolagem da barra lateral (Sidebar)
+  if (cssContent.includes('.sidebar') && cssContent.includes('overflow-y: auto')) {
+    logPass('Sidebar configurada com overflow-y: auto para janelas de baixa resolução');
+  } else {
+    logFail('Sidebar sem overflow-y: auto! Risco de cortar rodapé em janelas baixas.');
+  }
+} else {
+  logFail('src/ui/styles.css não encontrado!');
+}
+
 console.log('\n======================================================');
 if (hasErrors) {
   console.error('\x1b[31m⛔ TESTES FALHARAM! Corrija os erros antes de comitar ou publicar.\x1b[0m');
@@ -119,4 +165,3 @@ if (hasErrors) {
   console.log('\x1b[32m🎉 TODOS OS TESTES PASSARAM! Sistema 100% pronto e íntegro.\x1b[0m');
   process.exit(0);
 }
-
