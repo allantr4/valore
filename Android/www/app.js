@@ -12131,6 +12131,222 @@ window.checkAppUpdates = async function(isManualClick = false) {
   }
 };
 
+
+// ==========================================
+// CENTRAL DE NOTIFICAÇÕES & LEMBRETES DE VENCIMENTO
+// ==========================================
+
+window.renderDashboardDueAlertBanner = function() {
+  const banner = document.getElementById('dashboardDueAlertBanner');
+  if (!banner) return;
+
+  const alerts = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : [];
+  if (!alerts || alerts.length === 0) {
+    banner.style.display = 'none';
+    return;
+  }
+
+  const listEl = document.getElementById('dashboardDueAlertList');
+  const countEl = document.getElementById('dashboardDueAlertCount');
+  if (countEl) countEl.textContent = `${alerts.length} lembrete(s)`;
+
+  if (listEl) {
+    listEl.innerHTML = alerts.map(a => {
+      let icon = 'clock';
+      let badgeColor = 'var(--primary)';
+      let badgeBg = 'rgba(59, 130, 246, 0.15)';
+      let label = 'Vence em breve';
+
+      if (a.type === 'overdue') {
+        icon = 'alert-triangle';
+        badgeColor = '#ef4444';
+        badgeBg = 'rgba(239, 68, 68, 0.15)';
+        label = 'Em Atraso';
+      } else if (a.type === 'today') {
+        icon = 'bell-ring';
+        badgeColor = '#f59e0b';
+        badgeBg = 'rgba(245, 158, 11, 0.15)';
+        label = 'Vence Hoje';
+      } else if (a.type === 'card_closing') {
+        icon = 'credit-card';
+        badgeColor = '#8b5cf6';
+        badgeBg = 'rgba(139, 92, 246, 0.15)';
+        label = 'Fatura Fechando';
+      }
+
+      return `
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.85rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 0.65rem; min-width: 0;">
+            <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 6px; background: ${badgeBg}; color: ${badgeColor}; flex-shrink: 0;">
+              <i data-lucide="${icon}" style="width: 15px; height: 15px;"></i>
+            </span>
+            <div style="min-width: 0;">
+              <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.title}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${a.detail}</div>
+            </div>
+          </div>
+          <div style="text-align: right; flex-shrink: 0;">
+            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${typeof currencyFormatter !== 'undefined' ? currencyFormatter.format(a.amount || 0) : 'R$ ' + (a.amount || 0)}</div>
+            <span style="display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 4px; background: ${badgeBg}; color: ${badgeColor};">${label}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  banner.style.display = 'block';
+  if (window.lucide) lucide.createIcons();
+};
+
+window.updateHeaderNotificationBadge = function() {
+  const badgeHeader = document.getElementById('headerNotificationBadge');
+  const badgeSidebar = document.getElementById('sidebarNotificationBadge');
+  const settings = (typeof finance !== 'undefined' && finance.getNotificationSettings) ? finance.getNotificationSettings() : { enabled: true };
+
+  if (!settings.enabled) {
+    if (badgeHeader) badgeHeader.style.display = 'none';
+    if (badgeSidebar) badgeSidebar.style.display = 'none';
+    return;
+  }
+
+  const alerts = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : [];
+  const count = alerts.length;
+
+  if (count > 0) {
+    if (badgeHeader) {
+      badgeHeader.textContent = count > 99 ? '99+' : count;
+      badgeHeader.style.display = 'flex';
+    }
+    if (badgeSidebar) {
+      badgeSidebar.textContent = count > 99 ? '99+' : count;
+      badgeSidebar.style.display = 'inline-block';
+    }
+  } else {
+    if (badgeHeader) badgeHeader.style.display = 'none';
+    if (badgeSidebar) badgeSidebar.style.display = 'none';
+  }
+};
+
+window.openNotificationSettingsModal = function() {
+  const modal = document.getElementById('notificationSettingsModal');
+  if (!modal) return;
+
+  const settings = (typeof finance !== 'undefined' && finance.getNotificationSettings) ? finance.getNotificationSettings() : {};
+
+  const masterEl = document.getElementById('notifyMasterSwitch');
+  const dueDayEl = document.getElementById('notifyOnDueDay');
+  const dueTimeEl = document.getElementById('notifyDueDayTime');
+  const daysBeforeEl = document.getElementById('notifyDaysBeforeSelect');
+  const overdueEl = document.getElementById('notifyOverdue');
+  const cardClosingEl = document.getElementById('notifyCreditCardClosing');
+  const bankReaderEl = document.getElementById('notifyBankReader');
+
+  if (masterEl) masterEl.checked = settings.enabled !== false;
+  if (dueDayEl) dueDayEl.checked = settings.notifyOnDueDay !== false;
+  if (dueTimeEl) dueTimeEl.value = settings.dueDayTime || '09:00';
+  if (daysBeforeEl) daysBeforeEl.value = String(settings.notifyDaysBefore !== undefined ? settings.notifyDaysBefore : 2);
+  if (overdueEl) overdueEl.checked = settings.notifyOverdue !== false;
+  if (cardClosingEl) cardClosingEl.checked = settings.notifyCreditCardClosing !== false;
+  if (bankReaderEl) bankReaderEl.checked = !!settings.bankNotificationReader;
+
+  modal.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+};
+
+window.closeNotificationSettingsModal = function() {
+  const modal = document.getElementById('notificationSettingsModal');
+  if (modal) modal.classList.remove('open');
+};
+
+window.saveNotificationSettingsFromModal = function() {
+  const masterEl = document.getElementById('notifyMasterSwitch');
+  const dueDayEl = document.getElementById('notifyOnDueDay');
+  const dueTimeEl = document.getElementById('notifyDueDayTime');
+  const daysBeforeEl = document.getElementById('notifyDaysBeforeSelect');
+  const overdueEl = document.getElementById('notifyOverdue');
+  const cardClosingEl = document.getElementById('notifyCreditCardClosing');
+  const bankReaderEl = document.getElementById('notifyBankReader');
+
+  const newSettings = {
+    enabled: masterEl ? masterEl.checked : true,
+    notifyOnDueDay: dueDayEl ? dueDayEl.checked : true,
+    dueDayTime: dueTimeEl ? dueTimeEl.value : '09:00',
+    notifyDaysBefore: daysBeforeEl ? parseInt(daysBeforeEl.value, 10) : 2,
+    notifyOverdue: overdueEl ? overdueEl.checked : true,
+    notifyCreditCardClosing: cardClosingEl ? cardClosingEl.checked : true,
+    bankNotificationReader: bankReaderEl ? bankReaderEl.checked : false
+  };
+
+  if (typeof finance !== 'undefined' && finance.saveNotificationSettings) {
+    finance.saveNotificationSettings(newSettings);
+  }
+
+  if (newSettings.enabled && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+    Notification.requestPermission().catch(() => {});
+  }
+
+  if (typeof showToast === 'function') {
+    showToast('Configurações de notificações e lembretes salvas com sucesso!', 'success');
+  }
+
+  window.closeNotificationSettingsModal();
+  window.updateHeaderNotificationBadge();
+  window.renderDashboardDueAlertBanner();
+};
+
+window.testNotificationTrigger = function() {
+  const title = 'Lembrete Valore Financeiro';
+  const body = 'Você tem um alerta de teste: lembrete de vencimento configurado com sucesso!';
+
+  if (typeof Notification !== 'undefined') {
+    if (Notification.permission === 'granted') {
+      try {
+        new Notification(title, {
+          body: body,
+          icon: 'assets/logo_completo.png'
+        });
+      } catch (e) {
+        console.warn('Erro ao disparar Web Notification:', e);
+      }
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification(title, { body: body, icon: 'assets/logo_completo.png' });
+        }
+      });
+    }
+  }
+
+  if (typeof showToast === 'function') {
+    showToast('🔔 Notificação de teste emitida com sucesso!', 'info');
+  }
+};
+
+function setupNotificationListeners() {
+  const btnHeader = document.getElementById('btnOpenNotificationSettings');
+  const btnSidebar = document.getElementById('btnSidebarNotifications');
+  const btnClose = document.getElementById('btnCloseNotificationSettingsModal');
+  const btnCancel = document.getElementById('btnCancelNotificationSettings');
+  const btnSave = document.getElementById('btnSaveNotificationSettings');
+  const btnTest = document.getElementById('btnTestNotification');
+  const btnViewBills = document.getElementById('btnDashboardViewPendingBills');
+
+  if (btnHeader) btnHeader.addEventListener('click', window.openNotificationSettingsModal);
+  if (btnSidebar) btnSidebar.addEventListener('click', window.openNotificationSettingsModal);
+  if (btnClose) btnClose.addEventListener('click', window.closeNotificationSettingsModal);
+  if (btnCancel) btnCancel.addEventListener('click', window.closeNotificationSettingsModal);
+  if (btnSave) btnSave.addEventListener('click', window.saveNotificationSettingsFromModal);
+  if (btnTest) btnTest.addEventListener('click', window.testNotificationTrigger);
+
+  if (btnViewBills) {
+    btnViewBills.addEventListener('click', () => {
+      if (typeof switchTab === 'function') {
+        switchTab('transactions');
+      }
+    });
+  }
+}
+
 window.openUpdateModal = function(info, currentVer) {
   const modal = document.getElementById('updateModal');
   if (!modal) return;
@@ -12167,6 +12383,8 @@ window.openUpdateModal = function(info, currentVer) {
   if (btnAction) btnAction.disabled = false;
   if (btnDismiss) btnDismiss.disabled = false;
   if (btnClose) btnClose.disabled = false;
+  const btnUpdateViaBrowser = document.getElementById('btnUpdateViaBrowser');
+  if (btnUpdateViaBrowser) btnUpdateViaBrowser.style.display = 'inline-flex';
 
   if (changelogEl) {
     if (Array.isArray(info.notes) && info.notes.length > 0) {
@@ -12205,6 +12423,39 @@ function setupUpdateModalListeners() {
   };
 
   if (btnClose) btnClose.addEventListener('click', closeUpdate);
+
+  // Blindagem anti-travamento de foco e retorno de configurações do Android
+  const unlockUpdateControls = () => {
+    const bAction = document.getElementById('btnActionUpdate');
+    const bDismiss = document.getElementById('btnDismissUpdate');
+    const bClose = document.getElementById('btnCloseUpdateModal');
+    if (bDismiss) bDismiss.disabled = false;
+    if (bClose) bClose.disabled = false;
+    if (bAction) bAction.disabled = false;
+  };
+
+  window.addEventListener('focus', unlockUpdateControls);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') unlockUpdateControls();
+  });
+
+  const btnUpdateViaBrowser = document.getElementById('btnUpdateViaBrowser');
+  if (btnUpdateViaBrowser) {
+    btnUpdateViaBrowser.addEventListener('click', () => {
+      const targetUrl = (latestUpdateData && (latestUpdateData.downloadUrlApk || latestUpdateData.githubReleaseUrl)) || 'https://github.com/allantr4/valore/releases';
+      try {
+        if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.openExternal) {
+          window.electronAPI.openExternal(targetUrl);
+        } else {
+          window.open(targetUrl, '_blank');
+        }
+      } catch (e) {
+        window.open(targetUrl, '_blank');
+      }
+      closeUpdate();
+    });
+  }
+
   if (btnDismiss) btnDismiss.addEventListener('click', closeUpdate);
 
   // Registra ouvintes para download e progresso no Mobile Android
@@ -12424,6 +12675,7 @@ function setupUpdateModalListeners() {
             window.AndroidAppUpdater.retryInstall();
           } catch (e) {
             window.AndroidAppUpdater.downloadAndInstall(latestUpdateData.downloadUrlApk);
+        setTimeout(unlockUpdateControls, 12000);
           }
           return;
         }
@@ -12479,6 +12731,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initPerformanceMode();
   initMobileBackButtonListener();
   setupUpdateModalListeners();
+  setupNotificationListeners();
+  setTimeout(() => { if (window.updateHeaderNotificationBadge) window.updateHeaderNotificationBadge(); }, 1000);
   setTimeout(() => {
     window.checkAppUpdates(false);
   }, 3000);

@@ -119,6 +119,13 @@
           <i data-lucide="help-circle" style="width: 14px; height: 14px;"></i>
           <span>Dicas & Boas-Vindas</span>
         </button>
+        <button type="button" id="btnSidebarNotifications" class="btn-lite-mode-toggle"
+          title="Configurar Lembretes de Vencimento e Notificações"
+          onclick="window.openNotificationSettingsModal()"
+          style="margin-top: 0.35rem; border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;">
+          <i data-lucide="bell" style="width: 14px; height: 14px;"></i>
+          <span>Lembretes & Alertas</span>
+        </button>
         <button type="button" id="btnToggleLiteMode" class="btn-lite-mode-toggle"
           title="Ativar Modo Leve para computadores fracos (Desativa blur e sombras para economizar CPU e RAM)"
           onclick="window.togglePerformanceMode()">
@@ -129,7 +136,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.1.4</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.2.0</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -152,6 +159,13 @@
           </div>
 
           <!-- Pílula de Identidade do Aparelho (Mostra quem está lançando neste PC/Celular e permite trocar em 1 toque) -->
+          <button type="button" id="btnOpenNotificationSettings"
+            onclick="window.openNotificationSettingsModal()"
+            title="Lembretes & Notificações de Vencimento"
+            style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; margin-right: 0.45rem; flex-shrink: 0;">
+            <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
+            <span id="headerNotificationBadge" style="display: none; position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; background: #ef4444; color: #fff; font-size: 0.62rem; font-weight: 800; border-radius: 999px; align-items: center; justify-content: center; border: 2px solid var(--bg-card); line-height: 1;">0</span>
+          </button>
           <button type="button" id="btnHeaderDeviceOwner"
             onclick="window.openDeviceIdentityConfig()"
             title="Identificação deste aparelho: toque para escolher se este PC/Celular pertence a você ou ao seu parceiro(a)"
@@ -201,6 +215,8 @@
 
       <!-- View: Dashboard -->
       <div id="view-dashboard" class="view-container">
+        <!-- Banner de Alertas e Lembretes de Vencimento -->
+        <div id="dashboardDueAlertBanner" style="display: none; margin-bottom: 1.25rem;"></div>
         <!-- Barra de Controle de Período do Dashboard (Mês e Ano) -->
         <div class="dashboard-period-toolbar"
           style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.65rem 1rem; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
@@ -4623,6 +4639,102 @@
   </div>
 
   
+  <!-- Modal da Central de Notificações & Lembretes -->
+  <div class="modal-overlay" id="notificationSettingsModal" style="z-index: 10045;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="card-title-row">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); display: flex; align-items: center; justify-content: center; color: #f59e0b;">
+            <i data-lucide="bell"></i>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem;">Central de Notificações & Lembretes</h3>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Personalize quando e como deseja ser avisado sobre suas contas</span>
+          </div>
+        </div>
+        <button type="button" id="btnCloseNotificationModal" onclick="window.closeNotificationSettingsModal()" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div style="margin: 1.25rem 0 1rem; display: flex; flex-direction: column; gap: 1rem;">
+        <!-- Switch Master -->
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 1rem; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-color);">
+          <div>
+            <b style="font-size: 0.9rem; color: var(--text-main); display: block;">Ativar Lembretes de Vencimento</b>
+            <span style="font-size: 0.76rem; color: var(--text-muted);">Receba alertas no sistema e dentro do app antes e no dia do vencimento</span>
+          </div>
+          <label class="switch" style="position: relative; display: inline-block; width: 44px; height: 24px; margin: 0;">
+            <input type="checkbox" id="notifMasterEnabled" checked style="opacity: 0; width: 0; height: 0;">
+            <span class="slider round" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .2s; border-radius: 24px;"></span>
+          </label>
+        </div>
+
+        <div id="notifDetailsContainer" style="display: flex; flex-direction: column; gap: 0.85rem;">
+          <!-- Antecedência de Aviso -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 180px;">
+              <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); display: block;">Quando avisar com antecedência?</span>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Defina quantos dias antes você prefere ser lembrado</span>
+            </div>
+            <select id="notifDaysBefore" class="form-control" style="width: auto; min-width: 160px; font-size: 0.82rem;">
+              <option value="0">Apenas no dia</option>
+              <option value="1">1 dia antes</option>
+              <option value="2" selected>2 dias antes (Recomendado)</option>
+              <option value="3">3 dias antes</option>
+            </select>
+          </div>
+
+          <!-- Horário do Alerta -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 180px;">
+              <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); display: block;">Horário do Alerta Diário</span>
+              <span style="font-size: 0.74rem; color: var(--text-muted);">Momento do dia para receber o resumo das contas</span>
+            </div>
+            <input type="time" id="notifDueTime" class="form-control" value="09:00" style="width: auto; min-width: 120px; font-size: 0.85rem; text-align: center;">
+          </div>
+
+          <!-- Toggles Adicionais -->
+          <div style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+            <label style="display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; cursor: pointer; margin: 0; color: var(--text-main);">
+              <input type="checkbox" id="notifAlertOverdue" checked style="accent-color: var(--primary);">
+              <span>Alertar diariamente contas em atraso (pendentes vencidas)</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; cursor: pointer; margin: 0; color: var(--text-main);">
+              <input type="checkbox" id="notifAlertCards" checked style="accent-color: var(--primary);">
+              <span>Lembrar fechamento de faturas de cartão de crédito</span>
+            </label>
+          </div>
+
+          <!-- Seção Informativa: Leitor Bancário -->
+          <div style="padding: 0.75rem 0.9rem; border-radius: var(--radius-md); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);">
+            <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.35rem;">
+              <i data-lucide="sparkles" style="width: 15px; height: 15px; color: var(--primary);"></i>
+              <b style="font-size: 0.82rem; color: var(--primary);">Leitor de Notificações Bancárias</b>
+            </div>
+            <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
+              O Valore está preparado para interceptar compras do <b>Nubank, Itaú, Inter, Bradesco e C6</b> no Android e sugerir lançamentos em 1 toque.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-outline" onclick="window.testNotificationTrigger()" style="gap: 0.4rem; font-size: 0.8rem;">
+          <i data-lucide="bell-ring" style="width: 14px; height: 14px;"></i>
+          <span>Testar Alerta</span>
+        </button>
+        <div style="display: flex; gap: 0.65rem;">
+          <button type="button" class="btn btn-outline" onclick="window.closeNotificationSettingsModal()">Cancelar</button>
+          <button type="button" class="btn btn-primary" onclick="window.saveNotificationSettingsFromModal()" style="gap: 0.4rem;">
+            <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+            <span>Salvar Lembretes</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal de Atualização Online -->
   <div class="modal-overlay" id="updateModal" style="z-index: 10050;">
     <div class="modal-card" style="max-width: 480px;">
@@ -4677,6 +4789,10 @@
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-outline" id="btnUpdateViaBrowser" style="display: none; gap: 0.45rem; font-size: 0.82rem; border-color: rgba(59, 130, 246, 0.4); color: var(--primary);" title="Baixar diretamente pelo navegador do aparelho sem bloqueios de segurança">
+          <i data-lucide="globe" style="width: 14px; height: 14px;"></i>
+          <span>Baixar pelo Navegador</span>
+        </button>
         <button type="button" class="btn btn-outline" id="btnDismissUpdate">Depois</button>
         <button type="button" class="btn btn-primary" id="btnActionUpdate" style="gap: 0.5rem;">
           <i data-lucide="download"></i>

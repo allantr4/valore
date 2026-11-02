@@ -76,7 +76,16 @@ class FinanceService {
       settings: {
         currency: 'BRL',
         theme: 'auto',
-        startDayOfMonth: 1
+        startDayOfMonth: 1,
+        notifications: {
+          enabled: true,
+          notifyOnDueDay: true,
+          dueDayTime: "09:00",
+          notifyDaysBefore: 2,
+          notifyOverdue: true,
+          notifyCreditCardClosing: true,
+          bankNotificationReader: false
+        }
       }
     };
   }
@@ -246,8 +255,83 @@ class FinanceService {
     this.state.syncMeta.lastModifiedAt = Date.now();
   }
 
+  getNotificationSettings() {
+    const defaults = {
+      enabled: true,
+      notifyOnDueDay: true,
+      dueDayTime: "09:00",
+      notifyDaysBefore: 2,
+      notifyOverdue: true,
+      notifyCreditCardClosing: true,
+      bankNotificationReader: false
+    };
+    if (!this.state.settings) this.state.settings = {};
+    return { ...defaults, ...(this.state.settings.notifications || {}) };
+  }
+
+  async saveNotificationSettings(newSettings) {
+    if (!this.state.settings) this.state.settings = {};
+    this.state.settings.notifications = {
+      ...this.getNotificationSettings(),
+      ...newSettings
+    };
+    this.touch();
+    await this.storage.set(this.state);
+    return this.state.settings.notifications;
+  }
+
+  getPendingDueAlerts() {
+    const cfg = this.getNotificationSettings();
+    if (!cfg.enabled) return { hasAlerts: false, items: [], dueToday: [], upcoming: [], overdue: [], totalAmount: 0 };
+
+    const today = localDateStr();
+    const todayDate = new Date(today + 'T00:00:00');
+    const maxDaysAhead = parseInt(cfg.notifyDaysBefore !== undefined ? cfg.notifyDaysBefore : 2, 10);
+
+    const schedules = (this.state.schedules || []).filter(s => s.status === 'pending' && s.type === 'expense');
+    const dueToday = [];
+    const upcoming = [];
+    const overdue = [];
+
+    schedules.forEach(s => {
+      if (!s.dueDate) return;
+      const itemDate = new Date(s.dueDate + 'T00:00:00');
+      const diffDays = Math.round((itemDate - todayDate) / 86400000);
+
+      const acc = (this.state.accounts || []).find(a => a.id === s.accountId) || { name: 'Conta' };
+      const cat = (this.state.categories || []).find(c => c.id === s.categoryId) || { name: 'Geral' };
+      const alertItem = {
+        id: s.id,
+        description: s.description,
+        amount: s.amount,
+        dueDate: s.dueDate,
+        diffDays,
+        accountName: acc.name,
+        categoryName: cat.name
+      };
+
+      if (diffDays < 0 && cfg.notifyOverdue) {
+        overdue.push(alertItem);
+      } else if (diffDays === 0 && cfg.notifyOnDueDay) {
+        dueToday.push(alertItem);
+      } else if (diffDays > 0 && diffDays <= maxDaysAhead) {
+        upcoming.push(alertItem);
+      }
+    });
+
+    const allItems = [...dueToday, ...upcoming, ...overdue];
+    return {
+      hasAlerts: allItems.length > 0,
+      dueToday,
+      upcoming,
+      overdue,
+      items: allItems,
+      totalAmount: round2(allItems.reduce((sum, i) => sum + (i.amount || 0), 0))
+    };
+  }
+
   getAppVersion() {
-    return '1.1.4';
+    return '1.2.0';
   }
 
   getAppBuildDate() {

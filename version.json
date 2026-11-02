@@ -1,13 +1,13 @@
 {
-  "version": "1.1.4",
+  "version": "1.2.0",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.1.4 - Retomada Automática do Instalador Android pós-Permissão",
+  "title": "Valore v1.2.0 - Central de Notificações, Lembretes de Vencimento e Blindagem do Atualizador",
   "notes": [
-    "Retomada Automática no Android: ao conceder a permissão 'Permitir desta fonte' e voltar ao Valore, o app abre o instalador imediatamente sem congelar.",
-    "Botão de Ação Resiliente: reativação automática dos botões com a opção 'Concluir Instalação' caso o usuário deseje disparar manualmente.",
-    "Feedback em Tempo Real: mensagens de status detalhadas no modal de atualização durante todas as etapas.",
-    "Paridade e sincronização contínua com Desktop Windows, Mobile Android e iOS."
+    "Nova Central de Notificações & Lembretes: configure alertas de vencimento no dia da conta, X dias antes, faturas de cartão e contas em atraso.",
+    "Banner Inteligente no Dashboard: visualização clara e em destaque das contas a vencer e faturas fechando diretamente na tela inicial.",
+    "Blindagem Anti-Travamento no Atualizador Android: adição de rota de contingência 'Baixar pelo Navegador' e desbloqueio resiliente ao alternar telas ou retornar de permissões.",
+    "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
