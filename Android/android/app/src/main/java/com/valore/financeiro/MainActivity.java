@@ -7,6 +7,8 @@ import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private ApkUpdater apkUpdater;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -21,8 +23,17 @@ public class MainActivity extends BridgeActivity {
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
 
                 // Registra o atualizador embutido nativo do Android
-                webView.addJavascriptInterface(new ApkUpdater(this, webView), "AndroidAppUpdater");
+                apkUpdater = new ApkUpdater(this, webView);
+                webView.addJavascriptInterface(apkUpdater, "AndroidAppUpdater");
             }
         } catch (Exception ignored) {}
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (apkUpdater != null) {
+            apkUpdater.onResume();
+        }
     }
 }

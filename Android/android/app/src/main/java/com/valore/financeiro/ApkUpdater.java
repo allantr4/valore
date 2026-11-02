@@ -20,16 +20,56 @@ public class ApkUpdater {
     private final Activity activity;
     private final WebView webView;
     private boolean isDownloading = false;
+    private static File pendingApkFile = null;
 
     public ApkUpdater(Activity activity, WebView webView) {
         this.activity = activity;
         this.webView = webView;
     }
 
+    public void onResume() {
+        if (pendingApkFile != null && pendingApkFile.exists()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (activity.getPackageManager().canRequestPackageInstalls()) {
+                    File toInstall = pendingApkFile;
+                    pendingApkFile = null;
+                    installApkFile(toInstall);
+                }
+            } else {
+                File toInstall = pendingApkFile;
+                pendingApkFile = null;
+                installApkFile(toInstall);
+            }
+        }
+    }
+
+    @JavascriptInterface
+    public void retryInstall() {
+        activity.runOnUiThread(() -> {
+            File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+            if (downloadDir == null) downloadDir = activity.getCacheDir();
+            File apk = new File(downloadDir, "Valore_Update.apk");
+            if (apk.exists()) {
+                installApkFile(apk);
+            } else {
+                sendError("Arquivo de atualização não encontrado no celular. Toque em Atualizar para baixar novamente.");
+            }
+        });
+    }
+
     @JavascriptInterface
     public void downloadAndInstall(final String fileUrl) {
         if (isDownloading) {
-            sendToast("Já existe um download de atualização em andamento.");
+            sendToast("O download da atualização já está em andamento. Aguarde...");
+            return;
+        }
+
+        // Se o APK já foi baixado anteriormente e está no aparelho, tenta instalar direto
+        File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+        if (downloadDir == null) downloadDir = activity.getCacheDir();
+        File existingApk = new File(downloadDir, "Valore_Update.apk");
+        if (existingApk.exists() && existingApk.length() > 5 * 1024 * 1024) {
+            installApkFile(existingApk);
             return;
         }
 
@@ -38,25 +78,19 @@ public class ApkUpdater {
         new Thread(() -> {
             File tempApk = null;
             try {
-                // Seleciona diretório seguro para o APK
-                File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
-                if (downloadDir == null) {
-                    downloadDir = activity.getCacheDir();
-                }
-                if (!downloadDir.exists()) {
-                    downloadDir.mkdirs();
-                }
-                tempApk = new File(downloadDir, "Valore_Update.apk");
-                if (tempApk.exists()) {
-                    tempApk.delete();
-                }
+                File dir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                if (dir == null) dir = activity.getCacheDir();
+                if (!dir.exists()) dir.mkdirs();
+
+                tempApk = new File(dir, "Valore_Update.apk");
+                if (tempApk.exists()) tempApk.delete();
 
                 URL url = new URL(fileUrl);
                 HttpURLConnection conn = openConnectionFollowingRedirects(url);
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw new Exception("Servidor respondeu com código HTTP " + responseCode);
+                    throw new Exception("Servidor de atualizações retornou código HTTP " + responseCode);
                 }
 
                 long totalBytes = conn.getContentLength();
@@ -73,7 +107,7 @@ public class ApkUpdater {
                     transferredBytes += bytesRead;
 
                     long now = System.currentTimeMillis();
-                    if (now - lastReportTime > 150 || (totalBytes > 0 && transferredBytes == totalBytes)) {
+                    if (now - lastReportTime > 120 || (totalBytes > 0 && transferredBytes == totalBytes)) {
                         lastReportTime = now;
                         int percent = totalBytes > 0 ? (int) Math.min(100, (transferredBytes * 100) / totalBytes) : 0;
                         double transferredMb = Math.round((transferredBytes / (1024.0 * 1024.0)) * 10.0) / 10.0;
@@ -91,7 +125,6 @@ public class ApkUpdater {
                 isDownloading = false;
                 sendProgress(100, Math.round((tempApk.length() / (1024.0 * 1024.0)) * 10.0) / 10.0, Math.round((tempApk.length() / (1024.0 * 1024.0)) * 10.0) / 10.0);
 
-                // Executa a instalação do APK
                 installApkFile(tempApk);
 
             } catch (final Exception e) {
@@ -140,16 +173,21 @@ public class ApkUpdater {
     private void installApkFile(final File apkFile) {
         activity.runOnUiThread(() -> {
             try {
+                pendingApkFile = apkFile;
+
                 // Checa permissão no Android 8.0+ (Oreo)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     if (!activity.getPackageManager().canRequestPackageInstalls()) {
-                        sendToast("Por favor, ative a permissão 'Permitir desta fonte' para o Valore concluir a instalação.");
+                        notifyPermissionPending();
+                        sendToast("Ative a permissão 'Permitir desta fonte' nas Configurações e retorne ao Valore.");
                         Intent settingsIntent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                                 Uri.parse("package:" + activity.getPackageName()));
                         activity.startActivity(settingsIntent);
                         return;
                     }
                 }
+
+                notifyInstallReady();
 
                 // Cria Intent com FileProvider
                 Uri apkUri = FileProvider.getUriForFile(activity, activity.getPackageName() + ".fileprovider", apkFile);
@@ -174,6 +212,24 @@ public class ApkUpdater {
         }
     }
 
+    private void notifyPermissionPending() {
+        if (webView != null) {
+            webView.post(() -> {
+                String js = "if(window.onAndroidPermissionPending) window.onAndroidPermissionPending();";
+                webView.evaluateJavascript(js, null);
+            });
+        }
+    }
+
+    private void notifyInstallReady() {
+        if (webView != null) {
+            webView.post(() -> {
+                String js = "if(window.onAndroidInstallReady) window.onAndroidInstallReady();";
+                webView.evaluateJavascript(js, null);
+            });
+        }
+    }
+
     private void sendError(final String errorMsg) {
         if (webView != null) {
             webView.post(() -> {
@@ -188,10 +244,9 @@ public class ApkUpdater {
         if (webView != null) {
             webView.post(() -> {
                 String safeMsg = msg.replace("'", "\\'").replace("\n", " ");
-                String js = String.format("if(typeof showToast === 'function') showToast('%s', 'warning');", safeMsg);
+                String js = String.format("if(typeof showToast === 'function') showToast('%s', 'info');", safeMsg);
                 webView.evaluateJavascript(js, null);
             });
         }
     }
 }
-

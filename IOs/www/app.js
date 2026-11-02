@@ -12254,6 +12254,54 @@ function setupUpdateModalListeners() {
     if (typeof showToast === 'function') showToast('Não foi possível concluir o download automático. Você pode baixar pelo navegador.', 'warning');
   };
 
+  window.onAndroidPermissionPending = function() {
+    const progressContainer = document.getElementById('updateProgressContainer');
+    const progressStatus = document.getElementById('updateProgressStatus');
+    const progressDetail = document.getElementById('updateProgressDetail');
+    const actionBtnText = document.getElementById('btnActionUpdateText');
+    const btnAction = document.getElementById('btnActionUpdate');
+    const btnDismiss = document.getElementById('btnDismissUpdate');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (progressStatus) {
+      progressStatus.textContent = 'Permissão necessária nas Configurações';
+      progressStatus.style.color = '#f59e0b';
+    }
+    if (progressDetail) {
+      progressDetail.textContent = 'Ative "Permitir desta fonte" para o Valore e retorne ao aplicativo.';
+    }
+    if (actionBtnText) actionBtnText.textContent = 'Concluir Instalação';
+
+    if (btnAction) btnAction.disabled = false;
+    if (btnDismiss) btnDismiss.disabled = false;
+    if (btnClose) btnClose.disabled = false;
+  };
+
+  window.onAndroidInstallReady = function() {
+    const progressContainer = document.getElementById('updateProgressContainer');
+    const progressStatus = document.getElementById('updateProgressStatus');
+    const progressDetail = document.getElementById('updateProgressDetail');
+    const actionBtnText = document.getElementById('btnActionUpdateText');
+    const btnAction = document.getElementById('btnActionUpdate');
+    const btnDismiss = document.getElementById('btnDismissUpdate');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (progressStatus) {
+      progressStatus.textContent = 'Instalador pronto!';
+      progressStatus.style.color = '#10b981';
+    }
+    if (progressDetail) {
+      progressDetail.textContent = 'Confirme a atualização na tela do Android.';
+    }
+    if (actionBtnText) actionBtnText.textContent = 'Abrir Instalador';
+
+    if (btnAction) btnAction.disabled = false;
+    if (btnDismiss) btnDismiss.disabled = false;
+    if (btnClose) btnClose.disabled = false;
+  };
+
   // Registra ouvintes IPC para download e progresso em tempo real no Desktop
   if (typeof window !== 'undefined' && window.electronAPI) {
     if (typeof window.electronAPI.onUpdateProgress === 'function') {
@@ -12367,6 +12415,16 @@ function setupUpdateModalListeners() {
         if (actionBtnText && actionBtnText.textContent.includes('Navegador')) {
           window.open(targetUrl, '_blank');
           closeUpdate();
+          return;
+        }
+
+        // Se o arquivo já foi baixado ou requer apenas retry de instalação
+        if (actionBtnText && (actionBtnText.textContent.includes('Concluir') || actionBtnText.textContent.includes('Instalador'))) {
+          try {
+            window.AndroidAppUpdater.retryInstall();
+          } catch (e) {
+            window.AndroidAppUpdater.downloadAndInstall(latestUpdateData.downloadUrlApk);
+          }
           return;
         }
 

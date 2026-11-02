@@ -1,13 +1,13 @@
 {
-  "version": "1.1.3",
+  "version": "1.1.4",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.1.3 - Foco Automático no Campo Descrição na Criação de Transações",
+  "title": "Valore v1.1.4 - Retomada Automática do Instalador Android pós-Permissão",
   "notes": [
-    "Foco Automático Inteligente: ao clicar no botão '+' de nova transação, o cursor e teclado vão diretamente para o campo 'Descrição'.",
-    "Melhoria de usabilidade e agilidade no preenchimento de lançamentos financeiros.",
-    "Integração contínua com a sugestão inteligente de categorias durante a digitação.",
-    "Paridade e sincronização total entre Desktop Windows, Mobile Android e iOS."
+    "Retomada Automática no Android: ao conceder a permissão 'Permitir desta fonte' e voltar ao Valore, o app abre o instalador imediatamente sem congelar.",
+    "Botão de Ação Resiliente: reativação automática dos botões com a opção 'Concluir Instalação' caso o usuário deseje disparar manualmente.",
+    "Feedback em Tempo Real: mensagens de status detalhadas no modal de atualização durante todas as etapas.",
+    "Paridade e sincronização contínua com Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
