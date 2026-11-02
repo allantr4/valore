@@ -4174,7 +4174,14 @@ function setupModals() {
     }
 
     txModal.classList.add('open');
-    if (window.lucide) lucide.createIcons();
+    if (window.lucide) lucide.createIcons({ root: txModal });
+    setTimeout(() => {
+      const activeAmountInput = (singleAmountGroup && singleAmountGroup.style.display !== 'none') ? txAmountInput : txInstallmentAmountInput;
+      if (activeAmountInput) {
+        activeAmountInput.focus();
+        if (typeof activeAmountInput.select === 'function') activeAmountInput.select();
+      }
+    }, 70);
   });
 
   const closeTx = () => {
@@ -10656,17 +10663,7 @@ function setupCoupleModule() {
         });
 
         showToast('Acerto de contas realizado com sucesso! Despesas marcadas como quitadas.', 'success');
-        closeSettle();
-        renderCoupleView();
-        renderTransactionsView();
-        renderAccountsView();
-        renderDashboard();
-      } catch (err) {
-        console.error('Erro ao liquidar acerto de contas:', err);
-        showToast(err.message || 'Erro ao realizar quitação.', 'error');
-      } finally {
-        btnConfirmSettle.disabled = false;
-      }
+        closeSett
     });
   }
 
@@ -11412,27 +11409,39 @@ function initMobileBackButtonListener() {
   });
 }
 
-// --- ATALHOS GLOBAIS DE TECLADO (ERGONOMIA) ---
+// --- ATALHOS GLOBAIS DE TECLADO (PRODUTIVIDADE & ERGONOMIA) ---
 window.addEventListener('keydown', (e) => {
   const targetTag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
   const isInput = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select';
+  const txModal = document.getElementById('txModal');
+  const isTxModalOpen = txModal && txModal.classList.contains('open');
 
-  // Tecla Escape: Fecha janelas e modais seguindo a mesma hierarquia
+  // 1. Tecla Escape: Fecha qualquer modal ou painel aberto
   if (e.key === 'Escape') {
     handleGlobalBackAction();
     return;
   }
 
-  // Tecla 'N' ou 'n': Abre Nova Transação se o usuário não estiver em um campo de digitação
-  if ((e.key === 'n' || e.key === 'N') && !isInput && !e.ctrlKey && !e.altKey && !e.metaKey) {
-    const btnOpenTx = document.getElementById('btnOpenNewTxModal');
-    if (btnOpenTx) {
+  // 2. Atalho 'Ctrl+N' / 'Cmd+N' ou Tecla 'N' livre: Abre Nova Transação e foca no Valor
+  const isCtrlN = (e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N');
+  const isFreeN = (e.key === 'n' || e.key === 'N') && !isInput && !e.ctrlKey && !e.altKey && !e.metaKey;
+
+  if (isCtrlN || isFreeN) {
+    if (!isTxModalOpen) {
       e.preventDefault();
-      btnOpenTx.click();
-      setTimeout(() => {
-        const descInput = document.getElementById('txDesc');
-        if (descInput) descInput.focus();
-      }, 100);
+      const btnOpenTx = document.getElementById('btnOpenNewTxModal');
+      if (btnOpenTx) btnOpenTx.click();
+    }
+    return;
+  }
+
+  // 3. Tecla Enter dentro do Modal de Transação: Submete se não for um textarea
+  if (e.key === 'Enter' && isTxModalOpen && targetTag !== 'textarea') {
+    const txForm = document.getElementById('txForm');
+    if (txForm) {
+      e.preventDefault();
+      const submitBtn = txForm.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.click();
     }
   }
 });

@@ -37,6 +37,7 @@ function genId(prefix = 'id') {
 class FinanceService {
   constructor(storageAdapter) {
     this.storage = storageAdapter;
+    this._saveQueue = Promise.resolve();
     this.state = {
       accounts: [],
       categories: [],
@@ -218,7 +219,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.1';
+    return '1.0.2';
   }
 
   getAppBuildDate() {
@@ -622,21 +623,33 @@ class FinanceService {
   }
 
   async save(options = {}) {
-    if (!this.state.syncMeta) {
-      this.state.syncMeta = { deviceId: genId('dev'), lastSyncAt: null, lastModifiedAt: Date.now(), deletedIds: {} };
-    }
-    if (!options || !options.preserveModifiedTimestamp) {
-      this.state.syncMeta.lastModifiedAt = Date.now();
-    }
-    const res = await this.storage.save(this.state);
-    if ((!options || !options.skipAutoSync) && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-      try {
-        window.dispatchEvent(new CustomEvent('valore-local-data-changed', {
-          detail: { lastModifiedAt: this.state.syncMeta.lastModifiedAt }
-        }));
-      } catch (_) {}
-    }
-    return res;
+    return new Promise((resolve, reject) => {
+      this._saveQueue = this._saveQueue.then(async () => {
+        try {
+          if (!this.state.syncMeta) {
+            this.state.syncMeta = { deviceId: genId('dev'), lastSyncAt: null, lastModifiedAt: Date.now(), deletedIds: {} };
+          }
+          if (!options || !options.preserveModifiedTimestamp) {
+            this.state.syncMeta.lastModifiedAt = Date.now();
+          }
+          const res = await this.storage.save(this.state);
+          if ((!options || !options.skipAutoSync) && typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+            try {
+              window.dispatchEvent(new CustomEvent('valore-local-data-changed', {
+                detail: { lastModifiedAt: this.state.syncMeta.lastModifiedAt }
+              }));
+            } catch (_) {}
+          }
+          resolve(res);
+        } catch (err) {
+          console.error('Erro na gravação atômica do Valore:', err);
+          reject(err);
+        }
+      }).catch(err => {
+        console.error('Falha na fila de persistência:', err);
+        reject(err);
+      });
+    });
   }
 
   // --- BACKUP & RESTAURAÇÃO DE DADOS ---

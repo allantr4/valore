@@ -1,13 +1,14 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.1 - Ícones Modernos & Correções Mobile",
+  "title": "Valore v1.0.2 - Ergonomia, Atalhos de Teclado & Fila Mutex QA",
   "notes": [
-    "Novo pacote visual com ícones modernos e badges estilizados no Dashboard de Gastos por Categoria.",
-    "Correção de layout e espaçamento em boletos com valores de 4 dígitos ou mais no mobile.",
-    "Área de respiro inferior ampliada, evitando que a barra de navegação e botões cubram os últimos itens.",
-    "Melhorias contínuas de estabilidade e renderização de ícones SVG."
+    "Atalhos de teclado universais no Desktop: Ctrl+N / N (Novo Lançamento), Esc (Fechar) e Enter inteligente.",
+    "Autofocus imediato com seleção automática do campo de valor ao abrir o formulário.",
+    "Menu lateral reorganizado em 3 blocos lógicos: Operação Diária, Planejamento e Gestão & Casal.",
+    "Fila de Mutex transacional em disco contra concorrência e race conditions.",
+    "Otimização de renderização de ícones SVG e desempenho do DOM."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
