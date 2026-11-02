@@ -626,7 +626,7 @@ function resolveCategoryIcon(name, existingIcon = '') {
   return existingIcon || 'tag';
 }
 
-function getCategoryBadgeHtml(cat, size = 34) {
+function getCategoryIconBoxHtml(cat, size = 34) {
   const catColor = cat.color || '#3b82f6';
   const catAccent = typeof getReadableAccentColor === 'function' ? getReadableAccentColor(catColor) : catColor;
   const iconName = resolveCategoryIcon(cat.name, cat.icon);
@@ -4096,7 +4096,7 @@ function renderMonthlyAuditReport() {
       return `
         <div class="audit-item-row">
           <div style="display: flex; align-items: center; gap: 0.65rem; flex: 1; min-width: 0; width: 100%;">
-            ${getCategoryBadgeHtml(cat, 34)}
+            ${getCategoryIconBoxHtml(cat, 34)}
             <div style="flex: 1; min-width: 0;">
               <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem;">
                 <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${cat.name}</span>
