@@ -3806,6 +3806,12 @@ html[data-performance="low"] .sidebar {
   to { opacity: 1; transform: translateY(0); }
 }
 
+
+/* Diálogo Universal de Alerta e Confirmação Crítica (Maior Prioridade de Camada - Sobrepõe Calculadora e Modais) */
+#appAlertModal {
+  z-index: 200050 !important;
+}
+
 /* --- iOS Specific Native Enhancements --- */
 :root {
   --ion-safe-area-top: env(safe-area-inset-top, 0px);

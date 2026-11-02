@@ -1,13 +1,11 @@
 {
-  "version": "1.0.8",
+  "version": "1.0.9",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.8 - Sugestão Preditiva de Categorias & Ícones Elegantes de Categoria",
+  "title": "Valore v1.0.9 - Correção de Z-Index do Modal de Confirmação na Calculadora",
   "notes": [
-    "Inteligência Preditiva de Categorias: auto-seleção automática da categoria e conta ao digitar despesas habituais.",
-    "Chips de Histórico em 1 Toque: sugestões rápidas de lançamentos frequentes (ex: Abastecimento, Mercado, Contas).",
-    "Ícones Elegantes de Categorias em Transações: pílulas no estilo premium do Cofrinho com ícones oficiais Lucide e cores suaves translúcidas.",
-    "Categorias visualmente identificáveis na Tabela do Dashboard, Transações e Agendamentos.",
+    "Correção de sobreposição: diálogo de confirmação (Limpar Histórico) agora abre à frente da Calculadora (z-index: 200050).",
+    "Garantia de hierarquia de camadas para todos os diálogos críticos do sistema.",
     "Paridade e sincronização total entre Desktop (Windows) e Mobile (Android & iOS)."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
