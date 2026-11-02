@@ -542,6 +542,7 @@ ipcMain.handle('updater:download-and-install', async (event, downloadUrl) => {
     if (!downloadUrl) throw new Error('URL de download da atualização não fornecida.');
     const tempDir = app.getPath('temp');
     const destPath = path.join(tempDir, 'Valore_Setup_Update.exe');
+    try { if (fs.existsSync(destPath)) fs.unlinkSync(destPath); } catch (_) {}
 
     // Executa download com callback de progresso em tempo real
     await downloadUpdateInstaller(downloadUrl, destPath, (progress) => {

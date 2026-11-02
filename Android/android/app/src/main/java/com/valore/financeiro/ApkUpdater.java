@@ -64,13 +64,12 @@ public class ApkUpdater {
             return;
         }
 
-        // Se o APK já foi baixado anteriormente e está no aparelho, tenta instalar direto
+        // Garante que qualquer APK residual de versoes anteriores seja excluido antes do novo download
         File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir == null) downloadDir = activity.getCacheDir();
         File existingApk = new File(downloadDir, "Valore_Update.apk");
-        if (existingApk.exists() && existingApk.length() > 5 * 1024 * 1024) {
-            installApkFile(existingApk);
-            return;
+        if (existingApk.exists()) {
+            try { existingApk.delete(); } catch (Exception ignored) {}
         }
 
         isDownloading = true;

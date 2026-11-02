@@ -12076,28 +12076,64 @@ window.checkAppUpdates = async function(isManualClick = false) {
     pillBadge.textContent = 'Verificando...';
   }
 
-  // Endpoints de verificação: 
-  // 1. Repositório oficial GitHub (produção)
-  // 2. Fallback relativo local /version.json
-  const endpoints = [
-    'https://raw.githubusercontent.com/allantr4/valore/main/version.json',
-    'version.json'
-  ];
-
+  const timestamp = Date.now();
   let updateInfo = null;
 
-  for (const url of endpoints) {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
-      const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
-      clearTimeout(timeoutId);
-      if (res.ok) {
-        updateInfo = await res.json();
-        break;
+  // 1. Tenta a API oficial do GitHub Releases (em tempo real, zero cache)
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3800);
+    const res = await fetch(`https://api.github.com/repos/allantr4/valore/releases/latest?_t=${timestamp}`, {
+      signal: controller.signal,
+      headers: { 'Accept': 'application/vnd.github.v3+json' },
+      cache: 'no-store'
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const release = await res.json();
+      if (release && release.tag_name) {
+        const ver = release.tag_name.replace(/^v/i, '').trim();
+        let apkUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Valore.apk`;
+        let exeUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Instalador.Valore.Financeiro.exe`;
+
+        if (Array.isArray(release.assets)) {
+          const apkAsset = release.assets.find(a => a.name && a.name.endsWith('.apk'));
+          const exeAsset = release.assets.find(a => a.name && a.name.endsWith('.exe'));
+          if (apkAsset && apkAsset.browser_download_url) apkUrl = apkAsset.browser_download_url;
+          if (exeAsset && exeAsset.browser_download_url) exeUrl = exeAsset.browser_download_url;
+        }
+
+        updateInfo = {
+          version: ver,
+          releaseDate: release.published_at ? release.published_at.slice(0, 10) : '',
+          title: release.name || `Valore v${ver}`,
+          notes: release.body ? release.body.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('*')).map(l => l.replace(/^[-*]\s*/, '')) : ['Melhorias de desempenho e correções gerais.'],
+          downloadUrlDesktop: exeUrl,
+          downloadUrlApk: apkUrl,
+          githubReleaseUrl: release.html_url || 'https://github.com/allantr4/valore/releases'
+        };
       }
-    } catch (e) {
-      // Tenta próximo endpoint
+    }
+  } catch (_) {}
+
+  // 2. Fallback: version.json com cache-buster
+  if (!updateInfo) {
+    const fallbackEndpoints = [
+      `https://raw.githubusercontent.com/allantr4/valore/main/version.json?_t=${timestamp}`,
+      'version.json'
+    ];
+
+    for (const url of fallbackEndpoints) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+        clearTimeout(timeoutId);
+        if (res.ok) {
+          updateInfo = await res.json();
+          break;
+        }
+      } catch (_) {}
     }
   }
 

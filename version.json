@@ -1,13 +1,12 @@
 {
-  "version": "1.2.2",
+  "version": "1.2.3",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.2 - Fluidez Contínua, Cabeçalho Mobile Desafogado e Lembretes",
+  "title": "Valore v1.2.3 - Correção Definitiva do Atualizador Online",
   "notes": [
-    "Desempenho Extremo no Mobile: desativação de blur pesado e eliminação de throttling de GPU, garantindo 60 FPS contínuos sem travar o toque.",
-    "Barra Superior Desafogada: títulos objetivos, avatar circular compacto e chips contábeis sem cortes de texto.",
-    "Retração Instantânea da Sidebar: o menu lateral se recolhe no primeiro toque de qualquer link.",
-    "Feedback Háptico e Push Banner no Teste de Lembrete: vibração física no celular e alerta visível acima de qualquer modal.",
+    "Fim do Looping de Atualização: eliminação total de reuso de APK antigo no armazenamento do Android. Toda atualização sempre baixa 100% do novo binário.",
+    "API em Tempo Real e Zero Cache: integração direta com a API do GitHub Releases e cache-buster com timestamp.",
+    "Limpeza Preventiva no Desktop: exclusão automática de instaladores temporários anteriores antes de novos downloads.",
     "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
