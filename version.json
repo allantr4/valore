@@ -1,12 +1,13 @@
 {
-  "version": "1.0.9",
+  "version": "1.1.0",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.9 - Correção de Z-Index do Modal de Confirmação na Calculadora",
+  "title": "Valore v1.1.0 - Atualizador Embutido In-App (One-Click Auto-Update)",
   "notes": [
-    "Correção de sobreposição: diálogo de confirmação (Limpar Histórico) agora abre à frente da Calculadora (z-index: 200050).",
-    "Garantia de hierarquia de camadas para todos os diálogos críticos do sistema.",
-    "Paridade e sincronização total entre Desktop (Windows) e Mobile (Android & iOS)."
+    "Novo Atualizador Embutido In-App: download, instalação e reinicialização 100% automatizados em 1 clique no Desktop.",
+    "Barra de progresso em tempo real dentro do modal de atualizações com monitoramento de MB baixados e velocidade.",
+    "Instalador C# otimizado com flag --update para substituição fluida sem travar arquivos ou requerer intervenção manual.",
+    "Paridade e sincronização contínua com as plataformas Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",

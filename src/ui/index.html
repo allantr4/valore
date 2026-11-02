@@ -129,7 +129,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.0.9</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.1.0</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -4658,6 +4658,21 @@
         </label>
         <div id="updateChangelogList" style="max-height: 180px; overflow-y: auto; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45; color: var(--text-secondary);">
           <!-- Itens dinâmicos -->
+        </div>
+      </div>
+
+      <!-- Barra de Progresso de Download e Instalação (One-Click Update) -->
+      <div id="updateProgressContainer" style="display: none; margin-bottom: 1.25rem; padding: 0.9rem 1rem; border-radius: var(--radius-md); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.84rem;">
+          <span id="updateProgressStatus" style="font-weight: 700; color: var(--primary);">Baixando atualização...</span>
+          <span id="updateProgressPercent" style="font-weight: 800; color: var(--text-main);">0%</span>
+        </div>
+        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 9999px; overflow: hidden; margin-bottom: 0.45rem;">
+          <div id="updateProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1); border-radius: 9999px; transition: width 0.15s ease;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
+          <span id="updateProgressDetail">Conectando aos servidores do Valore...</span>
+          <span id="updateProgressSpeed">In-App Auto-Update</span>
         </div>
       </div>
 

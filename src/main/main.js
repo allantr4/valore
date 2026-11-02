@@ -2,6 +2,8 @@ const { app, BrowserWindow, ipcMain, nativeTheme, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
+const child_process = require('child_process');
 const os = require('os');
 const { FinanceService } = require('../core/financeService');
 
@@ -460,6 +462,112 @@ ipcMain.handle('storage:restore-backup', () => {
     }
     return { success: false, error: 'Nenhum arquivo de backup automático encontrado no PC.' };
   } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// --- ATUALIZADOR EMBUTIDO (IN-APP ONE-CLICK AUTO-UPDATE) ---
+function downloadUpdateInstaller(fileUrl, destPath, onProgress) {
+  return new Promise((resolve, reject) => {
+    const handleRequest = (currentUrl, redirectCount = 0) => {
+      if (redirectCount > 8) {
+        return reject(new Error('Muitos redirecionamentos ao baixar a atualização.'));
+      }
+
+      const client = currentUrl.startsWith('https') ? https : http;
+      const req = client.get(currentUrl, {
+        headers: {
+          'User-Agent': 'Valore-App-Updater/1.0',
+          'Accept': 'application/octet-stream, application/vnd.microsoft.portable-executable, */*'
+        }
+      }, (res) => {
+        // Trata redirecionamentos 301, 302, 303, 307, 308 (comum no CDN do GitHub)
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          const nextUrl = new URL(res.headers.location, currentUrl).toString();
+          return handleRequest(nextUrl, redirectCount + 1);
+        }
+
+        if (res.statusCode !== 200) {
+          return reject(new Error(`O servidor respondeu com status HTTP ${res.statusCode}.`));
+        }
+
+        const totalBytes = parseInt(res.headers['content-length'] || '0', 10);
+        let transferredBytes = 0;
+        let lastReportedTime = 0;
+
+        const fileStream = fs.createWriteStream(destPath);
+
+        res.on('data', (chunk) => {
+          transferredBytes += chunk.length;
+          const now = Date.now();
+          if (now - lastReportedTime > 120 || transferredBytes === totalBytes) {
+            lastReportedTime = now;
+            const percent = totalBytes > 0 ? Math.min(100, Math.round((transferredBytes / totalBytes) * 100)) : 0;
+            if (typeof onProgress === 'function') {
+              onProgress({
+                percent,
+                transferredBytes,
+                totalBytes,
+                transferredMb: (transferredBytes / (1024 * 1024)).toFixed(1),
+                totalMb: totalBytes > 0 ? (totalBytes / (1024 * 1024)).toFixed(1) : '?'
+              });
+            }
+          }
+        });
+
+        res.pipe(fileStream);
+
+        fileStream.on('finish', () => {
+          fileStream.close(() => resolve(destPath));
+        });
+
+        fileStream.on('error', (err) => {
+          try { if (fs.existsSync(destPath)) fs.unlinkSync(destPath); } catch (_) {}
+          reject(err);
+        });
+      });
+
+      req.on('error', (err) => {
+        try { if (fs.existsSync(destPath)) fs.unlinkSync(destPath); } catch (_) {}
+        reject(err);
+      });
+    };
+
+    handleRequest(fileUrl);
+  });
+}
+
+ipcMain.handle('updater:download-and-install', async (event, downloadUrl) => {
+  try {
+    if (!downloadUrl) throw new Error('URL de download da atualização não fornecida.');
+    const tempDir = app.getPath('temp');
+    const destPath = path.join(tempDir, 'Valore_Setup_Update.exe');
+
+    // Executa download com callback de progresso em tempo real
+    await downloadUpdateInstaller(downloadUrl, destPath, (progress) => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('updater:progress', progress);
+      }
+    });
+
+    // Inicia o instalador desanexado do processo do Electron
+    const child = child_process.spawn(destPath, ['--update'], {
+      detached: true,
+      stdio: 'ignore'
+    });
+    child.unref();
+
+    // Fecha o Valore suavemente após 1 segundo para liberar arquivos
+    setTimeout(() => {
+      app.quit();
+    }, 1200);
+
+    return { success: true };
+  } catch (err) {
+    console.error('Erro na atualização embutida:', err);
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('updater:error', err.message || 'Falha ao baixar atualização.');
+    }
     return { success: false, error: err.message };
   }
 });

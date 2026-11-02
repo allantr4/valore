@@ -12140,10 +12140,33 @@ window.openUpdateModal = function(info, currentVer) {
   const newVerEl = document.getElementById('updateNewVersion');
   const changelogEl = document.getElementById('updateChangelogList');
   const actionBtnText = document.getElementById('btnActionUpdateText');
+  const btnAction = document.getElementById('btnActionUpdate');
+  const btnDismiss = document.getElementById('btnDismissUpdate');
+  const btnClose = document.getElementById('btnCloseUpdateModal');
+  const progressContainer = document.getElementById('updateProgressContainer');
+  const progressBar = document.getElementById('updateProgressBar');
+  const progressPercent = document.getElementById('updateProgressPercent');
+  const progressStatus = document.getElementById('updateProgressStatus');
+  const progressDetail = document.getElementById('updateProgressDetail');
 
   if (titleEl) titleEl.textContent = info.title || 'Nova Atualização Disponível!';
   if (curVerEl) curVerEl.textContent = `v${currentVer}`;
   if (newVerEl) newVerEl.textContent = `v${info.version}`;
+
+  // Reseta estado do progresso embutido
+  if (progressContainer) progressContainer.style.display = 'none';
+  if (progressBar) progressBar.style.width = '0%';
+  if (progressPercent) progressPercent.textContent = '0%';
+  if (progressStatus) {
+    progressStatus.textContent = 'Baixando atualização...';
+    progressStatus.style.color = 'var(--primary)';
+  }
+  if (progressDetail) progressDetail.textContent = 'Conectando aos servidores do Valore...';
+
+  // Habilita controles
+  if (btnAction) btnAction.disabled = false;
+  if (btnDismiss) btnDismiss.disabled = false;
+  if (btnClose) btnClose.disabled = false;
 
   if (changelogEl) {
     if (Array.isArray(info.notes) && info.notes.length > 0) {
@@ -12156,11 +12179,11 @@ window.openUpdateModal = function(info, currentVer) {
   }
 
   // Define texto do botão conforme a plataforma
-  const isDesktop = (typeof window !== 'undefined' && window.electronAPI);
+  const isDesktop = (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.downloadAndInstallUpdate === 'function');
   const isAndroid = (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android');
 
   if (actionBtnText) {
-    if (isDesktop) actionBtnText.textContent = 'Baixar Novo Instalador';
+    if (isDesktop) actionBtnText.textContent = 'Atualizar Agora (1-Clique)';
     else if (isAndroid) actionBtnText.textContent = 'Baixar APK Atualizado';
     else actionBtnText.textContent = 'Ver Atualização no GitHub';
   }
@@ -12182,10 +12205,60 @@ function setupUpdateModalListeners() {
   if (btnClose) btnClose.addEventListener('click', closeUpdate);
   if (btnDismiss) btnDismiss.addEventListener('click', closeUpdate);
 
+  // Registra ouvintes IPC para download e progresso em tempo real no Desktop
+  if (typeof window !== 'undefined' && window.electronAPI) {
+    if (typeof window.electronAPI.onUpdateProgress === 'function') {
+      window.electronAPI.onUpdateProgress((data) => {
+        const progressContainer = document.getElementById('updateProgressContainer');
+        const progressBar = document.getElementById('updateProgressBar');
+        const progressPercent = document.getElementById('updateProgressPercent');
+        const progressDetail = document.getElementById('updateProgressDetail');
+        const progressStatus = document.getElementById('updateProgressStatus');
+        const actionBtnText = document.getElementById('btnActionUpdateText');
+
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (progressBar) progressBar.style.width = `${data.percent}%`;
+        if (progressPercent) progressPercent.textContent = `${data.percent}%`;
+        if (progressDetail) {
+          progressDetail.textContent = data.totalMb !== '?'
+            ? `${data.transferredMb} MB de ${data.totalMb} MB baixados`
+            : `${data.transferredMb} MB baixados`;
+        }
+
+        if (data.percent >= 100) {
+          if (progressStatus) {
+            progressStatus.textContent = 'Download concluído! Iniciando instalação...';
+            progressStatus.style.color = '#10b981';
+          }
+          if (actionBtnText) actionBtnText.textContent = 'Reiniciando o Valore...';
+        }
+      });
+    }
+
+    if (typeof window.electronAPI.onUpdateError === 'function') {
+      window.electronAPI.onUpdateError((errMsg) => {
+        const progressStatus = document.getElementById('updateProgressStatus');
+        const progressDetail = document.getElementById('updateProgressDetail');
+        const actionBtnText = document.getElementById('btnActionUpdateText');
+        if (progressStatus) {
+          progressStatus.textContent = 'Falha no download da atualização.';
+          progressStatus.style.color = '#ef4444';
+        }
+        if (progressDetail) progressDetail.textContent = errMsg || 'Erro de conexão ou arquivo inacessível.';
+        if (actionBtnText) actionBtnText.textContent = 'Baixar no Navegador';
+
+        if (btnAction) btnAction.disabled = false;
+        if (btnDismiss) btnDismiss.disabled = false;
+        if (btnClose) btnClose.disabled = false;
+        showToast('Não foi possível concluir o download automático. Você pode baixar pelo navegador.', 'warning');
+      });
+    }
+  }
+
   if (btnAction) {
     btnAction.addEventListener('click', () => {
       if (!latestUpdateData) return;
-      const isDesktop = (typeof window !== 'undefined' && window.electronAPI);
+      const isDesktop = (typeof window !== 'undefined' && window.electronAPI && typeof window.electronAPI.downloadAndInstallUpdate === 'function');
       const isAndroid = (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android');
 
       let targetUrl = latestUpdateData.githubReleaseUrl || 'https://github.com/allantr4/valore/releases';
@@ -12195,6 +12268,51 @@ function setupUpdateModalListeners() {
         targetUrl = latestUpdateData.downloadUrlApk;
       }
 
+      // Se estiver no Desktop e o instalador suportar download nativo
+      if (isDesktop && latestUpdateData.downloadUrlDesktop) {
+        const actionBtnText = document.getElementById('btnActionUpdateText');
+        // Se o botão já falhou e virou fallback para o navegador
+        if (actionBtnText && actionBtnText.textContent.includes('Navegador')) {
+          if (window.electronAPI.openExternal) window.electronAPI.openExternal(targetUrl);
+          else window.open(targetUrl, '_blank');
+          closeUpdate();
+          return;
+        }
+
+        const progressContainer = document.getElementById('updateProgressContainer');
+        const progressStatus = document.getElementById('updateProgressStatus');
+        const progressDetail = document.getElementById('updateProgressDetail');
+        const progressBar = document.getElementById('updateProgressBar');
+        const progressPercent = document.getElementById('updateProgressPercent');
+
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPercent) progressPercent.textContent = '0%';
+        if (progressStatus) {
+          progressStatus.textContent = 'Baixando atualização...';
+          progressStatus.style.color = 'var(--primary)';
+        }
+        if (progressDetail) progressDetail.textContent = 'Conectando ao GitHub Releases...';
+
+        btnAction.disabled = true;
+        if (btnDismiss) btnDismiss.disabled = true;
+        if (btnClose) btnClose.disabled = true;
+        if (actionBtnText) actionBtnText.textContent = 'Baixando atualização...';
+
+        window.electronAPI.downloadAndInstallUpdate(targetUrl).then((res) => {
+          if (res && res.success) {
+            if (progressStatus) {
+              progressStatus.textContent = 'Instalando atualização e reiniciando o Valore...';
+              progressStatus.style.color = '#10b981';
+            }
+          }
+        }).catch((err) => {
+          console.error('Erro ao acionar atualizador:', err);
+        });
+        return;
+      }
+
+      // No Mobile Android ou fallback Web
       try {
         if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.openExternal) {
           window.electronAPI.openExternal(targetUrl);

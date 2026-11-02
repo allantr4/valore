@@ -12,6 +12,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   regenerateSyncPin: () => ipcRenderer.invoke('sync:regenerate-pin'),
   restorePcBackup: () => ipcRenderer.invoke('storage:restore-backup'),
   openExternal: (url) => ipcRenderer.invoke('shell:open-external', url),
+  downloadAndInstallUpdate: (url) => ipcRenderer.invoke('updater:download-and-install', url),
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on('updater:progress', (event, data) => callback(data));
+  },
+  onUpdateError: (callback) => {
+    ipcRenderer.on('updater:error', (event, err) => callback(err));
+  },
   onRemoteSyncCompleted: (callback) => {
     ipcRenderer.on('sync:remote-completed', (event, info) => callback(info));
   }

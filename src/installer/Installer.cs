@@ -75,9 +75,11 @@ namespace ValoreInstaller
         // Estado
         private string finalInstallPath = "";
         private Image appLogo = null;
+        private bool isAutoUpdateMode = false;
 
-        public InstallerForm()
+        public InstallerForm(bool autoUpdate = false)
         {
+            this.isAutoUpdateMode = autoUpdate;
             this.Text = "Valore - Instalador Oficial";
             this.Size = new Size(720, 520);
             this.FormBorderStyle = FormBorderStyle.None;
@@ -101,6 +103,32 @@ namespace ValoreInstaller
             BuildSetupPanel();
             BuildProgressPanel();
             BuildSuccessPanel();
+
+            if (isAutoUpdateMode)
+            {
+                try
+                {
+                    using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Uninstall\Valore"))
+                    {
+                        if (key != null)
+                        {
+                            object loc = key.GetValue("InstallLocation");
+                            if (loc != null && !string.IsNullOrEmpty(loc.ToString()))
+                            {
+                                txtPath.Text = loc.ToString();
+                            }
+                        }
+                    }
+                }
+                catch {}
+
+                this.Shown += (s, e) =>
+                {
+                    KillRunningValoreProcesses();
+                    Thread.Sleep(300);
+                    StartInstallation();
+                };
+            }
 
             ShowPanel(panelSetup);
         }
@@ -585,6 +613,14 @@ namespace ValoreInstaller
 
                         ShowPanel(panelSuccess);
 
+                        if (isAutoUpdateMode)
+                        {
+                            LaunchValoreExe();
+                            Thread.Sleep(800);
+                            Application.Exit();
+                            return;
+                        }
+
                         if (chkLaunchAfter.Checked)
                         {
                             LaunchValoreExe();
@@ -784,6 +820,23 @@ namespace ValoreInstaller
             return btn;
         }
 
+        private void KillRunningValoreProcesses()
+        {
+            try
+            {
+                Process current = Process.GetCurrentProcess();
+                foreach (Process p in Process.GetProcessesByName("Valore"))
+                {
+                    if (p.Id != current.Id)
+                    {
+                        p.Kill();
+                        p.WaitForExit(3000);
+                    }
+                }
+            }
+            catch {}
+        }
+
         private void DrawRoundedCard(Graphics g, Panel p, Color borderColor)
         {
             g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -794,11 +847,26 @@ namespace ValoreInstaller
         }
 
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
+            bool autoUpdate = false;
+            if (args != null && args.Length > 0)
+            {
+                foreach (string arg in args)
+                {
+                    if (arg.Equals("--update", StringComparison.OrdinalIgnoreCase) ||
+                        arg.Equals("/update", StringComparison.OrdinalIgnoreCase) ||
+                        arg.Equals("/silent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        autoUpdate = true;
+                        break;
+                    }
+                }
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new InstallerForm());
+            Application.Run(new InstallerForm(autoUpdate));
         }
     }
 }
