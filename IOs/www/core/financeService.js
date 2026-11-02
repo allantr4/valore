@@ -218,7 +218,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.0';
+    return '1.0.1';
   }
 
   getAppBuildDate() {

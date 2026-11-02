@@ -1543,9 +1543,9 @@ body {
     touch-action: manipulation;
   }
 
-  /* Ajuste do Main Content com Safe Area para não cobrir pelo Bottom Nav */
+  /* Ajuste do Main Content com Safe Area para não cobrir pelo Bottom Nav e Botão Flutuante */
   .main-content {
-    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(125px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
   /* Cabeçalho do App no Celular (Enquadrado 100% sem rolagem lateral) */

@@ -3689,32 +3689,37 @@ function renderMonthlyAuditReport() {
             </div>
           </div>
 
-          <div style="margin-top: 0.55rem; display: flex; flex-direction: column; gap: 0.35rem; width: 100%;">
+          <div style="margin-top: 0.55rem; display: flex; flex-direction: column; gap: 0.45rem; width: 100%;">
             ${report.bills.map(b => {
               const isPaid = b.status === 'paid';
+              const billDesc = (b.description && b.description.trim()) ? escapeHtml(b.description.trim()) : 'Conta / Boleto';
               return `
-              <div class="audit-bill-pill" style="${isPaid ? 'opacity: 0.9;' : ''}">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; width: 100%; min-width: 0;">
-                  <div style="display: flex; align-items: center; gap: 0.35rem; min-width: 0; flex: 1;">
-                    <span style="font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 999px; flex-shrink: 0; ${isPaid ? 'background: rgba(16,185,129,0.16); color: var(--success);' : 'background: rgba(245,158,11,0.16); color: #f59e0b;'}">${isPaid ? 'PAGO' : 'A VENCER'}</span>
-                    <span style="font-weight: 700; font-size: 0.78rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${escapeHtml(b.description || 'Conta / Boleto')}</span>
+              <div class="audit-bill-pill" style="${isPaid ? 'opacity: 0.88;' : ''}; padding: 0.55rem 0.65rem; border-radius: 9px; background: var(--bg-card); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.35rem; width: 100%; box-sizing: border-box;">
+                <!-- Linha 1: Status + Nome (Esquerda) e Valor (Direita) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%;">
+                  <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0; flex: 1;">
+                    <span style="font-size: 0.64rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; flex-shrink: 0; ${isPaid ? 'background: rgba(16,185,129,0.16); color: var(--success);' : 'background: rgba(245,158,11,0.16); color: #f59e0b;'}">${isPaid ? 'PAGO' : 'A VENCER'}</span>
+                    <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${billDesc}</span>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
-                    <span style="font-weight: 800; font-size: 0.8rem; color: ${isPaid ? 'var(--success)' : '#f59e0b'}; white-space: nowrap;">${currencyFormatter.format(b.amount)}</span>
-                    ${isPaid ? '' : `
-                    <button type="button" onclick="handleOpenPayBill('${b.id}')" class="btn-action-icon" style="color: var(--success); padding: 2px;" title="Pagar este boleto">
+                  <span style="font-weight: 800; font-size: 0.88rem; color: ${isPaid ? 'var(--success)' : '#f59e0b'}; white-space: nowrap; flex-shrink: 0; margin-left: auto;">${currencyFormatter.format(b.amount)}</span>
+                </div>
+                <!-- Linha 2: Data (Esquerda) e Botões de Ação (Direita) -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.25rem;">
+                  <div style="font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.25rem;">
+                    <span>📅 ${isPaid ? 'Pago em' : 'Vencimento:'} <b>${formatDateBR(isPaid ? b.date : b.dueDate)}</b></span>
+                  </div>
+                  ${isPaid ? '' : `
+                  <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                    <button type="button" onclick="handleOpenPayBill('${b.id}')" class="btn-action-icon" style="color: var(--success); padding: 3px 6px; border-radius: 6px; background: rgba(16,185,129,0.12);" title="Pagar este boleto">
                       <i data-lucide="check" style="width: 13px; height: 13px;"></i>
                     </button>
-                    <button type="button" onclick="handleEditSchedule('${b.id}')" class="btn-action-icon" style="color: var(--primary); padding: 2px;" title="Editar dados deste boleto">
+                    <button type="button" onclick="handleEditSchedule('${b.id}')" class="btn-action-icon" style="color: var(--primary); padding: 3px 6px; border-radius: 6px; background: rgba(99,102,241,0.12);" title="Editar dados deste boleto">
                       <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
                     </button>
-                    <button type="button" onclick="handleDeleteSchedule('${b.id}')" class="btn-action-icon" style="color: var(--danger); padding: 2px;" title="Excluir este boleto">
+                    <button type="button" onclick="handleDeleteSchedule('${b.id}')" class="btn-action-icon" style="color: var(--danger); padding: 3px 6px; border-radius: 6px; background: rgba(239,68,68,0.12);" title="Excluir este boleto">
                       <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
-                    </button>`}
-                  </div>
-                </div>
-                <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.14rem; display: flex; align-items: center; gap: 0.25rem;">
-                  <span>📅 ${isPaid ? 'Pago em' : 'Vencimento:'} <b>${formatDateBR(isPaid ? b.date : b.dueDate)}</b></span>
+                    </button>
+                  </div>`}
                 </div>
               </div>`;
             }).join('')}
@@ -3731,26 +3736,30 @@ function renderMonthlyAuditReport() {
                 ${currencyFormatter.format(nextMonthBillsTotal)}
               </span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
-              ${nextMonthItems.map(b => `
-                <div class="audit-bill-pill">
-                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; width: 100%; min-width: 0;">
-                    <div style="display: flex; align-items: center; gap: 0.35rem; min-width: 0; flex: 1;">
-                      <span style="font-size: 0.62rem; font-weight: 800; padding: 2px 6px; border-radius: 999px; background: rgba(99, 102, 241, 0.16); color: #818cf8; flex-shrink: 0;">SEGUINTE</span>
-                      <span style="font-weight: 700; font-size: 0.78rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${escapeHtml(b.description || 'Conta / Boleto')}</span>
+            <div style="display: flex; flex-direction: column; gap: 0.45rem;">
+              ${nextMonthItems.map(b => {
+                const nextDesc = (b.description && b.description.trim()) ? escapeHtml(b.description.trim()) : 'Conta / Boleto';
+                return `
+                <div class="audit-bill-pill" style="padding: 0.55rem 0.65rem; border-radius: 9px; background: var(--bg-card); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.35rem; width: 100%; box-sizing: border-box;">
+                  <!-- Linha 1: Status + Nome (Esquerda) e Valor (Direita) -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0; flex: 1;">
+                      <span style="font-size: 0.64rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; background: rgba(99, 102, 241, 0.16); color: #818cf8; flex-shrink: 0;">SEGUINTE</span>
+                      <span style="font-weight: 700; font-size: 0.82rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;">${nextDesc}</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-shrink: 0;">
-                      <span style="font-weight: 800; font-size: 0.8rem; color: #f59e0b; white-space: nowrap;">${currencyFormatter.format(b.amount)}</span>
-                      <button type="button" onclick="handleOpenPayBill('${b.id}')" class="btn-action-icon" style="color: var(--success); padding: 2px;" title="Pagar este boleto antecipado">
-                        <i data-lucide="check" style="width: 13px; height: 13px;"></i>
-                      </button>
-                    </div>
+                    <span style="font-weight: 800; font-size: 0.88rem; color: #f59e0b; white-space: nowrap; flex-shrink: 0; margin-left: auto;">${currencyFormatter.format(b.amount)}</span>
                   </div>
-                  <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 0.14rem;">
-                    📅 Vencimento: <b>${formatDateBR(b.dueDate)}</b>
+                  <!-- Linha 2: Data (Esquerda) e Botão Pagar (Direita) -->
+                  <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 0.25rem;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">
+                      📅 Vencimento: <b>${formatDateBR(b.dueDate)}</b>
+                    </div>
+                    <button type="button" onclick="handleOpenPayBill('${b.id}')" class="btn-action-icon" style="color: var(--success); padding: 3px 6px; border-radius: 6px; background: rgba(16,185,129,0.12);" title="Pagar este boleto antecipado">
+                      <i data-lucide="check" style="width: 13px; height: 13px;"></i>
+                    </button>
                   </div>
                 </div>
-              `).join('')}
+              `;}).join('')}
             </div>
           </div>` : (report.nextBill && billsPendingCount === 0 ? `
           <div style="margin-top: 0.45rem; font-size: 0.72rem; color: var(--text-muted); line-height: 1.35;">
