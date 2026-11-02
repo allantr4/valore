@@ -2626,7 +2626,6 @@ function renderAccountsView() {
             <div>
               <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
                 <span class="metric-title" style="display: block; font-weight: 700;">${acc.name}</span>
-                ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
                 <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">💳 Cartão • ${brandLabel}</span>
                 ${acc.isDefault ? `<span class="account-default-tag" title="Cartão padrão para lançamentos">★ Padrão</span>` : ''}
               </div>
@@ -2727,7 +2726,6 @@ function renderAccountsView() {
           <div>
             <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
               <span class="metric-title" style="display: block; font-weight: 700;">${acc.name}</span>
-              ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
               <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--primary); font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">
                 🏦 ${acc.type === 'investment' ? 'Investimento' : (acc.type === 'cash' ? 'Dinheiro' : 'Conta Corrente')}
               </span>
@@ -4186,25 +4184,6 @@ function setupModals() {
       btnP2.classList.toggle('active', devId.ownerRole === 'p2');
     }
 
-    const activeAccSelect = document.getElementById('txAccount');
-    if (activeAccSelect && activeAccSelect.value) {
-      const curAcc = (finance && finance.state && finance.state.accounts) ? finance.state.accounts.find(a => a.id === activeAccSelect.value) : null;
-      if (curAcc && curAcc.ownerRole) {
-        if (curAcc.ownerRole === 'p1' || curAcc.ownerRole === 'p2') {
-          if (paidByInput) paidByInput.value = curAcc.ownerRole;
-          if (btnP1 && btnP2) {
-            btnP1.classList.toggle('active', curAcc.ownerRole === 'p1');
-            btnP2.classList.toggle('active', curAcc.ownerRole === 'p2');
-          }
-        } else if (curAcc.ownerRole === 'joint') {
-          if (isSharedCheck) {
-            isSharedCheck.checked = true;
-            if (sharedDetails) sharedDetails.style.display = 'block';
-          }
-        }
-      }
-    }
-
     // Popula seletores de Projetos e Side Hustles
     const ccSelect = document.getElementById('txCostCenterSelect');
     if (ccSelect) {
@@ -5000,51 +4979,6 @@ function setupModals() {
 
   if (accModeBankBtn) accModeBankBtn.addEventListener('click', () => window.setAccountModalMode('bank'));
   if (accModeCardBtn) accModeCardBtn.addEventListener('click', () => window.setAccountModalMode('card'));
-
-  window.selectAccountOwner = function(role) {
-    const owner = (role === 'p2' || role === 'joint') ? role : 'p1';
-    const hiddenInput = document.getElementById('accOwnerRole');
-    if (hiddenInput) hiddenInput.value = owner;
-
-    const btnP1 = document.getElementById('btnAccOwnerP1');
-    const btnP2 = document.getElementById('btnAccOwnerP2');
-    const btnJoint = document.getElementById('btnAccOwnerJoint');
-    const labelP1 = document.getElementById('labelAccOwnerP1');
-    const labelP2 = document.getElementById('labelAccOwnerP2');
-
-    const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
-    const p1Name = (couple && couple.partner1 && couple.partner1.name) ? couple.partner1.name : 'Você';
-    const p2Name = (couple && couple.partner2 && couple.partner2.name) ? couple.partner2.name : 'Parceiro(a)';
-
-    if (labelP1) labelP1.textContent = p1Name;
-    if (labelP2) labelP2.textContent = p2Name;
-
-    if (btnP1) {
-      const isAct = owner === 'p1';
-      btnP1.classList.toggle('active', isAct);
-      btnP1.style.background = isAct ? 'rgba(59, 130, 246, 0.18)' : 'transparent';
-      btnP1.style.fontWeight = isAct ? '700' : 'normal';
-    }
-    if (btnP2) {
-      const isAct = owner === 'p2';
-      btnP2.classList.toggle('active', isAct);
-      btnP2.style.background = isAct ? 'rgba(236, 72, 153, 0.18)' : 'transparent';
-      btnP2.style.fontWeight = isAct ? '700' : 'normal';
-    }
-    if (btnJoint) {
-      const isAct = owner === 'joint';
-      btnJoint.classList.toggle('active', isAct);
-      btnJoint.style.background = isAct ? 'rgba(16, 185, 129, 0.18)' : 'transparent';
-      btnJoint.style.fontWeight = isAct ? '700' : 'normal';
-    }
-  };
-
-  const btnOwnerP1 = document.getElementById('btnAccOwnerP1');
-  const btnOwnerP2 = document.getElementById('btnAccOwnerP2');
-  const btnOwnerJoint = document.getElementById('btnAccOwnerJoint');
-  if (btnOwnerP1) btnOwnerP1.addEventListener('click', () => window.selectAccountOwner('p1'));
-  if (btnOwnerP2) btnOwnerP2.addEventListener('click', () => window.selectAccountOwner('p2'));
-  if (btnOwnerJoint) btnOwnerJoint.addEventListener('click', () => window.selectAccountOwner('joint'));
 
   const updateAccBankUI = () => {
     const bankId = accBankSelect ? accBankSelect.value : 'nubank';
@@ -7221,16 +7155,15 @@ function formatAccountOptionLabel(acc) {
     hipercard: 'Hipercard',
     other: 'Cartão'
   }[acc.cardBrand || 'mastercard'] || 'Cartão';
-  const ownerLabel = getAccountOwnerLabel(acc.ownerRole || 'p1');
 
   if (acc.type === 'credit') {
-    return `💳 ${acc.name}${ownerLabel} (Cartão • ${brandLabel})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `💳 ${acc.name} (Cartão • ${brandLabel})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else if (acc.type === 'investment') {
-    return `📈 ${acc.name}${ownerLabel} (Investimento - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `📈 ${acc.name} (Investimento - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else if (acc.type === 'cash') {
-    return `💵 ${acc.name}${ownerLabel} (Dinheiro Físico - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `💵 ${acc.name} (Dinheiro Físico - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else {
-    return `🏦 ${acc.name}${ownerLabel} (Conta Corrente - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `🏦 ${acc.name} (Conta Corrente - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   }
 }
 
@@ -7941,10 +7874,6 @@ window.handleEditAccount = function(accId) {
   const isDefaultCheck = document.getElementById('accIsDefault');
   if (isDefaultCheck) {
     isDefaultCheck.checked = !!account.isDefault;
-  }
-
-  if (window.selectAccountOwner) {
-    window.selectAccountOwner(account.ownerRole || 'p1');
   }
 
   accModal.classList.add('open');
@@ -10760,7 +10689,17 @@ function setupCoupleModule() {
         });
 
         showToast('Acerto de contas realizado com sucesso! Despesas marcadas como quitadas.', 'success');
-        closeSett
+        closeSettle();
+        renderCoupleView();
+        renderTransactionsView();
+        renderAccountsView();
+        renderDashboard();
+      } catch (err) {
+        console.error('Erro ao liquidar acerto de contas:', err);
+        showToast(err.message || 'Erro ao realizar quitação.', 'error');
+      } finally {
+        btnConfirmSettle.disabled = false;
+      }
     });
   }
 
@@ -10793,29 +10732,6 @@ function setupCoupleModule() {
       btnP2.classList.add('active');
       btnP1.classList.remove('active');
       paidByInput.value = 'p2';
-    });
-  }
-
-  // Preenchimento Inteligente de Pagador / Compartilhamento ao selecionar Conta/Cartão
-  const txAccSelect = document.getElementById('txAccount');
-  if (txAccSelect) {
-    txAccSelect.addEventListener('change', () => {
-      const selectedAccId = txAccSelect.value;
-      const acc = (typeof finance !== 'undefined' && finance.state && finance.state.accounts) ? finance.state.accounts.find(a => a.id === selectedAccId) : null;
-      if (acc && acc.ownerRole) {
-        if (acc.ownerRole === 'p1' || acc.ownerRole === 'p2') {
-          if (paidByInput) paidByInput.value = acc.ownerRole;
-          if (btnP1 && btnP2) {
-            btnP1.classList.toggle('active', acc.ownerRole === 'p1');
-            btnP2.classList.toggle('active', acc.ownerRole === 'p2');
-          }
-        } else if (acc.ownerRole === 'joint') {
-          if (isSharedCheck && !isSharedCheck.checked) {
-            isSharedCheck.checked = true;
-            isSharedCheck.dispatchEvent(new Event('change'));
-          }
-        }
-      }
     });
   }
 

@@ -1,9 +1,10 @@
 {
-  "version": "1.0.3",
+  "version": "1.0.4",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.3 - Titularidade Inteligente de Contas & Cartões para Casais",
+  "title": "Valore v1.0.4 - Correção Crítica de Inicialização & Titularidade Inteligente",
   "notes": [
+    "Correção crítica de integridade no carregamento do aplicativo Desktop e Mobile (resolução de congelamento na inicialização).",
     "Titularidade nativa de Contas e Cartões: defina quem é o dono (Você, Parceiro(a) ou Conta Conjunta/Casa).",
     "Badges visuais elegantes em cada cartão de crédito e conta bancária identificando o titular.",
     "Preenchimento inteligente de pagador: ao selecionar uma conta/cartão, o responsável pelo pagamento é atribuído automaticamente.",

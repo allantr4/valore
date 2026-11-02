@@ -2626,7 +2626,6 @@ function renderAccountsView() {
             <div>
               <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
                 <span class="metric-title" style="display: block; font-weight: 700;">${acc.name}</span>
-                ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
                 <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">💳 Cartão • ${brandLabel}</span>
                 ${acc.isDefault ? `<span class="account-default-tag" title="Cartão padrão para lançamentos">★ Padrão</span>` : ''}
               </div>
@@ -2727,7 +2726,6 @@ function renderAccountsView() {
           <div>
             <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
               <span class="metric-title" style="display: block; font-weight: 700;">${acc.name}</span>
-              ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
               <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--primary); font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">
                 🏦 ${acc.type === 'investment' ? 'Investimento' : (acc.type === 'cash' ? 'Dinheiro' : 'Conta Corrente')}
               </span>
@@ -4186,25 +4184,6 @@ function setupModals() {
       btnP2.classList.toggle('active', devId.ownerRole === 'p2');
     }
 
-    const activeAccSelect = document.getElementById('txAccount');
-    if (activeAccSelect && activeAccSelect.value) {
-      const curAcc = (finance && finance.state && finance.state.accounts) ? finance.state.accounts.find(a => a.id === activeAccSelect.value) : null;
-      if (curAcc && curAcc.ownerRole) {
-        if (curAcc.ownerRole === 'p1' || curAcc.ownerRole === 'p2') {
-          if (paidByInput) paidByInput.value = curAcc.ownerRole;
-          if (btnP1 && btnP2) {
-            btnP1.classList.toggle('active', curAcc.ownerRole === 'p1');
-            btnP2.classList.toggle('active', curAcc.ownerRole === 'p2');
-          }
-        } else if (curAcc.ownerRole === 'joint') {
-          if (isSharedCheck) {
-            isSharedCheck.checked = true;
-            if (sharedDetails) sharedDetails.style.display = 'block';
-          }
-        }
-      }
-    }
-
     // Popula seletores de Projetos e Side Hustles
     const ccSelect = document.getElementById('txCostCenterSelect');
     if (ccSelect) {
@@ -5000,51 +4979,6 @@ function setupModals() {
 
   if (accModeBankBtn) accModeBankBtn.addEventListener('click', () => window.setAccountModalMode('bank'));
   if (accModeCardBtn) accModeCardBtn.addEventListener('click', () => window.setAccountModalMode('card'));
-
-  window.selectAccountOwner = function(role) {
-    const owner = (role === 'p2' || role === 'joint') ? role : 'p1';
-    const hiddenInput = document.getElementById('accOwnerRole');
-    if (hiddenInput) hiddenInput.value = owner;
-
-    const btnP1 = document.getElementById('btnAccOwnerP1');
-    const btnP2 = document.getElementById('btnAccOwnerP2');
-    const btnJoint = document.getElementById('btnAccOwnerJoint');
-    const labelP1 = document.getElementById('labelAccOwnerP1');
-    const labelP2 = document.getElementById('labelAccOwnerP2');
-
-    const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
-    const p1Name = (couple && couple.partner1 && couple.partner1.name) ? couple.partner1.name : 'Você';
-    const p2Name = (couple && couple.partner2 && couple.partner2.name) ? couple.partner2.name : 'Parceiro(a)';
-
-    if (labelP1) labelP1.textContent = p1Name;
-    if (labelP2) labelP2.textContent = p2Name;
-
-    if (btnP1) {
-      const isAct = owner === 'p1';
-      btnP1.classList.toggle('active', isAct);
-      btnP1.style.background = isAct ? 'rgba(59, 130, 246, 0.18)' : 'transparent';
-      btnP1.style.fontWeight = isAct ? '700' : 'normal';
-    }
-    if (btnP2) {
-      const isAct = owner === 'p2';
-      btnP2.classList.toggle('active', isAct);
-      btnP2.style.background = isAct ? 'rgba(236, 72, 153, 0.18)' : 'transparent';
-      btnP2.style.fontWeight = isAct ? '700' : 'normal';
-    }
-    if (btnJoint) {
-      const isAct = owner === 'joint';
-      btnJoint.classList.toggle('active', isAct);
-      btnJoint.style.background = isAct ? 'rgba(16, 185, 129, 0.18)' : 'transparent';
-      btnJoint.style.fontWeight = isAct ? '700' : 'normal';
-    }
-  };
-
-  const btnOwnerP1 = document.getElementById('btnAccOwnerP1');
-  const btnOwnerP2 = document.getElementById('btnAccOwnerP2');
-  const btnOwnerJoint = document.getElementById('btnAccOwnerJoint');
-  if (btnOwnerP1) btnOwnerP1.addEventListener('click', () => window.selectAccountOwner('p1'));
-  if (btnOwnerP2) btnOwnerP2.addEventListener('click', () => window.selectAccountOwner('p2'));
-  if (btnOwnerJoint) btnOwnerJoint.addEventListener('click', () => window.selectAccountOwner('joint'));
 
   const updateAccBankUI = () => {
     const bankId = accBankSelect ? accBankSelect.value : 'nubank';
@@ -7221,16 +7155,15 @@ function formatAccountOptionLabel(acc) {
     hipercard: 'Hipercard',
     other: 'Cartão'
   }[acc.cardBrand || 'mastercard'] || 'Cartão';
-  const ownerLabel = getAccountOwnerLabel(acc.ownerRole || 'p1');
 
   if (acc.type === 'credit') {
-    return `💳 ${acc.name}${ownerLabel} (Cartão • ${brandLabel})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `💳 ${acc.name} (Cartão • ${brandLabel})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else if (acc.type === 'investment') {
-    return `📈 ${acc.name}${ownerLabel} (Investimento - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `📈 ${acc.name} (Investimento - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else if (acc.type === 'cash') {
-    return `💵 ${acc.name}${ownerLabel} (Dinheiro Físico - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `💵 ${acc.name} (Dinheiro Físico - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   } else {
-    return `🏦 ${acc.name}${ownerLabel} (Conta Corrente - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
+    return `🏦 ${acc.name} (Conta Corrente - Saldo: ${currencyFormatter.format(acc.balance || 0)})${acc.isDefault ? ' ★ Padrão' : ''}`;
   }
 }
 
@@ -7941,10 +7874,6 @@ window.handleEditAccount = function(accId) {
   const isDefaultCheck = document.getElementById('accIsDefault');
   if (isDefaultCheck) {
     isDefaultCheck.checked = !!account.isDefault;
-  }
-
-  if (window.selectAccountOwner) {
-    window.selectAccountOwner(account.ownerRole || 'p1');
   }
 
   accModal.classList.add('open');
@@ -10635,5 +10564,1096 @@ function setupCoupleModule() {
   }
 
   const closeSettings = () => { if (settingsModal) settingsModal.classList.remove('open'); };
-  if (btnCloseSettings) btnCloseSet
-... [truncated for diff preview]
+  if (btnCloseSettings) btnCloseSettings.addEventListener('click', closeSettings);
+  if (btnCancelSettings) btnCancelSettings.addEventListener('click', closeSettings);
+
+  // Atualização em tempo real da prévia do Equity Split enquanto digita rendas
+  const incP1Input = document.getElementById('coupleP1Income');
+  const incP2Input = document.getElementById('coupleP2Income');
+  function updateCoupleRatioPreview() {
+    const inc1 = parseCurrencyInput(incP1Input ? incP1Input.value : '0');
+    const inc2 = parseCurrencyInput(incP2Input ? incP2Input.value : '0');
+    const total = inc1 + inc2;
+    let p1Pct = 50, p2Pct = 50;
+    if (total > 0) {
+      p1Pct = Math.round((inc1 / total) * 100);
+      p2Pct = 100 - p1Pct;
+    }
+    const name1 = (document.getElementById('coupleP1Name')?.value || 'Você').trim();
+    const name2 = (document.getElementById('coupleP2Name')?.value || 'Parceiro(a)').trim();
+    const el1 = document.getElementById('couplePreviewP1Ratio');
+    const el2 = document.getElementById('couplePreviewP2Ratio');
+    if (el1) el1.textContent = `${name1}: ${p1Pct}%`;
+    if (el2) el2.textContent = `${name2}: ${p2Pct}%`;
+  }
+
+  if (incP1Input) incP1Input.addEventListener('input', updateCoupleRatioPreview);
+  if (incP2Input) incP2Input.addEventListener('input', updateCoupleRatioPreview);
+
+  if (settingsForm) {
+    settingsForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const p1Name = (document.getElementById('coupleP1Name').value || 'Você').trim();
+      const p1Income = parseCurrencyInput(document.getElementById('coupleP1Income').value);
+      const p1Pix = (document.getElementById('coupleP1Pix').value || '').trim();
+
+      const p2Name = (document.getElementById('coupleP2Name').value || 'Parceiro(a)').trim();
+      const p2Income = parseCurrencyInput(document.getElementById('coupleP2Income').value);
+      const p2Pix = (document.getElementById('coupleP2Pix').value || '').trim();
+
+      const splitMode = document.getElementById('coupleSplitModeSelect').value;
+
+      await finance.updateCoupleSettings({
+        enabled: true,
+        splitMode: splitMode,
+        partner1: { name: p1Name, monthlyIncome: p1Income, pixKey: p1Pix },
+        partner2: { name: p2Name, monthlyIncome: p2Income, pixKey: p2Pix }
+      });
+
+      showToast('Configurações do casal atualizadas com sucesso!', 'success');
+      if (window.syncDeviceIdentityUI) window.syncDeviceIdentityUI();
+      closeSettings();
+      renderCoupleView();
+    });
+  }
+
+  // Modal de Acerto de Contas & Quitação Pix
+  const openSettleModal = () => {
+    const summary = finance.getCoupleSummary(currentCouplePeriod.year, currentCouplePeriod.month);
+    if (summary.balanceAmount <= 0.01) {
+      showToast('Não há despesas pendentes de acerto neste mês. Tudo já está equilibrado!', 'info');
+      return;
+    }
+
+    const amountEl = document.getElementById('coupleSettleAmountDisplay');
+    const dirEl = document.getElementById('coupleSettleDirectionDisplay');
+    const pixInput = document.getElementById('coupleSettlePixKeyInput');
+    const accSelect = document.getElementById('coupleSettleAccountSelect');
+
+    if (amountEl) amountEl.textContent = currencyFormatter.format(summary.balanceAmount);
+    if (dirEl) {
+      dirEl.innerHTML = `<strong>${escapeHtml(summary.debtorName)}</strong> transfere para <strong>${escapeHtml(summary.creditorName)}</strong>`;
+    }
+
+    if (pixInput) {
+      pixInput.value = summary.creditorPixKey || 'Chave Pix não informada nas configurações';
+    }
+
+    // Popula contas correntes/carteiras do titular
+    if (accSelect) {
+      const validAccounts = finance.state.accounts.filter(a => a.type !== 'credit');
+      accSelect.innerHTML = validAccounts.map(a => `<option value="${a.id}">${escapeHtml(a.name)} (${currencyFormatter.format(a.balance || 0)})</option>`).join('');
+    }
+
+    if (settleModal) settleModal.classList.add('open');
+    if (window.lucide) lucide.createIcons();
+  };
+
+  if (btnOpenSettle) btnOpenSettle.addEventListener('click', openSettleModal);
+  if (btnQuickSettle) btnQuickSettle.addEventListener('click', openSettleModal);
+
+  const closeSettle = () => { if (settleModal) settleModal.classList.remove('open'); };
+  if (btnCloseSettle) btnCloseSettle.addEventListener('click', closeSettle);
+  if (btnCancelSettle) btnCancelSettle.addEventListener('click', closeSettle);
+
+  // Copiar Chave Pix
+  if (btnCopyPix) {
+    btnCopyPix.addEventListener('click', () => {
+      const pixInput = document.getElementById('coupleSettlePixKeyInput');
+      if (pixInput && pixInput.value && !pixInput.value.includes('não informada')) {
+        navigator.clipboard.writeText(pixInput.value).then(() => {
+          showToast('Chave Pix copiada com sucesso!', 'success');
+        }).catch(() => {
+          pixInput.select();
+          document.execCommand('copy');
+          showToast('Chave Pix copiada!', 'success');
+        });
+      } else {
+        showToast('Nenhuma chave Pix cadastrada para o favorecido.', 'warning');
+      }
+    });
+  }
+
+  // Confirmar Quitação
+  if (btnConfirmSettle) {
+    btnConfirmSettle.addEventListener('click', async () => {
+      const recordTx = !!document.getElementById('coupleSettleRecordTxCheckbox')?.checked;
+      const accountId = recordTx ? document.getElementById('coupleSettleAccountSelect')?.value : null;
+
+      try {
+        btnConfirmSettle.disabled = true;
+        await finance.settleCoupleExpenses({
+          year: currentCouplePeriod.year,
+          month: currentCouplePeriod.month,
+          accountId: accountId
+        });
+
+        showToast('Acerto de contas realizado com sucesso! Despesas marcadas como quitadas.', 'success');
+        closeSettle();
+        renderCoupleView();
+        renderTransactionsView();
+        renderAccountsView();
+        renderDashboard();
+      } catch (err) {
+        console.error('Erro ao liquidar acerto de contas:', err);
+        showToast(err.message || 'Erro ao realizar quitação.', 'error');
+      } finally {
+        btnConfirmSettle.disabled = false;
+      }
+    });
+  }
+
+  // Interações no Formulário de Transação (Nova Transação)
+  const isSharedCheck = document.getElementById('txIsShared');
+  const sharedDetails = document.getElementById('txSharedDetailsContainer');
+  const btnP1 = document.getElementById('btnTxPayerP1');
+  const btnP2 = document.getElementById('btnTxPayerP2');
+  const paidByInput = document.getElementById('txPaidBy');
+  const splitRuleSelect = document.getElementById('txSplitRule');
+  const customSplitSliderContainer = document.getElementById('txCustomSplitSliderContainer');
+  const customSplitRange = document.getElementById('txCustomSplitRange');
+  const previewText = document.getElementById('txSplitCalcPreview');
+
+  if (isSharedCheck && sharedDetails) {
+    isSharedCheck.addEventListener('change', () => {
+      sharedDetails.style.display = isSharedCheck.checked ? 'block' : 'none';
+      const badge = document.getElementById('txSharedRatioBadge');
+      if (badge) badge.style.display = isSharedCheck.checked ? 'inline-flex' : 'none';
+    });
+  }
+
+  if (btnP1 && btnP2 && paidByInput) {
+    btnP1.addEventListener('click', () => {
+      btnP1.classList.add('active');
+      btnP2.classList.remove('active');
+      paidByInput.value = 'p1';
+    });
+    btnP2.addEventListener('click', () => {
+      btnP2.classList.add('active');
+      btnP1.classList.remove('active');
+      paidByInput.value = 'p2';
+    });
+  }
+
+  if (splitRuleSelect) {
+    splitRuleSelect.addEventListener('change', () => {
+      if (customSplitSliderContainer) {
+        customSplitSliderContainer.style.display = splitRuleSelect.value === 'custom' ? 'block' : 'none';
+      }
+      if (previewText) {
+        const couple = finance.getCoupleSettings();
+        if (splitRuleSelect.value === 'default') {
+          previewText.textContent = `Divisão Proporcional ativa: ${couple.partner1.name} (${couple.proportionalRatio.p1}%) e ${couple.partner2.name} (${couple.proportionalRatio.p2}%).`;
+        } else if (splitRuleSelect.value === 'equal') {
+          previewText.textContent = `Divisão 50% / 50%: Metade para cada um.`;
+        } else if (splitRuleSelect.value === '100_p1') {
+          previewText.textContent = `100% pago e assumido por ${couple.partner1.name}.`;
+        } else if (splitRuleSelect.value === '100_p2') {
+          previewText.textContent = `100% pago e assumido por ${couple.partner2.name}.`;
+        }
+      }
+    });
+  }
+
+  if (customSplitRange) {
+    customSplitRange.addEventListener('input', () => {
+      const p1 = parseInt(customSplitRange.value, 10);
+      const p2 = 100 - p1;
+      const couple = finance.getCoupleSettings();
+      const l1 = document.getElementById('txCustomP1Label');
+      const l2 = document.getElementById('txCustomP2Label');
+      if (l1) l1.textContent = `${couple.partner1.name}: ${p1}%`;
+      if (l2) l2.textContent = `${couple.partner2.name}: ${p2}%`;
+    });
+  }
+
+  // Atalhos de Nova Transação do Casal e Novo Sonho
+  if (btnNewCoupleTx) {
+    btnNewCoupleTx.addEventListener('click', () => {
+      const btnOpen = document.getElementById('btnOpenNewTxModal');
+      if (btnOpen) btnOpen.click();
+      setTimeout(() => {
+        const toggleExp = document.getElementById('toggleExpense');
+        if (toggleExp) toggleExp.click();
+        const check = document.getElementById('txIsShared');
+        if (check) {
+          check.checked = true;
+          check.dispatchEvent(new Event('change'));
+        }
+      }, 50);
+    });
+  }
+
+  if (btnNewCoupleGoal) {
+    btnNewCoupleGoal.addEventListener('click', () => {
+      const btnOpen = document.getElementById('btnOpenNewGoalModal');
+      if (btnOpen) btnOpen.click();
+      setTimeout(() => {
+        const check = document.getElementById('goalIsCouple');
+        if (check) check.checked = true;
+        const titleEl = document.getElementById('goalTitle');
+        if (titleEl && !titleEl.value) titleEl.placeholder = 'Ex: Viagem romântica, Casamento, Reforma';
+      }, 50);
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      renderCoupleTransactionsTable(searchInput.value);
+    });
+  }
+}
+
+function populateCoupleYearSelect() {
+  const yearSelect = document.getElementById('coupleSelectYear');
+  if (!yearSelect) return;
+  const currentYear = new Date().getFullYear();
+  let html = '';
+  for (let y = currentYear - 3; y <= currentYear + 2; y++) {
+    html += `<option value="${y}" ${y === currentCouplePeriod.year ? 'selected' : ''}>${y}</option>`;
+  }
+  yearSelect.innerHTML = html;
+}
+
+// Renderização Principal da Tela: Finanças a Dois
+function renderCoupleView() {
+  const couple = finance.getCoupleSettings();
+  const summary = finance.getCoupleSummary(currentCouplePeriod.year, currentCouplePeriod.month);
+  const mName = monthNamesLong[currentCouplePeriod.month - 1] || 'Mês';
+
+  // Sincroniza controles de período no topo
+  const periodLabel = document.getElementById('couplePeriodCurrentLabel');
+  if (periodLabel) periodLabel.textContent = `${mName} de ${currentCouplePeriod.year}`;
+
+  const monthSelect = document.getElementById('coupleSelectMonth');
+  const yearSelect = document.getElementById('coupleSelectYear');
+  if (monthSelect) monthSelect.value = currentCouplePeriod.month;
+  if (yearSelect) yearSelect.value = currentCouplePeriod.year;
+
+  // Atualiza Nomes dos Parceiros nas Etiquetas
+  const labelP1 = document.getElementById('coupleLabelPaidP1');
+  const labelP2 = document.getElementById('coupleLabelPaidP2');
+  if (labelP1) labelP1.textContent = `Pago por ${couple.partner1.name}`;
+  if (labelP2) labelP2.textContent = `Pago por ${couple.partner2.name}`;
+
+  const btnP1Payer = document.getElementById('btnTxPayerP1');
+  const btnP2Payer = document.getElementById('btnTxPayerP2');
+  if (btnP1Payer) btnP1Payer.textContent = couple.partner1.name;
+  if (btnP2Payer) btnP2Payer.textContent = couple.partner2.name;
+
+  // Atualiza Hero Card de Balanço & Compensação
+  const balanceTitle = document.getElementById('coupleBalanceMainTitle');
+  const balanceSub = document.getElementById('coupleBalanceSubtitle');
+  const quickSettleContainer = document.getElementById('coupleSettleQuickActionContainer');
+  const quickSettleBtnText = document.getElementById('btnQuickSettleHeroText');
+
+  if (summary.balanceAmount > 0.01) {
+    if (balanceTitle) {
+      balanceTitle.innerHTML = `
+        <span style="color: ${summary.creditor === 'p1' ? '#3b82f6' : '#ec4899'};">${escapeHtml(summary.debtorName)}</span> 
+        <span style="font-size: 1.15rem; font-weight: 600; color: var(--text-muted);">deve transferir</span> 
+        <span style="color: #10b981; font-weight: 900;">${currencyFormatter.format(summary.balanceAmount)}</span>
+        <span style="font-size: 1.15rem; font-weight: 600; color: var(--text-muted);">para ${escapeHtml(summary.creditorName)}</span>
+      `;
+    }
+    if (balanceSub) {
+      balanceSub.textContent = `Balanço líquido de ${summary.transactions.filter(t => !t.settled).length} compras conjuntas pendentes no mês de ${mName}.`;
+    }
+    if (quickSettleContainer) quickSettleContainer.style.display = 'block';
+    if (quickSettleBtnText) {
+      quickSettleBtnText.textContent = `Fazer Pix de ${currencyFormatter.format(summary.balanceAmount)}`;
+    }
+  } else {
+    if (balanceTitle) {
+      balanceTitle.innerHTML = `<span style="color: #10b981;">Tudo Equilibrado e Quitado! 🎉</span>`;
+    }
+    if (balanceSub) {
+      balanceSub.textContent = `Todas as despesas compartilhadas deste período estão perfeitamente divididas e compensadas.`;
+    }
+    if (quickSettleContainer) quickSettleContainer.style.display = 'none';
+  }
+
+  // Barra Visual de Proporção (Equity Split)
+  const ratioP1Label = document.getElementById('coupleRatioP1Label');
+  const ratioP2Label = document.getElementById('coupleRatioP2Label');
+  const ratioBarP1 = document.getElementById('coupleRatioBarP1');
+  const ratioBarP2 = document.getElementById('coupleRatioBarP2');
+  const splitModeBadge = document.getElementById('coupleSplitModeBadge');
+
+  const p1Pct = couple.proportionalRatio.p1;
+  const p2Pct = couple.proportionalRatio.p2;
+
+  if (ratioP1Label) ratioP1Label.textContent = `${couple.partner1.name}: ${p1Pct}%`;
+  if (ratioP2Label) ratioP2Label.textContent = `${couple.partner2.name}: ${p2Pct}%`;
+  if (ratioBarP1) ratioBarP1.style.width = `${p1Pct}%`;
+  if (ratioBarP2) ratioBarP2.style.width = `${p2Pct}%`;
+  if (splitModeBadge) {
+    splitModeBadge.textContent = couple.splitMode === 'equal' ? '50% / 50% Meio a Meio' : (couple.splitMode === 'fixed_quota' ? 'Cota Fixa Mensal' : 'Proporcional à Renda (Equity Split)');
+  }
+
+  // Cards de Métricas
+  const totalExpEl = document.getElementById('coupleMetricTotalExpenses');
+  const expCountEl = document.getElementById('coupleMetricExpensesCount');
+  const paidP1El = document.getElementById('coupleMetricPaidP1');
+  const dueP1El = document.getElementById('coupleMetricDueP1');
+  const paidP2El = document.getElementById('coupleMetricPaidP2');
+  const dueP2El = document.getElementById('coupleMetricDueP2');
+  const balanceAmtEl = document.getElementById('coupleMetricBalanceAmount');
+  const balanceStatEl = document.getElementById('coupleMetricBalanceStatus');
+
+  if (totalExpEl) totalExpEl.textContent = currencyFormatter.format(summary.totalSharedExpenses);
+  if (expCountEl) expCountEl.textContent = `${summary.transactions.length} ${summary.transactions.length === 1 ? 'compra compartilhada' : 'compras compartilhadas'}`;
+
+  if (paidP1El) paidP1El.textContent = currencyFormatter.format(summary.paidByP1);
+  if (dueP1El) dueP1El.textContent = `Cota devida: ${currencyFormatter.format(summary.dueByP1)}`;
+
+  if (paidP2El) paidP2El.textContent = currencyFormatter.format(summary.paidByP2);
+  if (dueP2El) dueP2El.textContent = `Cota devida: ${currencyFormatter.format(summary.dueByP2)}`;
+
+  if (balanceAmtEl) balanceAmtEl.textContent = currencyFormatter.format(summary.balanceAmount);
+  if (balanceStatEl) {
+    balanceStatEl.textContent = summary.balanceAmount > 0.01 ? summary.statusLabel : 'Contas equilibradas';
+  }
+
+  // Gráfico de Categoria do Casal
+  renderCoupleCategoryChart(summary.categories);
+
+  // Metas do Casal
+  renderCoupleGoals(summary.coupleGoals);
+
+  // Painel DR Financeira Positiva
+  renderCoupleAlignmentReport();
+
+  // Tabela de Despesas Compartilhadas
+  renderCoupleTransactionsTable();
+
+  // Histórico de Acertos de Contas
+  renderCoupleSettlementsHistory(summary.settlements);
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderCoupleCategoryChart(categories) {
+  const canvas = document.getElementById('coupleCategoryChart');
+  if (!canvas) return;
+
+  if (coupleCategoryChartInstance) {
+    coupleCategoryChartInstance.destroy();
+    coupleCategoryChartInstance = null;
+  }
+
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const textColor = isDark ? '#94a3b8' : '#475569';
+
+  let labels = [];
+  let dataVals = [];
+  let bgColors = [];
+
+  if (categories && categories.length > 0) {
+    labels = categories.map(c => c.name);
+    dataVals = categories.map(c => c.total);
+    bgColors = categories.map(c => c.color || '#ec4899');
+  } else {
+    labels = ['Nenhuma despesa compartilhada'];
+    dataVals = [1];
+    bgColors = [isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'];
+  }
+
+  coupleCategoryChartInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: dataVals,
+        backgroundColor: bgColors,
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: window.innerWidth <= 768 ? 'bottom' : 'right',
+          labels: {
+            color: textColor,
+            font: { family: 'Plus Jakarta Sans', size: 11 },
+            boxWidth: 12,
+            padding: 8
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              if (categories.length === 0) return 'Sem dados';
+              const val = ctx.raw || 0;
+              const total = dataVals.reduce((a, b) => a + b, 0);
+              const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0';
+              return ` ${ctx.label}: ${currencyFormatter.format(val)} (${pct}%)`;
+            }
+          }
+        }
+      },
+      cutout: '68%'
+    }
+  });
+}
+
+function renderCoupleGoals(coupleGoals) {
+  const container = document.getElementById('coupleGoalsListContainer');
+  if (!container) return;
+
+  if (!coupleGoals || coupleGoals.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; color: var(--text-muted); padding: 2rem 1rem;">
+        <i data-lucide="heart" style="width: 32px; height: 32px; color: #ec4899; opacity: 0.6; margin-bottom: 0.5rem;"></i>
+        <p style="font-size: 0.85rem; margin: 0;">Nenhum sonho planejado a dois ainda.</p>
+        <span style="font-size: 0.74rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">Planejem uma viagem, reforma ou casamento juntos!</span>
+      </div>
+    `;
+    return;
+  }
+
+  const couple = finance.getCoupleSettings();
+
+  container.innerHTML = coupleGoals.map(g => {
+    const cur = parseFloat(g.currentAmount || 0);
+    const tgt = parseFloat(g.targetAmount || 1);
+    const pct = Math.min(100, Math.round((cur / tgt) * 100));
+
+    // Calcula contribuição de cada parceiro a partir do histórico de depósitos
+    let contribP1 = 0;
+    let contribP2 = 0;
+    (g.history || []).forEach(h => {
+      if (h.type === 'deposit') {
+        const amt = parseFloat(h.amount || 0);
+        if (h.contributor === 'p2') contribP2 += amt;
+        else contribP1 += amt;
+      }
+    });
+
+    const totalContrib = contribP1 + contribP2;
+    const p1SharePct = totalContrib > 0 ? Math.round((contribP1 / totalContrib) * 100) : 50;
+    const p2SharePct = 100 - p1SharePct;
+
+    return `
+      <div style="background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 12px; padding: 0.85rem 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(236, 72, 153, 0.15); display: flex; align-items: center; justify-content: center; color: #ec4899;">
+              <i data-lucide="${g.icon || 'heart'}" style="width: 15px; height: 15px;"></i>
+            </div>
+            <span style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${escapeHtml(g.title)}</span>
+          </div>
+          <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; font-size: 0.76rem;">${pct}%</span>
+        </div>
+
+        <!-- Barra de Progresso Bicolor do Casal -->
+        <div class="couple-goal-bicolor-bar">
+          <div style="height: 100%; width: ${(pct * (p1SharePct / 100))}%; background: #3b82f6;" title="${couple.partner1.name}: ${currencyFormatter.format(contribP1)}"></div>
+          <div style="height: 100%; width: ${(pct * (p2SharePct / 100))}%; background: #ec4899;" title="${couple.partner2.name}: ${currencyFormatter.format(contribP2)}"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-muted); margin-top: 0.35rem;">
+          <span>Poupado: <strong style="color: var(--text-main);">${currencyFormatter.format(cur)}</strong> de ${currencyFormatter.format(tgt)}</span>
+          <span><span style="color: #3b82f6;">●</span> ${p1SharePct}% | <span style="color: #ec4899;">●</span> ${p2SharePct}%</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderCoupleAlignmentReport() {
+  const container = document.getElementById('coupleAlignmentInsightsContainer');
+  const scoreBadge = document.getElementById('coupleHarmonyScoreBadge');
+  if (!container) return;
+
+  const report = finance.getCoupleAlignmentReport(currentCouplePeriod.year, currentCouplePeriod.month);
+
+  if (scoreBadge) {
+    scoreBadge.textContent = `${report.harmonyScore} / 100`;
+    if (report.harmonyScore >= 85) {
+      scoreBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+      scoreBadge.style.color = '#34d399';
+    } else if (report.harmonyScore >= 70) {
+      scoreBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+      scoreBadge.style.color = '#f59e0b';
+    } else {
+      scoreBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+      scoreBadge.style.color = '#f87171';
+    }
+  }
+
+  if (report.insights.length === 0) {
+    container.innerHTML = `<div>Nenhum alerta registrado. As finanças do casal estão em plena harmonia!</div>`;
+    return;
+  }
+
+  container.innerHTML = report.insights.map(txt => `
+    <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+      <i data-lucide="check-circle" style="width: 16px; height: 16px; color: #a78bfa; flex-shrink: 0; margin-top: 2px;"></i>
+      <span>${escapeHtml(txt)}</span>
+    </div>
+  `).join('');
+}
+
+function renderCoupleTransactionsTable(searchFilter = '') {
+  const tbody = document.getElementById('coupleTxTableBody');
+  if (!tbody) return;
+
+  const summary = finance.getCoupleSummary(currentCouplePeriod.year, currentCouplePeriod.month);
+  const couple = summary.couple;
+  const search = String(searchFilter || '').toLowerCase().trim();
+
+  let txs = summary.transactions;
+  if (search) {
+    txs = txs.filter(t => (t.description || '').toLowerCase().includes(search) || (t.coupleNote || '').toLowerCase().includes(search));
+  }
+
+  if (txs.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">
+          Nenhuma despesa compartilhada registrada para este mês.
+          <br>
+          <button class="btn btn-primary" onclick="document.getElementById('btnNewCoupleTxShortcut')?.click()" style="margin-top: 0.75rem; font-size: 0.8rem;">
+            + Lançar Primeira Despesa do Casal
+          </button>
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = txs.map(t => {
+    const isP1 = t.paidBy === 'p1';
+    const payerName = isP1 ? couple.partner1.name : couple.partner2.name;
+    const cat = finance.state.categories.find(c => c.id === t.categoryId) || { name: 'Outros', color: '#64748b' };
+    const acc = finance.state.accounts.find(a => a.id === t.accountId) || { name: 'Conta' };
+
+    let ruleLabel = 'Proporcional';
+    if (t.splitRule === 'equal') ruleLabel = '50/50';
+    else if (t.splitRule === '100_p1') ruleLabel = '100% ' + couple.partner1.name;
+    else if (t.splitRule === '100_p2') ruleLabel = '100% ' + couple.partner2.name;
+    else if (t.splitRule === 'custom' && t.customSplit) ruleLabel = `${t.customSplit.p1}% / ${t.customSplit.p2}%`;
+
+    const statusBadge = t.settled
+      ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 700; font-size: 0.7rem;">Quitado</span>`
+      : `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-weight: 700; font-size: 0.7rem;">Pendente</span>`;
+
+    return `
+      <tr class="tx-row">
+        <td class="tx-cell-desc">
+          <div style="font-weight: 700; color: var(--text-main);">${escapeHtml(t.description)}</div>
+          ${t.coupleNote ? `<div style="font-size: 0.74rem; color: #ec4899; display: flex; align-items: center; gap: 3px;">❤️ ${escapeHtml(t.coupleNote)}</div>` : ''}
+        </td>
+        <td class="tx-cell-cat">
+          <span class="couple-badge-tag ${isP1 ? 'couple-badge-p1' : 'couple-badge-p2'}">
+            ${escapeHtml(payerName)}
+          </span>
+          <span class="badge mobile-only-inline" style="background: var(--bg-tertiary); font-size: 0.72rem; color: var(--text-secondary);">${ruleLabel}</span>
+          <span class="mobile-only-inline">${statusBadge}</span>
+        </td>
+        <td class="tx-cell-acc">
+          <div style="font-size: 0.8rem; font-weight: 600;">${escapeHtml(cat.name)}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted);">${escapeHtml(acc.name)}</div>
+        </td>
+        <td class="tx-cell-date" style="font-size: 0.8rem;">${formatDateBR(t.date)}</td>
+        <td class="desktop-only-cell">
+          <span class="badge" style="background: var(--bg-tertiary); font-size: 0.72rem; color: var(--text-secondary);">${ruleLabel}</span>
+        </td>
+        <td class="tx-cell-amount" style="text-align: right; font-weight: 700; color: var(--text-main);">
+          ${currencyFormatter.format(t.amount)}
+          <div class="mobile-only-block" style="font-size: 0.72rem; font-weight: 600; color: #3b82f6;">Sua parte: ${currencyFormatter.format(t._computedDueP1 || 0)}</div>
+        </td>
+        <td class="desktop-only-cell" style="text-align: right; font-weight: 700; color: #3b82f6;">
+          ${currencyFormatter.format(t._computedDueP1 || 0)}
+        </td>
+        <td class="desktop-only-cell" style="text-align: center;">${statusBadge}</td>
+        <td class="td-actions tx-cell-actions">
+          <div class="table-actions-container">
+            <button onclick="handleEditTx('${t.id}')" class="btn-action-icon" style="color: var(--primary);" title="Editar">
+              <i data-lucide="edit-3" style="width: 15px; height: 15px;"></i>
+            </button>
+            <button onclick="handleDeleteTx('${t.id}')" class="btn-action-icon" style="color: var(--danger);" title="Excluir">
+              <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+function renderCoupleSettlementsHistory(settlements) {
+  const tbody = document.getElementById('coupleSettlementsTableBody');
+  const card = document.getElementById('coupleSettlementsHistoryCard');
+  if (!tbody || !card) return;
+
+  if (!settlements || settlements.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+
+  card.style.display = 'block';
+  tbody.innerHTML = settlements.map(s => `
+    <tr class="tx-settlement-card">
+      <td style="font-size: 0.82rem; font-weight: 600;">
+        <span class="mobile-only-inline" style="font-size: 0.74rem; color: var(--text-muted);">Data:</span>
+        <span>${formatDateBR(s.date)}</span>
+      </td>
+      <td style="font-size: 0.82rem;">
+        <span class="mobile-only-inline" style="font-size: 0.74rem; color: var(--text-muted);">Ref:</span>
+        <span>${escapeHtml(s.note || 'Acerto mensal')}</span>
+      </td>
+      <td>
+        <span class="mobile-only-inline" style="font-size: 0.74rem; color: var(--text-muted);">Pagador:</span>
+        <span class="couple-badge-tag couple-badge-p2">${escapeHtml(s.debtorName)}</span>
+      </td>
+      <td>
+        <span class="mobile-only-inline" style="font-size: 0.74rem; color: var(--text-muted);">Recebedor:</span>
+        <span class="couple-badge-tag couple-badge-p1">${escapeHtml(s.creditorName)}</span>
+      </td>
+      <td style="text-align: right; font-weight: 800; color: #10b981;">
+        <span class="mobile-only-inline" style="font-size: 0.74rem; color: var(--text-muted); font-weight: 500;">Compensado:</span>
+        <span>${currencyFormatter.format(s.amount)}</span>
+      </td>
+      <td style="font-size: 0.8rem; color: var(--text-muted);">
+        <span class="mobile-only-inline">Itens:</span>
+        <span>${s.transactionsCount} despesas</span>
+      </td>
+      <td class="td-actions">
+        <button onclick="handleDeleteCoupleSettlement('${s.id}')" class="btn btn-outline" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: var(--danger); margin-left: auto;" title="Desfazer Acerto e reabrir pendências">
+          <i data-lucide="rotate-ccw" style="width: 12px; height: 12px;"></i> Desfazer
+        </button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.handleDeleteCoupleSettlement = async function(settlementId) {
+  if (confirm('Deseja realmente desfazer este acerto de contas? As despesas voltarão ao status de pendentes.')) {
+    await finance.deleteCoupleSettlement(settlementId);
+    showToast('Acerto de contas desfeito com sucesso.', 'info');
+    renderCoupleView();
+  }
+};
+
+window.renderCoupleView = renderCoupleView;
+
+// --- PÍLULAS DE PARCELAMENTO RÁPIDO (REDUÇÃO DE CLIQUES) ---
+window.selectQuickInstallment = function(n) {
+  const select = document.getElementById('txInstallments');
+  if (select) {
+    select.value = String(n);
+    select.dispatchEvent(new Event('change'));
+  }
+  const pills = document.querySelectorAll('.btn-pill-installment');
+  pills.forEach(p => {
+    p.classList.toggle('active', parseInt(p.getAttribute('data-inst'), 10) === n);
+  });
+};
+
+// --- MODO LEVE / BAIXO CONSUMO (32-BITS E HARDWARE LIMITADO) ---
+window.togglePerformanceMode = function() {
+  const html = document.documentElement;
+  const isLow = html.getAttribute('data-performance') === 'low';
+  const newMode = isLow ? 'standard' : 'low';
+  html.setAttribute('data-performance', newMode);
+  localStorage.setItem('valore_perf_mode', newMode);
+  updatePerformanceModeUI(newMode);
+};
+
+function updatePerformanceModeUI(mode) {
+  const btn = document.getElementById('btnToggleLiteMode');
+  const txt = document.getElementById('liteModeText');
+  if (!btn || !txt) return;
+  if (mode === 'low') {
+    btn.classList.add('active-lite');
+    txt.textContent = '⚡ Modo Leve Ativo';
+    btn.title = 'Modo Leve Ativo: Blur e sombras desativados para máxima fluidez e economia de RAM/CPU. Clique para voltar ao Padrão.';
+  } else {
+    btn.classList.remove('active-lite');
+    txt.textContent = 'Modo Padrão';
+    btn.title = 'Ativar Modo Leve para computadores fracos (Desativa blur e sombras para economizar CPU e RAM)';
+  }
+}
+
+function initPerformanceMode() {
+  const savedMode = localStorage.getItem('valore_perf_mode') || 'standard';
+  document.documentElement.setAttribute('data-performance', savedMode);
+  updatePerformanceModeUI(savedMode);
+}
+
+// =========================================================================
+// --- GERENCIAMENTO GLOBAL DO BOTÃO VOLTAR (ANDROID / WEB / DESKTOP) ---
+// =========================================================================
+let lastBackPressTime = 0;
+
+function handleGlobalBackAction() {
+  // 0. Modal de Boas-Vindas / Onboarding aberto? (#welcomeModal)
+  const welcomeModal = document.getElementById('welcomeModal');
+  if (welcomeModal && welcomeModal.classList.contains('open')) {
+    if (typeof window.finishWelcomeOnboarding === 'function') {
+      window.finishWelcomeOnboarding('dismiss');
+    } else {
+      welcomeModal.classList.remove('open');
+    }
+    return true;
+  }
+
+  // 1. Scanner de QR Code ativo?
+  const qrScannerContainer = document.getElementById('qrScannerContainer');
+  if (qrScannerContainer && qrScannerContainer.style.display !== 'none') {
+    if (typeof window.stopQrScanner === 'function') {
+      window.stopQrScanner();
+    } else {
+      qrScannerContainer.style.display = 'none';
+    }
+    return true;
+  }
+
+  // 2. Calculadora Flutuante aberta? (#calcOverlay)
+  const calcOverlay = document.getElementById('calcOverlay');
+  if (calcOverlay && (calcOverlay.classList.contains('open') || calcOverlay.classList.contains('active'))) {
+    if (typeof window.closeCalculator === 'function') {
+      window.closeCalculator();
+    } else {
+      calcOverlay.classList.remove('open');
+      calcOverlay.classList.remove('active');
+    }
+    return true;
+  }
+
+  // 3. Modal universal de confirmação/alerta aberto? (#appAlertModal)
+  const appAlertModal = document.getElementById('appAlertModal');
+  if (appAlertModal && appAlertModal.classList.contains('open')) {
+    if (typeof closeAppAlertModal === 'function') {
+      closeAppAlertModal(false);
+    } else {
+      appAlertModal.classList.remove('open');
+    }
+    return true;
+  }
+
+  // 4. Modal de confirmação de exclusão de transação? (#confirmDeleteTxModal)
+  const confirmDelModal = document.getElementById('confirmDeleteTxModal');
+  if (confirmDelModal && confirmDelModal.classList.contains('open')) {
+    if (typeof window.closeConfirmDeleteTxModal === 'function') {
+      window.closeConfirmDeleteTxModal();
+    } else {
+      confirmDelModal.classList.remove('open');
+    }
+    return true;
+  }
+
+  // 5. Raio-X de métricas aberto? (#metricDetailModal)
+  const metricDetailModal = document.getElementById('metricDetailModal');
+  if (metricDetailModal && (metricDetailModal.classList.contains('open') || metricDetailModal.style.display === 'flex' || metricDetailModal.style.display === 'block')) {
+    if (typeof window.closeMetricDetail === 'function') {
+      window.closeMetricDetail();
+    } else {
+      metricDetailModal.classList.remove('open');
+      metricDetailModal.style.display = 'none';
+    }
+    return true;
+  }
+
+  // 6. Demais Modais Overlays abertos (.modal-overlay.open)
+  const openModals = Array.from(document.querySelectorAll('.modal-overlay.open'));
+  if (openModals.length > 0) {
+    const topModal = openModals[openModals.length - 1];
+    // Tenta encontrar botão de fechar ou cancelar daquele modal
+    const closeBtn = topModal.querySelector('[id^="btnClose"], [id^="btnCancel"], [id$="Close"], [id$="ModalClose"], .btn-close, .card-title-row button');
+    if (closeBtn && typeof closeBtn.click === 'function') {
+      closeBtn.click();
+    } else {
+      topModal.classList.remove('open');
+    }
+    return true;
+  }
+
+  // 7. Gaveta Deslizante Mobile (Bottom Sheet de Contas, Projetos ou Renda Extra)
+  const accCard = document.getElementById('accountDetailsCard');
+  const ccCard = document.getElementById('costCenterDetailsCard');
+  const shCard = document.getElementById('sideHustleDetailsCard');
+  const hasMobileSheetOpen =
+    (accCard && accCard.classList.contains('mobile-sheet-open') && accCard.style.display !== 'none') ||
+    (ccCard && ccCard.classList.contains('mobile-sheet-open') && ccCard.style.display !== 'none') ||
+    (shCard && shCard.classList.contains('mobile-sheet-open') && shCard.style.display !== 'none');
+
+  if (hasMobileSheetOpen) {
+    if (typeof window.closeAllMobileDetailSheets === 'function') {
+      window.closeAllMobileDetailSheets();
+    }
+    return true;
+  }
+
+  // 8. Menu Lateral Mobile aberto?
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar && sidebar.classList.contains('mobile-open')) {
+    if (typeof closeMobileDrawer === 'function') {
+      closeMobileDrawer();
+    } else {
+      sidebar.classList.remove('mobile-open');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (backdrop) backdrop.classList.remove('active');
+    }
+    return true;
+  }
+
+  // 9. Se estiver em uma tela secundária (≠ dashboard / Início), volta para a tela inicial
+  if (currentTab && currentTab !== 'dashboard') {
+    if (typeof switchTab === 'function') {
+      switchTab('dashboard');
+    }
+    return true;
+  }
+
+  // 10. Se já estiver na tela de Início sem nenhuma janela flutuante aberta:
+  // Duplo toque no botão voltar em até 2.2 segundos para sair do app (evita saída acidental)
+  const now = Date.now();
+  if (now - lastBackPressTime < 2200) {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App && typeof window.Capacitor.Plugins.App.exitApp === 'function') {
+      window.Capacitor.Plugins.App.exitApp();
+    }
+    return false;
+  }
+
+  lastBackPressTime = now;
+  showToast('Toque em voltar novamente para sair do Valore', 'info');
+  return true;
+}
+window.handleGlobalBackAction = handleGlobalBackAction;
+
+// Registra o ouvinte nativo do botão Voltar do Android (Capacitor App Plugin)
+function initMobileBackButtonListener() {
+  if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    try {
+      window.Capacitor.Plugins.App.addListener('backButton', () => {
+        handleGlobalBackAction();
+      });
+    } catch (err) {
+      console.warn('Não foi possível registrar backButton do Capacitor:', err);
+    }
+  }
+
+  // Suporte ao histórico de navegação
+  window.addEventListener('popstate', () => {
+    handleGlobalBackAction();
+  });
+}
+
+// --- ATALHOS GLOBAIS DE TECLADO (PRODUTIVIDADE & ERGONOMIA) ---
+window.addEventListener('keydown', (e) => {
+  const targetTag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+  const isInput = targetTag === 'input' || targetTag === 'textarea' || targetTag === 'select';
+  const txModal = document.getElementById('txModal');
+  const isTxModalOpen = txModal && txModal.classList.contains('open');
+
+  // 1. Tecla Escape: Fecha qualquer modal ou painel aberto
+  if (e.key === 'Escape') {
+    handleGlobalBackAction();
+    return;
+  }
+
+  // 2. Atalho 'Ctrl+N' / 'Cmd+N' ou Tecla 'N' livre: Abre Nova Transação e foca no Valor
+  const isCtrlN = (e.ctrlKey || e.metaKey) && (e.key === 'n' || e.key === 'N');
+  const isFreeN = (e.key === 'n' || e.key === 'N') && !isInput && !e.ctrlKey && !e.altKey && !e.metaKey;
+
+  if (isCtrlN || isFreeN) {
+    if (!isTxModalOpen) {
+      e.preventDefault();
+      const btnOpenTx = document.getElementById('btnOpenNewTxModal');
+      if (btnOpenTx) btnOpenTx.click();
+    }
+    return;
+  }
+
+  // 3. Tecla Enter dentro do Modal de Transação: Submete se não for um textarea
+  if (e.key === 'Enter' && isTxModalOpen && targetTag !== 'textarea') {
+    const txForm = document.getElementById('txForm');
+    if (txForm) {
+      e.preventDefault();
+      const submitBtn = txForm.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.click();
+    }
+  }
+});
+
+
+// =========================================================================
+// SISTEMA DE VERSÃO E VERIFICAÇÃO DE ATUALIZAÇÕES ONLINE (OTA & DESKTOP)
+// =========================================================================
+
+function compareSemanticVersions(v1, v2) {
+  const parts1 = String(v1).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const parts2 = String(v2).replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(parts1.length, parts2.length);
+  for (let i = 0; i < len; i++) {
+    const p1 = parts1[i] || 0;
+    const p2 = parts2[i] || 0;
+    if (p1 > p2) return 1;
+    if (p1 < p2) return -1;
+  }
+  return 0;
+}
+
+let latestUpdateData = null;
+
+window.checkAppUpdates = async function(isManualClick = false) {
+  const currentVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.0.0';
+  const pillText = document.getElementById('sidebarVersionText');
+  const pillDot = document.getElementById('sidebarVersionDot');
+  const pillBadge = document.getElementById('sidebarVersionBadge');
+
+  if (pillText) pillText.textContent = `Valore v${currentVer}`;
+
+  if (isManualClick && pillBadge) {
+    pillBadge.textContent = 'Verificando...';
+  }
+
+  // Endpoints de verificação: 
+  // 1. Repositório oficial GitHub (produção)
+  // 2. Fallback relativo local /version.json
+  const endpoints = [
+    'https://raw.githubusercontent.com/allantr4/valore/main/version.json',
+    'version.json'
+  ];
+
+  let updateInfo = null;
+
+  for (const url of endpoints) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+      clearTimeout(timeoutId);
+      if (res.ok) {
+        updateInfo = await res.json();
+        break;
+      }
+    } catch (e) {
+      // Tenta próximo endpoint
+    }
+  }
+
+  if (!updateInfo || !updateInfo.version) {
+    if (pillBadge) pillBadge.textContent = 'Atualizado';
+    if (isManualClick) {
+      showToast('Não foi possível conectar ao servidor de atualizações. Verifique sua conexão à internet.', 'warning');
+    }
+    return;
+  }
+
+  latestUpdateData = updateInfo;
+  const isNewer = compareSemanticVersions(updateInfo.version, currentVer) > 0;
+
+  if (isNewer) {
+    if (pillDot) pillDot.className = 'version-dot has-update';
+    if (pillBadge) {
+      pillBadge.textContent = 'Novo!';
+      pillBadge.className = 'version-badge has-update';
+    }
+    window.openUpdateModal(updateInfo, currentVer);
+  } else {
+    if (pillDot) pillDot.className = 'version-dot';
+    if (pillBadge) {
+      pillBadge.textContent = 'Atualizado';
+      pillBadge.className = 'version-badge';
+    }
+    if (isManualClick) {
+      showToast(`Você já está usando a versão mais recente do Valore (v${currentVer})!`, 'success');
+    }
+  }
+};
+
+window.openUpdateModal = function(info, currentVer) {
+  const modal = document.getElementById('updateModal');
+  if (!modal) return;
+
+  const titleEl = document.getElementById('updateModalTitle');
+  const curVerEl = document.getElementById('updateCurrentVersion');
+  const newVerEl = document.getElementById('updateNewVersion');
+  const changelogEl = document.getElementById('updateChangelogList');
+  const actionBtnText = document.getElementById('btnActionUpdateText');
+
+  if (titleEl) titleEl.textContent = info.title || 'Nova Atualização Disponível!';
+  if (curVerEl) curVerEl.textContent = `v${currentVer}`;
+  if (newVerEl) newVerEl.textContent = `v${info.version}`;
+
+  if (changelogEl) {
+    if (Array.isArray(info.notes) && info.notes.length > 0) {
+      changelogEl.innerHTML = '<ul style="margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.35rem;">' +
+        info.notes.map(note => `<li>${note}</li>`).join('') +
+        '</ul>';
+    } else {
+      changelogEl.innerHTML = '<p style="margin: 0;">Melhorias contínuas de estabilidade, desempenho e interface.</p>';
+    }
+  }
+
+  // Define texto do botão conforme a plataforma
+  const isDesktop = (typeof window !== 'undefined' && window.electronAPI);
+  const isAndroid = (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android');
+
+  if (actionBtnText) {
+    if (isDesktop) actionBtnText.textContent = 'Baixar Novo Instalador';
+    else if (isAndroid) actionBtnText.textContent = 'Baixar APK Atualizado';
+    else actionBtnText.textContent = 'Ver Atualização no GitHub';
+  }
+
+  modal.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+};
+
+function setupUpdateModalListeners() {
+  const modal = document.getElementById('updateModal');
+  const btnClose = document.getElementById('btnCloseUpdateModal');
+  const btnDismiss = document.getElementById('btnDismissUpdate');
+  const btnAction = document.getElementById('btnActionUpdate');
+
+  const closeUpdate = () => {
+    if (modal) modal.classList.remove('open');
+  };
+
+  if (btnClose) btnClose.addEventListener('click', closeUpdate);
+  if (btnDismiss) btnDismiss.addEventListener('click', closeUpdate);
+
+  if (btnAction) {
+    btnAction.addEventListener('click', () => {
+      if (!latestUpdateData) return;
+      const isDesktop = (typeof window !== 'undefined' && window.electronAPI);
+      const isAndroid = (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android');
+
+      let targetUrl = latestUpdateData.githubReleaseUrl || 'https://github.com/allantr4/valore/releases';
+      if (isDesktop && latestUpdateData.downloadUrlDesktop) {
+        targetUrl = latestUpdateData.downloadUrlDesktop;
+      } else if (isAndroid && latestUpdateData.downloadUrlApk) {
+        targetUrl = latestUpdateData.downloadUrlApk;
+      }
+
+      try {
+        if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.openExternal) {
+          window.electronAPI.openExternal(targetUrl);
+        } else {
+          window.open(targetUrl, '_blank');
+        }
+      } catch (err) {
+        window.open(targetUrl, '_blank');
+      }
+      closeUpdate();
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  setupCalculator();
+  initPerformanceMode();
+  initMobileBackButtonListener();
+  setupUpdateModalListeners();
+  setTimeout(() => {
+    window.checkAppUpdates(false);
+  }, 3000);
+});
