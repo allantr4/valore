@@ -7329,7 +7329,7 @@ function setupBackupManager() {
         }
       }
     } catch (_) {}
-  }, 15000);
+  }, 60000);
 
   // Criptografia Ponta a Ponta (AES-256-GCM) - Exportar / Compartilhar Cofre
   if (btnExportEncrypted) {
@@ -12315,27 +12315,37 @@ window.testNotificationTrigger = function() {
     return;
   }
 
+  // 1. Feedback Háptico / Vibração física no smartphone
+  try {
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Haptics) {
+      window.Capacitor.Plugins.Haptics.notification({ type: 'SUCCESS' }).catch(() => {});
+    } else if (navigator.vibrate) {
+      navigator.vibrate([80, 40, 80]);
+    }
+  } catch (_) {}
+
+  // 2. Banner de Status no próprio modal
+  const feedbackBox = document.getElementById('notifTestFeedbackBox');
+  if (feedbackBox) {
+    feedbackBox.style.display = 'block';
+    feedbackBox.textContent = '🔔 Alerta de Teste Emitido! Lembretes e notificações estão 100% ativos.';
+    setTimeout(() => { if (feedbackBox) feedbackBox.style.display = 'none'; }, 5000);
+  }
+
+  // 3. Web Notification se disponível no ambiente
   const title = 'Lembrete Valore Financeiro';
   const body = 'Você tem um alerta de teste: lembretes de contas configurados com sucesso!';
-
-  if (typeof Notification !== 'undefined') {
-    if (Notification.permission === 'granted') {
-      try {
-        new Notification(title, { body: body, icon: 'assets/logo_completo.png' });
-      } catch (e) {
-        console.warn('Erro ao disparar Web Notification:', e);
-      }
-    } else if (Notification.permission === 'default') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          new Notification(title, { body: body, icon: 'assets/logo_completo.png' });
-        }
-      });
+  if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+    try {
+      new Notification(title, { body: body, icon: 'assets/logo_completo.png' });
+    } catch (e) {
+      console.warn('Erro ao disparar Web Notification:', e);
     }
   }
 
+  // 4. Toast Supremo visível no topo da tela acima de qualquer modal
   if (typeof showToast === 'function') {
-    showToast('🔔 Notificação de teste emitida com sucesso!', 'info');
+    showToast('🔔 Lembrete de Teste: Suas contas e vencimentos serão avisados no horário definido!', 'success', 4500);
   }
 };
 

@@ -174,6 +174,7 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
   // IDs críticos que DEVEM existir no index.html
   const criticalIds = [
     'notificationSettingsModal',
+    'notifTestFeedbackBox',
     'btnOpenNotificationSettings',
     'headerNotificationBadge',
     'btnSidebarNotifications',
@@ -223,6 +224,12 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
 
   // Verificação de compactação do cabeçalho mobile
   const cssContent = fs.readFileSync(cssPath, 'utf8');
+  if (cssContent.includes('z-index: 1000050 !important')) {
+    logPass('Toast configurado com z-index supremo (1000050) acima de todos os modais');
+  } else {
+    logFail('Toast com z-index insuficiente!');
+  }
+
   if (cssContent.includes('#viewSubtitle') && cssContent.includes('display: none !important')) {
     logPass('Subtítulo longo ocultado no mobile para economizar altura vertical');
   } else {

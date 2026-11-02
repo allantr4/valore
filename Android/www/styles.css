@@ -1657,19 +1657,49 @@ body {
   }
 
   
+  
   /* ========================================================
-     CABEÇALHO ULTRA COMPACTO NO CELULAR (Redução de 75% da altura)
+     DESEMPENHO SUPREMO NO MOBILE: ELIMINAÇÃO DE BLUR E THROTTLING
+     ======================================================== */
+  .modal-overlay,
+  .sidebar,
+  .sidebar-backdrop,
+  .mobile-bottom-nav,
+  .top-header,
+  .metric-card,
+  .card,
+  .smart-monitor-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .modal-overlay {
+    background: rgba(4, 7, 13, 0.82) !important;
+  }
+
+  .sidebar {
+    background: #0f172a !important;
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .sidebar-backdrop {
+    background: rgba(4, 7, 13, 0.75) !important;
+  }
+
+  /* ========================================================
+     CABEÇALHO MOBILE DESAFOGADO E ERGONÔMICO (SEM CORTES)
      ======================================================== */
   .top-header {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.35rem !important;
-    padding: 0.45rem 0.75rem 0.4rem !important;
+    gap: 0.45rem !important;
+    padding: 0.5rem 0.85rem 0.45rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
     flex-shrink: 0 !important;
-    background: var(--bg-surface) !important;
+    background: #0f172a !important;
     border-bottom: 1px solid var(--border-color) !important;
   }
 
@@ -1677,7 +1707,7 @@ body {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 0.45rem !important;
+    gap: 0.5rem !important;
     width: 100% !important;
     flex-wrap: nowrap !important;
   }
@@ -1685,26 +1715,54 @@ body {
   .header-title-container > div:first-child {
     display: flex !important;
     align-items: center !important;
-    gap: 0.45rem !important;
+    gap: 0.55rem !important;
     min-width: 0 !important;
     flex: 1 !important;
   }
 
-  /* Oculta subtítulo longo no mobile para não ocupar altura vertical */
-  #viewSubtitle {
-    display: none !important;
+  .header-title {
+    min-width: 0 !important;
+    flex: 1 !important;
   }
 
   .header-title h2 {
-    font-size: 1.05rem !important;
+    font-size: 1.12rem !important;
+    font-weight: 700 !important;
     margin: 0 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    line-height: 1.2 !important;
+    line-height: 1.25 !important;
+    color: var(--text-main) !important;
   }
 
-  /* Oculta botões de ação secundários do topo mobile (já acessíveis na Sidebar) */
+  #viewSubtitle {
+    display: none !important;
+  }
+
+  /* Botão Avatar Compacto no Mobile (32x32px) para não espremer o título */
+  #btnHeaderDeviceOwner {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  #headerDeviceOwnerName,
+  #btnHeaderDeviceOwner span:last-child {
+    display: none !important;
+  }
+
+  #headerDeviceOwnerIcon {
+    font-size: 0.88rem !important;
+    margin: 0 !important;
+  }
+
+  /* Chips de Contexto Contábil (Todos / Pessoal / Negócio) */
   .header-actions {
     display: none !important;
   }
@@ -1719,23 +1777,22 @@ body {
     width: 100% !important;
     display: grid !important;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 2px !important;
-    padding: 2px !important;
-    border-radius: 8px !important;
+    gap: 3px !important;
+    padding: 2.5px !important;
+    border-radius: 9px !important;
+    background: var(--bg-secondary) !important;
   }
 
   .entity-toggle-btn {
-    padding: 0.28rem 0.3rem !important;
-    font-size: 0.68rem !important;
+    padding: 0.32rem 0.35rem !important;
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
     justify-content: center !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
 
-  .entity-toggle-btn span {
-    font-size: 0.68rem !important;
-  }
 
 
   /* Containers de Views no Celular (Sem corte vertical de cards filhos) */
@@ -3898,4 +3955,34 @@ html[data-performance="low"] .sidebar {
 .switch input:focus + .slider {
   outline: 2px solid var(--primary, #3b82f6);
   outline-offset: 2px;
+}
+
+
+/* ========================================================
+   CONTAINER SUPREMO DE TOAST (Camada acima de modais)
+   ======================================================== */
+#toastNotificationContainer {
+  position: fixed !important;
+  z-index: 1000050 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.65rem !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 900px), (hover: none) and (pointer: coarse) {
+  #toastNotificationContainer {
+    top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    left: 0.85rem !important;
+    right: 0.85rem !important;
+    align-items: center !important;
+  }
+
+  .toast {
+    width: 100% !important;
+    max-width: 420px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    border-radius: 12px !important;
+  }
 }

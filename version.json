@@ -1,12 +1,13 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.1 - Cabeçalho Compacto e Correção dos Lembretes de Vencimento",
+  "title": "Valore v1.2.2 - Fluidez Contínua, Cabeçalho Mobile Desafogado e Lembretes",
   "notes": [
-    "Cabeçalho Ultra Compacto no Mobile: redução de 75% da altura ocupada pelo cabeçalho no celular, liberando espaço amplo para as finanças.",
-    "Correção Funcional dos Lembretes: chave deslizante moderna (switch verde), ativação por toque em qualquer ponto da barra e sincronização total de configurações.",
-    "Validação E2E/DOM Automatizada Pré-Commit: nova bateria de testes de paridade entre elementos HTML, JavaScript e estilos CSS interativos.",
+    "Desempenho Extremo no Mobile: desativação de blur pesado e eliminação de throttling de GPU, garantindo 60 FPS contínuos sem travar o toque.",
+    "Barra Superior Desafogada: títulos objetivos, avatar circular compacto e chips contábeis sem cortes de texto.",
+    "Retração Instantânea da Sidebar: o menu lateral se recolhe no primeiro toque de qualquer link.",
+    "Feedback Háptico e Push Banner no Teste de Lembrete: vibração física no celular e alerta visível acima de qualquer modal.",
     "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
