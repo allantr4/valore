@@ -29,9 +29,11 @@ Antes de realizar qualquer `git commit`, criação de tag ou envio de release pa
    Verificar se o ponto de entrada principal (`DOMContentLoaded` com chamada para `initApp()`), as chaves de fechamento de blocos e estruturas assíncronas (`try/catch/finally`) estão intactos e sem truncamentos.
 3. **Auditoria Obrigatória de Enquadramento, Scrollbar & Ergonomia de UI:**
    Garantir a presença de scrollbar de alta visibilidade no `.main-content`, safe bottom clearance (`padding-bottom >= 4.5rem`), suporte a janelas compactas na vertical (`@media max-height`) e ausência de scrolls bloqueados.
-4. **Fluxo de Correção Imediata:**
+4. **Validação Funcional Automatizada de Ponta a Ponta (E2E/DOM & Paridade de IDs):**
+   Garantir que todos os componentes interativos, switches, botões, modais e formulários referenciados nos scripts existam com exatidão de IDs no HTML (`index.html`) e possuam as devidas classes CSS ativas e estilizadas em `styles.css`. O teste automatizado deve simular o chaveamento e validar a árvore DOM antes de liberar o commit.
+5. **Fluxo de Correção Imediata:**
    Caso qualquer teste ou validação acuse erro ou inconformidade, você DEVE OBRIGATORIAMENTE corrigir o código imediatamente e rodar a bateria de testes novamente até que todos passem com 100% de sucesso (código de retorno 0).
-5. **Liberação Somente com Sucesso:**
+6. **Liberação Somente com Sucesso:**
    É estritamente proibido realizar commit, gerar instalador ou publicar release enquanto houver qualquer pendência ou erro não sanado.
 
 

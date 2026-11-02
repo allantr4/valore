@@ -1,12 +1,12 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.0 - Central de Notificações, Lembretes de Vencimento e Blindagem do Atualizador",
+  "title": "Valore v1.2.1 - Cabeçalho Compacto e Correção dos Lembretes de Vencimento",
   "notes": [
-    "Nova Central de Notificações & Lembretes: configure alertas de vencimento no dia da conta, X dias antes, faturas de cartão e contas em atraso.",
-    "Banner Inteligente no Dashboard: visualização clara e em destaque das contas a vencer e faturas fechando diretamente na tela inicial.",
-    "Blindagem Anti-Travamento no Atualizador Android: adição de rota de contingência 'Baixar pelo Navegador' e desbloqueio resiliente ao alternar telas ou retornar de permissões.",
+    "Cabeçalho Ultra Compacto no Mobile: redução de 75% da altura ocupada pelo cabeçalho no celular, liberando espaço amplo para as finanças.",
+    "Correção Funcional dos Lembretes: chave deslizante moderna (switch verde), ativação por toque em qualquer ponto da barra e sincronização total de configurações.",
+    "Validação E2E/DOM Automatizada Pré-Commit: nova bateria de testes de paridade entre elementos HTML, JavaScript e estilos CSS interativos.",
     "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",

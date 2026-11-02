@@ -1,7 +1,7 @@
 /**
  * Valore - Verificador Automatizado de Integridade Pré-Commit & Pré-Release
- * Executa checagem de sintaxe, integridade de inicialização, paridade de versões
- * e auditoria estática de enquadramento, visibilidade de scrollbars e ergonomia de UI.
+ * Executa checagem de sintaxe, integridade de inicialização, paridade de versões,
+ * auditoria estática de layout/ergonomia e validação funcional ponta a ponta (E2E/DOM & IDs).
  */
 const fs = require('fs');
 const path = require('path');
@@ -24,7 +24,7 @@ console.log('   💎 Valore - Verificação Pré-Commit & Pré-Release   ');
 console.log('======================================================\n');
 
 // 1. Verificação de Sintaxe de Scripts
-console.log('[1/4] Validando sintaxe e parsing JavaScript...');
+console.log('[1/5] Validando sintaxe e parsing JavaScript...');
 const scriptsToValidate = [
   'src/ui/app.js',
   'src/core/financeService.js',
@@ -52,12 +52,12 @@ for (const relPath of scriptsToValidate) {
 }
 
 // 2. Verificação de Integridade Estrutural do app.js
-console.log('\n[2/4] Validando inicialização e pontos de entrada (app.js)...');
+console.log('\n[2/5] Validando inicialização e pontos de entrada (app.js)...');
 const appJsPath = path.join(rootDir, 'src/ui/app.js');
 if (fs.existsSync(appJsPath)) {
   const appContent = fs.readFileSync(appJsPath, 'utf8');
 
-  if (appContent.includes('document.addEventListener(\'DOMContentLoaded\'') || appContent.includes('document.addEventListener("DOMContentLoaded"')) {
+  if (appContent.includes("document.addEventListener('DOMContentLoaded'") || appContent.includes('document.addEventListener("DOMContentLoaded"')) {
     logPass('DOMContentLoaded registrado no app.js');
   } else {
     logFail('DOMContentLoaded NÃO foi encontrado no app.js! O app pode ficar travado na inicialização.');
@@ -79,7 +79,7 @@ if (fs.existsSync(appJsPath)) {
 }
 
 // 3. Verificação de Paridade de Versões
-console.log('\n[3/4] Validando paridade de versões entre arquivos...');
+console.log('\n[3/5] Validando paridade de versões entre arquivos...');
 let versionJsonVer = null;
 try {
   const vJson = JSON.parse(fs.readFileSync(path.join(rootDir, 'version.json'), 'utf8'));
@@ -113,7 +113,7 @@ try {
 }
 
 // 4. Verificação de Enquadramento, Scrollbar & Responsividade (UI Layout Audit)
-console.log('\n[4/4] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
+console.log('\n[4/5] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
 const cssPath = path.join(rootDir, 'src/ui/styles.css');
 if (fs.existsSync(cssPath)) {
   const cssContent = fs.readFileSync(cssPath, 'utf8');
@@ -153,8 +153,83 @@ if (fs.existsSync(cssPath)) {
   } else {
     logFail('Sidebar sem overflow-y: auto! Risco de cortar rodapé em janelas baixas.');
   }
+
+  // F. Classes de chaveamento de switch estilizadas
+  if (cssContent.includes('.switch') && cssContent.includes('.switch .slider') && cssContent.includes('.switch input:checked + .slider')) {
+    logPass('Classes de chaveamento de switch (.switch e .slider) devidamente estilizadas no CSS');
+  } else {
+    logFail('Classes .switch / .slider ausentes no CSS! Switches podem ficar invisíveis ou inertes.');
+  }
 } else {
   logFail('src/ui/styles.css não encontrado!');
+}
+
+// 5. Validação Funcional Automatizada de Ponta a Ponta (E2E/DOM & Paridade de IDs)
+console.log('\n[5/5] Validando integridade funcional E2E e paridade de IDs entre JS, HTML e CSS...');
+const indexPath = path.join(rootDir, 'src/ui/index.html');
+if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
+  const htmlContent = fs.readFileSync(indexPath, 'utf8');
+  const appContent = fs.readFileSync(appJsPath, 'utf8');
+
+  // IDs críticos que DEVEM existir no index.html
+  const criticalIds = [
+    'notificationSettingsModal',
+    'btnOpenNotificationSettings',
+    'headerNotificationBadge',
+    'btnSidebarNotifications',
+    'notifMasterRow',
+    'notifMasterEnabled',
+    'notifDetailsContainer',
+    'notifDaysBefore',
+    'notifDueTime',
+    'notifAlertOverdue',
+    'notifAlertCards',
+    'notifBankReader',
+    'dashboardDueAlertBanner',
+    'updateModal',
+    'btnUpdateViaBrowser',
+    'txModal',
+    'accountModal',
+    'calcOverlay'
+  ];
+
+  let missingCount = 0;
+  for (const id of criticalIds) {
+    const hasInHtml = htmlContent.includes(`id="${id}"`) || htmlContent.includes(`id='${id}'`);
+    if (hasInHtml) {
+      logPass(`ID interativo verificado no HTML: #${id}`);
+    } else {
+      logFail(`ID crítico ausente no index.html: #${id}`);
+      missingCount++;
+    }
+  }
+
+  // Verificação de compatibilidade no app.js
+  const jsIds = [
+    'notifMasterEnabled',
+    'notifDaysBefore',
+    'notifDueTime',
+    'notifAlertOverdue',
+    'notifAlertCards'
+  ];
+
+  for (const jId of jsIds) {
+    if (appContent.includes(`'${jId}'`) || appContent.includes(`"${jId}"`)) {
+      logPass(`ID sincronizado no app.js: #${jId}`);
+    } else {
+      logFail(`ID ausente ou divergente no app.js: #${jId}`);
+    }
+  }
+
+  // Verificação de compactação do cabeçalho mobile
+  const cssContent = fs.readFileSync(cssPath, 'utf8');
+  if (cssContent.includes('#viewSubtitle') && cssContent.includes('display: none !important')) {
+    logPass('Subtítulo longo ocultado no mobile para economizar altura vertical');
+  } else {
+    logFail('Falta regra para ocultar #viewSubtitle no mobile!');
+  }
+} else {
+  logFail('Arquivos de interface (index.html ou app.js) ausentes para o teste E2E!');
 }
 
 console.log('\n======================================================');

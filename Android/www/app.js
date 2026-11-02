@@ -12132,6 +12132,7 @@ window.checkAppUpdates = async function(isManualClick = false) {
 };
 
 
+// ========================================
 // ==========================================
 // CENTRAL DE NOTIFICAÇÕES & LEMBRETES DE VENCIMENTO
 // ==========================================
@@ -12227,27 +12228,37 @@ window.updateHeaderNotificationBadge = function() {
   }
 };
 
+window.syncNotificationDetailsVisibility = function(enabled) {
+  const container = document.getElementById('notifDetailsContainer');
+  if (container) {
+    container.style.opacity = enabled ? '1' : '0.35';
+    container.style.pointerEvents = enabled ? 'auto' : 'none';
+    container.style.transition = 'opacity 0.2s ease';
+  }
+};
+
 window.openNotificationSettingsModal = function() {
   const modal = document.getElementById('notificationSettingsModal');
   if (!modal) return;
 
   const settings = (typeof finance !== 'undefined' && finance.getNotificationSettings) ? finance.getNotificationSettings() : {};
 
-  const masterEl = document.getElementById('notifyMasterSwitch');
-  const dueDayEl = document.getElementById('notifyOnDueDay');
-  const dueTimeEl = document.getElementById('notifyDueDayTime');
-  const daysBeforeEl = document.getElementById('notifyDaysBeforeSelect');
-  const overdueEl = document.getElementById('notifyOverdue');
-  const cardClosingEl = document.getElementById('notifyCreditCardClosing');
-  const bankReaderEl = document.getElementById('notifyBankReader');
+  const masterEl = document.getElementById('notifMasterEnabled');
+  const daysBeforeEl = document.getElementById('notifDaysBefore');
+  const dueTimeEl = document.getElementById('notifDueTime');
+  const overdueEl = document.getElementById('notifAlertOverdue');
+  const cardClosingEl = document.getElementById('notifAlertCards');
+  const bankReaderEl = document.getElementById('notifBankReader');
 
-  if (masterEl) masterEl.checked = settings.enabled !== false;
-  if (dueDayEl) dueDayEl.checked = settings.notifyOnDueDay !== false;
-  if (dueTimeEl) dueTimeEl.value = settings.dueDayTime || '09:00';
+  const isEnabled = settings.enabled !== false;
+  if (masterEl) masterEl.checked = isEnabled;
   if (daysBeforeEl) daysBeforeEl.value = String(settings.notifyDaysBefore !== undefined ? settings.notifyDaysBefore : 2);
+  if (dueTimeEl) dueTimeEl.value = settings.dueDayTime || '09:00';
   if (overdueEl) overdueEl.checked = settings.notifyOverdue !== false;
   if (cardClosingEl) cardClosingEl.checked = settings.notifyCreditCardClosing !== false;
   if (bankReaderEl) bankReaderEl.checked = !!settings.bankNotificationReader;
+
+  window.syncNotificationDetailsVisibility(isEnabled);
 
   modal.classList.add('open');
   if (window.lucide) lucide.createIcons();
@@ -12259,17 +12270,18 @@ window.closeNotificationSettingsModal = function() {
 };
 
 window.saveNotificationSettingsFromModal = function() {
-  const masterEl = document.getElementById('notifyMasterSwitch');
-  const dueDayEl = document.getElementById('notifyOnDueDay');
-  const dueTimeEl = document.getElementById('notifyDueDayTime');
-  const daysBeforeEl = document.getElementById('notifyDaysBeforeSelect');
-  const overdueEl = document.getElementById('notifyOverdue');
-  const cardClosingEl = document.getElementById('notifyCreditCardClosing');
-  const bankReaderEl = document.getElementById('notifyBankReader');
+  const masterEl = document.getElementById('notifMasterEnabled');
+  const daysBeforeEl = document.getElementById('notifDaysBefore');
+  const dueTimeEl = document.getElementById('notifDueTime');
+  const overdueEl = document.getElementById('notifAlertOverdue');
+  const cardClosingEl = document.getElementById('notifAlertCards');
+  const bankReaderEl = document.getElementById('notifBankReader');
+
+  const isEnabled = masterEl ? masterEl.checked : true;
 
   const newSettings = {
-    enabled: masterEl ? masterEl.checked : true,
-    notifyOnDueDay: dueDayEl ? dueDayEl.checked : true,
+    enabled: isEnabled,
+    notifyOnDueDay: true,
     dueDayTime: dueTimeEl ? dueTimeEl.value : '09:00',
     notifyDaysBefore: daysBeforeEl ? parseInt(daysBeforeEl.value, 10) : 2,
     notifyOverdue: overdueEl ? overdueEl.checked : true,
@@ -12286,7 +12298,7 @@ window.saveNotificationSettingsFromModal = function() {
   }
 
   if (typeof showToast === 'function') {
-    showToast('Configurações de notificações e lembretes salvas com sucesso!', 'success');
+    showToast('Configurações de lembretes e notificações salvas!', 'success');
   }
 
   window.closeNotificationSettingsModal();
@@ -12295,16 +12307,21 @@ window.saveNotificationSettingsFromModal = function() {
 };
 
 window.testNotificationTrigger = function() {
+  const masterEl = document.getElementById('notifMasterEnabled');
+  if (masterEl && !masterEl.checked) {
+    if (typeof showToast === 'function') {
+      showToast('Ative os lembretes acima antes de realizar o teste!', 'warning');
+    }
+    return;
+  }
+
   const title = 'Lembrete Valore Financeiro';
-  const body = 'Você tem um alerta de teste: lembrete de vencimento configurado com sucesso!';
+  const body = 'Você tem um alerta de teste: lembretes de contas configurados com sucesso!';
 
   if (typeof Notification !== 'undefined') {
     if (Notification.permission === 'granted') {
       try {
-        new Notification(title, {
-          body: body,
-          icon: 'assets/logo_completo.png'
-        });
+        new Notification(title, { body: body, icon: 'assets/logo_completo.png' });
       } catch (e) {
         console.warn('Erro ao disparar Web Notification:', e);
       }
@@ -12326,6 +12343,7 @@ function setupNotificationListeners() {
   const btnHeader = document.getElementById('btnOpenNotificationSettings');
   const btnSidebar = document.getElementById('btnSidebarNotifications');
   const btnClose = document.getElementById('btnCloseNotificationSettingsModal');
+  const btnCloseAlt = document.getElementById('btnCloseNotificationModal');
   const btnCancel = document.getElementById('btnCancelNotificationSettings');
   const btnSave = document.getElementById('btnSaveNotificationSettings');
   const btnTest = document.getElementById('btnTestNotification');
@@ -12334,9 +12352,21 @@ function setupNotificationListeners() {
   if (btnHeader) btnHeader.addEventListener('click', window.openNotificationSettingsModal);
   if (btnSidebar) btnSidebar.addEventListener('click', window.openNotificationSettingsModal);
   if (btnClose) btnClose.addEventListener('click', window.closeNotificationSettingsModal);
+  if (btnCloseAlt) btnCloseAlt.addEventListener('click', window.closeNotificationSettingsModal);
   if (btnCancel) btnCancel.addEventListener('click', window.closeNotificationSettingsModal);
   if (btnSave) btnSave.addEventListener('click', window.saveNotificationSettingsFromModal);
   if (btnTest) btnTest.addEventListener('click', window.testNotificationTrigger);
+
+  // Linha master com clique direto e toggle do switch
+  const masterRow = document.getElementById('notifMasterRow');
+  const masterInput = document.getElementById('notifMasterEnabled');
+  if (masterRow && masterInput) {
+    masterRow.addEventListener('click', (e) => {
+      // Alterna o checkbox
+      masterInput.checked = !masterInput.checked;
+      window.syncNotificationDetailsVisibility(masterInput.checked);
+    });
+  }
 
   if (btnViewBills) {
     btnViewBills.addEventListener('click', () => {

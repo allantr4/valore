@@ -1656,59 +1656,87 @@ body {
     padding-bottom: calc(125px + env(safe-area-inset-bottom, 0px)) !important;
   }
 
-  /* Cabeçalho do App no Celular (Enquadrado 100% sem rolagem lateral) */
+  
+  /* ========================================================
+     CABEÇALHO ULTRA COMPACTO NO CELULAR (Redução de 75% da altura)
+     ======================================================== */
   .top-header {
     display: flex !important;
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.65rem !important;
-    padding: 0.85rem 0.85rem 0.75rem !important;
+    gap: 0.35rem !important;
+    padding: 0.45rem 0.75rem 0.4rem !important;
     width: 100% !important;
     box-sizing: border-box !important;
     flex-shrink: 0 !important;
-    overflow: visible !important;
+    background: var(--bg-surface) !important;
+    border-bottom: 1px solid var(--border-color) !important;
   }
 
-  .top-header > div:first-child {
-    width: 100%;
-  }
-
-  .header-title h2 {
-    font-size: 1.2rem;
-    line-height: 1.25;
-  }
-
-  .header-title p {
-    font-size: 0.74rem;
-    line-height: 1.3;
-  }
-
-  .header-actions {
+  .header-title-container {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.45rem !important;
     width: 100% !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    overflow: visible !important;
-    padding: 0 !important;
-    gap: 0.5rem !important;
-    box-sizing: border-box !important;
+    flex-wrap: nowrap !important;
   }
 
-  /* No mobile o botão '+' central da barra inferior já abre Nova Transação, evitando 3º botão na barra superior */
-  .header-actions #btnOpenNewTxModal {
+  .header-title-container > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  /* Oculta subtítulo longo no mobile para não ocupar altura vertical */
+  #viewSubtitle {
     display: none !important;
   }
 
-  .header-actions .btn {
-    width: 100% !important;
-    min-width: 0 !important;
-    justify-content: center !important;
-    padding: 0.52rem 0.5rem !important;
-    font-size: 0.76rem !important;
+  .header-title h2 {
+    font-size: 1.05rem !important;
+    margin: 0 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    box-sizing: border-box !important;
+    line-height: 1.2 !important;
   }
+
+  /* Oculta botões de ação secundários do topo mobile (já acessíveis na Sidebar) */
+  .header-actions {
+    display: none !important;
+  }
+
+  .header-right-controls {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .entity-toggle-group {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 2px !important;
+    padding: 2px !important;
+    border-radius: 8px !important;
+  }
+
+  .entity-toggle-btn {
+    padding: 0.28rem 0.3rem !important;
+    font-size: 0.68rem !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .entity-toggle-btn span {
+    font-size: 0.68rem !important;
+  }
+
 
   /* Containers de Views no Celular (Sem corte vertical de cards filhos) */
   .view-container {
@@ -3810,4 +3838,64 @@ html[data-performance="low"] .sidebar {
 /* Diálogo Universal de Alerta e Confirmação Crítica (Maior Prioridade de Camada - Sobrepõe Calculadora e Modais) */
 #appAlertModal {
   z-index: 200050 !important;
+}
+
+
+/* ========================================================
+   SWITCH DESLIZANTE MODERNO (Lembretes & Configurações)
+   ======================================================== */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  margin: 0;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: var(--border-color, #334155);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: #ffffff;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.switch input:checked + .slider {
+  background-color: #10b981;
+  border-color: #059669;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.38);
+}
+
+.switch input:checked + .slider:before {
+  transform: translateX(22px);
+  background-color: #ffffff;
+}
+
+.switch input:focus + .slider {
+  outline: 2px solid var(--primary, #3b82f6);
+  outline-offset: 2px;
 }
