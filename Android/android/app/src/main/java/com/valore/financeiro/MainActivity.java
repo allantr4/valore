@@ -19,6 +19,9 @@ public class MainActivity extends BridgeActivity {
                 settings.setDomStorageEnabled(true);
                 settings.setDatabaseEnabled(true);
                 settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+
+                // Registra o atualizador embutido nativo do Android
+                webView.addJavascriptInterface(new ApkUpdater(this, webView), "AndroidAppUpdater");
             }
         } catch (Exception ignored) {}
     }

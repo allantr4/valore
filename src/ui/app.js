@@ -12183,9 +12183,11 @@ window.openUpdateModal = function(info, currentVer) {
   const isAndroid = (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.getPlatform && window.Capacitor.getPlatform() === 'android');
 
   if (actionBtnText) {
-    if (isDesktop) actionBtnText.textContent = 'Atualizar Agora (1-Clique)';
-    else if (isAndroid) actionBtnText.textContent = 'Baixar APK Atualizado';
-    else actionBtnText.textContent = 'Ver Atualização no GitHub';
+    if (isDesktop || (typeof window !== 'undefined' && window.AndroidAppUpdater) || isAndroid) {
+      actionBtnText.textContent = 'Atualizar Agora (1-Clique)';
+    } else {
+      actionBtnText.textContent = 'Ver Atualização no GitHub';
+    }
   }
 
   modal.classList.add('open');
@@ -12204,6 +12206,53 @@ function setupUpdateModalListeners() {
 
   if (btnClose) btnClose.addEventListener('click', closeUpdate);
   if (btnDismiss) btnDismiss.addEventListener('click', closeUpdate);
+
+  // Registra ouvintes para download e progresso no Mobile Android
+  window.onAndroidUpdateProgress = function(percent, transferredMb, totalMb) {
+    const progressContainer = document.getElementById('updateProgressContainer');
+    const progressBar = document.getElementById('updateProgressBar');
+    const progressPercent = document.getElementById('updateProgressPercent');
+    const progressDetail = document.getElementById('updateProgressDetail');
+    const progressStatus = document.getElementById('updateProgressStatus');
+    const actionBtnText = document.getElementById('btnActionUpdateText');
+
+    if (progressContainer) progressContainer.style.display = 'block';
+    if (progressBar) progressBar.style.width = `${percent}%`;
+    if (progressPercent) progressPercent.textContent = `${percent}%`;
+    if (progressDetail) {
+      progressDetail.textContent = totalMb > 0
+        ? `${transferredMb} MB de ${totalMb} MB baixados`
+        : `${transferredMb} MB baixados`;
+    }
+
+    if (percent >= 100) {
+      if (progressStatus) {
+        progressStatus.textContent = 'Download concluído! Abrindo instalador...';
+        progressStatus.style.color = '#10b981';
+      }
+      if (actionBtnText) actionBtnText.textContent = 'Instalando...';
+    }
+  };
+
+  window.onAndroidUpdateError = function(errMsg) {
+    const progressStatus = document.getElementById('updateProgressStatus');
+    const progressDetail = document.getElementById('updateProgressDetail');
+    const actionBtnText = document.getElementById('btnActionUpdateText');
+    if (progressStatus) {
+      progressStatus.textContent = 'Falha no download da atualização.';
+      progressStatus.style.color = '#ef4444';
+    }
+    if (progressDetail) progressDetail.textContent = errMsg || 'Erro de conexão ou arquivo inacessível.';
+    if (actionBtnText) actionBtnText.textContent = 'Baixar no Navegador';
+
+    const btnAction = document.getElementById('btnActionUpdate');
+    const btnDismiss = document.getElementById('btnDismissUpdate');
+    const btnClose = document.getElementById('btnCloseUpdateModal');
+    if (btnAction) btnAction.disabled = false;
+    if (btnDismiss) btnDismiss.disabled = false;
+    if (btnClose) btnClose.disabled = false;
+    if (typeof showToast === 'function') showToast('Não foi possível concluir o download automático. Você pode baixar pelo navegador.', 'warning');
+  };
 
   // Registra ouvintes IPC para download e progresso em tempo real no Desktop
   if (typeof window !== 'undefined' && window.electronAPI) {
@@ -12309,6 +12358,45 @@ function setupUpdateModalListeners() {
         }).catch((err) => {
           console.error('Erro ao acionar atualizador:', err);
         });
+        return;
+      }
+
+      // Se for Mobile Android com suporte a atualizador embutido
+      if (typeof window !== 'undefined' && window.AndroidAppUpdater && latestUpdateData.downloadUrlApk) {
+        const actionBtnText = document.getElementById('btnActionUpdateText');
+        if (actionBtnText && actionBtnText.textContent.includes('Navegador')) {
+          window.open(targetUrl, '_blank');
+          closeUpdate();
+          return;
+        }
+
+        const progressContainer = document.getElementById('updateProgressContainer');
+        const progressStatus = document.getElementById('updateProgressStatus');
+        const progressDetail = document.getElementById('updateProgressDetail');
+        const progressBar = document.getElementById('updateProgressBar');
+        const progressPercent = document.getElementById('updateProgressPercent');
+
+        if (progressContainer) progressContainer.style.display = 'block';
+        if (progressBar) progressBar.style.width = '0%';
+        if (progressPercent) progressPercent.textContent = '0%';
+        if (progressStatus) {
+          progressStatus.textContent = 'Baixando atualização...';
+          progressStatus.style.color = 'var(--primary)';
+        }
+        if (progressDetail) progressDetail.textContent = 'Conectando ao servidor do Valore...';
+
+        btnAction.disabled = true;
+        if (btnDismiss) btnDismiss.disabled = true;
+        if (btnClose) btnClose.disabled = true;
+        if (actionBtnText) actionBtnText.textContent = 'Baixando APK...';
+
+        try {
+          window.AndroidAppUpdater.downloadAndInstall(latestUpdateData.downloadUrlApk);
+        } catch (err) {
+          console.error('Falha ao acionar AndroidAppUpdater:', err);
+          window.open(targetUrl, '_blank');
+          closeUpdate();
+        }
         return;
       }
 

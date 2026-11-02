@@ -1,12 +1,13 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.1.1 - Correção Visual de Categorias no Raio-X de Despesas",
+  "title": "Valore v1.1.2 - Atualizador Embutido In-App no Android (One-Click APK)",
   "notes": [
-    "Correção de duplicação: categorias no Raio-X de Despesas agora exibem avatar de ícone compacto estilizado (34x34px) sem duplicar o nome.",
-    "Padronização visual e de hierarquia entre ícones de categoria, contas e cofrinho.",
-    "Paridade e sincronização contínua com Desktop Windows, Mobile Android e iOS."
+    "Atualizador Embutido no Android: download nativo do APK com barra de progresso em tempo real e abertura direta do instalador do sistema.",
+    "Eliminação da necessidade de abrir o navegador externo para atualizar no smartphone.",
+    "Permissão REQUEST_INSTALL_PACKAGES e FileProvider configurados para instalação fluida de pacotes.",
+    "Paridade e sincronização total entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
