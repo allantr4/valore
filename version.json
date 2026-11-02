@@ -1,14 +1,14 @@
 {
-  "version": "1.0.5",
+  "version": "1.0.6",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.0.5 - Modo Individual (Solteiro), Identidade Universal & Ícone HD Mobile",
+  "title": "Valore v1.0.6 - Personalização Direta de Avatares e Cores no Sync Hub",
   "notes": [
-    "Chave Mestre de Modo de Gestão: Modo Individual (Solteiro) 100% limpo e sem distrações ou Modo Casal.",
-    "Identidade Universal e Inclusiva para Casais: Presets rápidos em 1 toque (Ele & Ela, Ele & Ele, Ela & Ela e Personalizado).",
-    "Galeria de Avatares e Cores de destaque personalizáveis para cada parceiro.",
-    "Identificação direta e sem atrito de aparelhos ('Quem utiliza este aparelho no dia a dia?').",
-    "Novo Ícone Oficial em Alta Definição (HD) para Mobile Android em todas as resoluções mipmap e web assets."
+    "Personalização de Avatar e Cores diretamente no card 'Quem utiliza este aparelho no dia a dia?' do Sync Hub.",
+    "Seletores visuais instantâneos para Parceiro 1 e Parceiro 2 com atualização em tempo real.",
+    "Botão 'Salvar Perfil & Cores' sincronizado automaticamente com todo o ecossistema e relatórios.",
+    "Atalho direto para Presets Rápidos e alternância entre Modo Individual e Casal.",
+    "Paridade e sincronização total entre Desktop (Windows) e Mobile (Android & iOS)."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
   "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",

@@ -1,6 +1,6 @@
 {
   "name": "gestor-financeiro",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Gestor Financeiro Pessoal e Empresarial - Desktop Windows & Multiplataforma",
   "main": "src/main/main.js",
   "scripts": {

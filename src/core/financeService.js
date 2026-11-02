@@ -165,8 +165,24 @@ class FinanceService {
       this.state.couple.partner1.name = options.p1Name.trim();
       stateChanged = true;
     }
+    if (typeof options.p1Avatar === 'string' && options.p1Avatar.trim()) {
+      this.state.couple.partner1.avatar = options.p1Avatar.trim();
+      stateChanged = true;
+    }
+    if (typeof options.p1Color === 'string' && options.p1Color.trim()) {
+      this.state.couple.partner1.color = options.p1Color.trim();
+      stateChanged = true;
+    }
     if (typeof options.p2Name === 'string' && options.p2Name.trim()) {
       this.state.couple.partner2.name = options.p2Name.trim();
+      stateChanged = true;
+    }
+    if (typeof options.p2Avatar === 'string' && options.p2Avatar.trim()) {
+      this.state.couple.partner2.avatar = options.p2Avatar.trim();
+      stateChanged = true;
+    }
+    if (typeof options.p2Color === 'string' && options.p2Color.trim()) {
+      this.state.couple.partner2.color = options.p2Color.trim();
       stateChanged = true;
     }
 
@@ -186,7 +202,8 @@ class FinanceService {
     return {
       role,
       name: role === 'p2' ? identity.p2Name : identity.p1Name,
-      color: role === 'p2' ? '#ec4899' : '#3b82f6',
+      color: role === 'p2' ? identity.p2Color : identity.p1Color,
+      avatar: role === 'p2' ? identity.p2Avatar : identity.p1Avatar,
       deviceType,
       deviceIcon: deviceType === 'mobile' ? '📱' : '💻',
       deviceLabel: deviceType === 'mobile' ? 'Celular' : 'PC'
@@ -230,7 +247,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.0.5';
+    return '1.0.6';
   }
 
   getAppBuildDate() {

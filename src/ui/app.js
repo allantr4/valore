@@ -6152,9 +6152,88 @@ function refreshAllViewsAfterSync() {
 // =========================================================================
 // --- IDENTIDADE DO APARELHO & AUTOR DOS LANÇAMENTOS (4 DISPOSITIVOS) ---
 // =========================================================================
+function renderDeviceIdentityPickers(p1Selected = 'user', p2Selected = 'heart', p1Color = '#3b82f6', p2Color = '#ec4899') {
+  const c1Av = document.getElementById('deviceAvatarPickerP1');
+  const c2Av = document.getElementById('deviceAvatarPickerP2');
+  const c1Col = document.getElementById('deviceColorPickerP1');
+  const c2Col = document.getElementById('deviceColorPickerP2');
+
+  if (c1Av) {
+    c1Av.innerHTML = AVAILABLE_COUPLE_AVATARS.map(av => {
+      const isSel = av.id === p1Selected;
+      return `<button type="button" class="avatar-opt-btn" onclick="window.selectDeviceAvatar('p1', '${av.id}')" style="width: 25px; height: 25px; border-radius: 6px; border: ${isSel ? `2px solid ${p1Color}` : '1px solid var(--border-color)'}; background: ${isSel ? `${p1Color}25` : 'var(--bg-surface)'}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;" title="${av.label}"><i data-lucide="${av.icon}" style="width: 13px; height: 13px; color: ${isSel ? p1Color : 'var(--text-muted)'};"></i></button>`;
+    }).join('');
+  }
+  if (c2Av) {
+    c2Av.innerHTML = AVAILABLE_COUPLE_AVATARS.map(av => {
+      const isSel = av.id === p2Selected;
+      return `<button type="button" class="avatar-opt-btn" onclick="window.selectDeviceAvatar('p2', '${av.id}')" style="width: 25px; height: 25px; border-radius: 6px; border: ${isSel ? `2px solid ${p2Color}` : '1px solid var(--border-color)'}; background: ${isSel ? `${p2Color}25` : 'var(--bg-surface)'}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;" title="${av.label}"><i data-lucide="${av.icon}" style="width: 13px; height: 13px; color: ${isSel ? p2Color : 'var(--text-muted)'};"></i></button>`;
+    }).join('');
+  }
+
+  if (c1Col) {
+    c1Col.innerHTML = AVAILABLE_COUPLE_COLORS.map(col => {
+      const isSel = col.toLowerCase() === p1Color.toLowerCase();
+      return `<button type="button" onclick="window.selectDeviceColor('p1', '${col}')" style="width: 19px; height: 19px; border-radius: 50%; background: ${col}; border: ${isSel ? '2px solid #fff' : '2px solid transparent'}; outline: ${isSel ? `2px solid ${col}` : 'none'}; cursor: pointer; padding: 0; transition: transform 0.15s ease; ${isSel ? 'transform: scale(1.18);' : ''}"></button>`;
+    }).join('');
+  }
+  if (c2Col) {
+    c2Col.innerHTML = AVAILABLE_COUPLE_COLORS.map(col => {
+      const isSel = col.toLowerCase() === p2Color.toLowerCase();
+      return `<button type="button" onclick="window.selectDeviceColor('p2', '${col}')" style="width: 19px; height: 19px; border-radius: 50%; background: ${col}; border: ${isSel ? '2px solid #fff' : '2px solid transparent'}; outline: ${isSel ? `2px solid ${col}` : 'none'}; cursor: pointer; padding: 0; transition: transform 0.15s ease; ${isSel ? 'transform: scale(1.18);' : ''}"></button>`;
+    }).join('');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+window.selectDeviceAvatar = function(partner, avatarId) {
+  const hiddenInput = document.getElementById(partner === 'p1' ? 'inputIdentityP1Avatar' : 'inputIdentityP2Avatar');
+  if (hiddenInput) hiddenInput.value = avatarId;
+  const p1Av = document.getElementById('inputIdentityP1Avatar')?.value || 'user';
+  const p2Av = document.getElementById('inputIdentityP2Avatar')?.value || 'heart';
+  const p1Col = document.getElementById('inputIdentityP1Color')?.value || '#3b82f6';
+  const p2Col = document.getElementById('inputIdentityP2Color')?.value || '#ec4899';
+
+  renderDeviceIdentityPickers(p1Av, p2Av, p1Col, p2Col);
+
+  const prevIcon = document.getElementById(partner === 'p1' ? 'devicePreviewIconP1' : 'devicePreviewIconP2');
+  if (prevIcon) prevIcon.textContent = getAvatarEmoji(avatarId);
+
+  const btnIcon = document.getElementById(partner === 'p1' ? 'iconDeviceOwnerP1' : 'iconDeviceOwnerP2');
+  if (btnIcon) btnIcon.textContent = getAvatarEmoji(avatarId);
+};
+
+window.selectDeviceColor = function(partner, colorHex) {
+  const hiddenInput = document.getElementById(partner === 'p1' ? 'inputIdentityP1Color' : 'inputIdentityP2Color');
+  if (hiddenInput) hiddenInput.value = colorHex;
+  const p1Av = document.getElementById('inputIdentityP1Avatar')?.value || 'user';
+  const p2Av = document.getElementById('inputIdentityP2Avatar')?.value || 'heart';
+  const p1Col = document.getElementById('inputIdentityP1Color')?.value || '#3b82f6';
+  const p2Col = document.getElementById('inputIdentityP2Color')?.value || '#ec4899';
+
+  renderDeviceIdentityPickers(p1Av, p2Av, p1Col, p2Col);
+
+  const box = document.getElementById(partner === 'p1' ? 'deviceCardBoxP1' : 'deviceCardBoxP2');
+  const lbl = document.getElementById(partner === 'p1' ? 'lblInputIdentityP1' : 'lblInputIdentityP2');
+  if (box) {
+    box.style.borderColor = `${colorHex}45`;
+    box.style.background = `${colorHex}08`;
+  }
+  if (lbl) lbl.style.color = colorHex;
+
+  const btn = document.getElementById(partner === 'p1' ? 'btnDeviceOwnerP1' : 'btnDeviceOwnerP2');
+  if (btn && btn.classList.contains('active')) {
+    btn.style.border = `2px solid ${colorHex}`;
+    btn.style.background = `${colorHex}22`;
+    btn.style.color = colorHex;
+  }
+};
+
 window.syncDeviceIdentityUI = function() {
   const info = finance.getDeviceIdentity();
   const couple = (typeof finance !== 'undefined' && finance.getCoupleSettings) ? finance.getCoupleSettings() : null;
+  const isCouple = (couple && couple.enabled !== false);
   const p1Avatar = (couple && couple.partner1 && couple.partner1.avatar) ? couple.partner1.avatar : 'user';
   const p2Avatar = (couple && couple.partner2 && couple.partner2.avatar) ? couple.partner2.avatar : 'heart';
   const p1Color = (couple && couple.partner1 && couple.partner1.color) ? couple.partner1.color : '#3b82f6';
@@ -6176,18 +6255,33 @@ window.syncDeviceIdentityUI = function() {
   // 2. Atualiza card de identidade dentro do Valore Sync Hub
   const btnP1 = document.getElementById('btnDeviceOwnerP1');
   const btnP2 = document.getElementById('btnDeviceOwnerP2');
+  const boxP2 = document.getElementById('deviceCardBoxP2');
   const lblP1 = document.getElementById('lblDeviceOwnerP1Name');
   const lblP2 = document.getElementById('lblDeviceOwnerP2Name');
   const iconP1 = document.getElementById('iconDeviceOwnerP1');
   const iconP2 = document.getElementById('iconDeviceOwnerP2');
   const inP1 = document.getElementById('inputIdentityP1Name');
   const inP2 = document.getElementById('inputIdentityP2Name');
+  const inP1Av = document.getElementById('inputIdentityP1Avatar');
+  const inP2Av = document.getElementById('inputIdentityP2Avatar');
+  const inP1Col = document.getElementById('inputIdentityP1Color');
+  const inP2Col = document.getElementById('inputIdentityP2Color');
+  const prevIcon1 = document.getElementById('devicePreviewIconP1');
+  const prevIcon2 = document.getElementById('devicePreviewIconP2');
   const badgeDev = document.getElementById('deviceIdentityCurrentBadge');
 
   if (lblP1) lblP1.textContent = info.p1Name;
   if (lblP2) lblP2.textContent = info.p2Name;
   if (iconP1) iconP1.textContent = getAvatarEmoji(p1Avatar);
   if (iconP2) iconP2.textContent = getAvatarEmoji(p2Avatar);
+  if (prevIcon1) prevIcon1.textContent = getAvatarEmoji(p1Avatar);
+  if (prevIcon2) prevIcon2.textContent = getAvatarEmoji(p2Avatar);
+
+  if (inP1Av) inP1Av.value = p1Avatar;
+  if (inP2Av) inP2Av.value = p2Avatar;
+  if (inP1Col) inP1Col.value = p1Color;
+  if (inP2Col) inP2Col.value = p2Color;
+
   if (badgeDev) {
     badgeDev.textContent = `${info.deviceIcon} Este aparelho: ${info.ownerName}`;
     badgeDev.style.background = `${info.ownerColor}22`;
@@ -6195,6 +6289,10 @@ window.syncDeviceIdentityUI = function() {
   }
   if (inP1 && document.activeElement !== inP1) inP1.value = info.p1Name;
   if (inP2 && document.activeElement !== inP2) inP2.value = info.p2Name;
+
+  // Adapta visibilidade se for Modo Individual ou Casal
+  if (btnP2) btnP2.style.display = isCouple ? 'inline-flex' : 'none';
+  if (boxP2) boxP2.style.display = isCouple ? 'block' : 'none';
 
   if (btnP1 && btnP2) {
     const isP2 = info.ownerRole === 'p2';
@@ -6206,6 +6304,9 @@ window.syncDeviceIdentityUI = function() {
     btnP2.style.background = isP2 ? `${p2Color}22` : 'var(--bg-surface)';
     btnP2.style.color = isP2 ? p2Color : 'var(--text-secondary)';
   }
+
+  // Renderiza seletores visuais de avatar e cores no card
+  renderDeviceIdentityPickers(p1Avatar, p2Avatar, p1Color, p2Color);
 
   // 3. Atualiza botões de Autor no modal de Nova Transação (#txModal)
   const btnTxAuthorP1 = document.getElementById('btnTxAuthorP1');
@@ -6245,10 +6346,19 @@ window.handleSelectDeviceOwner = async function(role) {
   const cleanRole = role === 'p2' ? 'p2' : 'p1';
   const inP1 = document.getElementById('inputIdentityP1Name');
   const inP2 = document.getElementById('inputIdentityP2Name');
+  const inP1Av = document.getElementById('inputIdentityP1Avatar');
+  const inP2Av = document.getElementById('inputIdentityP2Avatar');
+  const inP1Col = document.getElementById('inputIdentityP1Color');
+  const inP2Col = document.getElementById('inputIdentityP2Color');
+
   const info = await finance.setDeviceIdentity({
     ownerRole: cleanRole,
     p1Name: inP1 && inP1.value.trim() ? inP1.value.trim() : undefined,
-    p2Name: inP2 && inP2.value.trim() ? inP2.value.trim() : undefined
+    p2Name: inP2 && inP2.value.trim() ? inP2.value.trim() : undefined,
+    p1Avatar: inP1Av ? inP1Av.value : undefined,
+    p2Avatar: inP2Av ? inP2Av.value : undefined,
+    p1Color: inP1Col ? inP1Col.value : undefined,
+    p2Color: inP2Col ? inP2Col.value : undefined
   });
   window.syncDeviceIdentityUI();
   if (currentTab === 'transactions') renderTransactionsView();
@@ -6257,24 +6367,51 @@ window.handleSelectDeviceOwner = async function(role) {
   showToast(`Aparelho identificado como: ${info.deviceIcon} ${info.ownerName}!`, 'success');
 };
 
-window.handleSaveIdentityNames = async function() {
+window.handleSaveIdentityProfile = async function() {
   const inP1 = document.getElementById('inputIdentityP1Name');
   const inP2 = document.getElementById('inputIdentityP2Name');
+  const inP1Av = document.getElementById('inputIdentityP1Avatar');
+  const inP2Av = document.getElementById('inputIdentityP2Avatar');
+  const inP1Col = document.getElementById('inputIdentityP1Color');
+  const inP2Col = document.getElementById('inputIdentityP2Color');
+
   const p1Name = inP1 && inP1.value.trim() ? inP1.value.trim() : 'Você';
   const p2Name = inP2 && inP2.value.trim() ? inP2.value.trim() : 'Esposa';
+  const p1Avatar = inP1Av ? inP1Av.value : 'user';
+  const p2Avatar = inP2Av ? inP2Av.value : 'heart';
+  const p1Color = inP1Col ? inP1Col.value : '#3b82f6';
+  const p2Color = inP2Col ? inP2Col.value : '#ec4899';
+
   const cur = finance.getDeviceIdentity();
   await finance.setDeviceIdentity({
     ownerRole: cur.ownerRole,
     p1Name,
-    p2Name
+    p2Name,
+    p1Avatar,
+    p1Color,
+    p2Avatar,
+    p2Color
   });
+
+  await finance.updateCoupleSettings({
+    partner1: { name: p1Name, avatar: p1Avatar, color: p1Color },
+    partner2: { name: p2Name, avatar: p2Avatar, color: p2Color }
+  });
+
   window.syncDeviceIdentityUI();
+  if (typeof renderAvatarPickers === 'function') {
+    renderAvatarPickers(p1Avatar, p2Avatar, p1Color, p2Color);
+    renderColorPickers(p1Color, p2Color);
+  }
+
   if (currentTab === 'transactions') renderTransactionsView();
   if (currentTab === 'schedules') renderSchedulesView();
   if (currentTab === 'accounts') renderAccountsView();
   if (currentTab === 'couple') renderCoupleView();
-  showToast(`Nomes salvos: ${p1Name} & ${p2Name}!`, 'success');
+  showToast(`Perfil e cores atualizados: ${p1Name} & ${p2Name}!`, 'success');
 };
+
+window.handleSaveIdentityNames = window.handleSaveIdentityProfile;
 
 window.openDeviceIdentityConfig = function() {
   const btnExport = document.getElementById('btnExportData');

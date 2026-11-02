@@ -129,7 +129,7 @@
         <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
           <div style="display: flex; align-items: center; gap: 0.45rem;">
             <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.0.5</span>
+            <span class="version-number" id="sidebarVersionText">Valore v1.0.6</span>
           </div>
           <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
         </div>
@@ -3105,7 +3105,7 @@
             Toque abaixo para definir quem está utilizando este dispositivo. Todos os lançamentos inseridos aqui receberão automaticamente sua assinatura e cor:
           </p>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.6rem;">
+          <div id="deviceOwnerBtnGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.75rem;">
             <button type="button" id="btnDeviceOwnerP1" onclick="window.handleSelectDeviceOwner('p1')"
               class="btn btn-outline couple-payer-btn active" data-payer="p1"
               style="justify-content: center; padding: 0.5rem 0.65rem; font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; gap: 6px;">
@@ -3120,20 +3120,72 @@
             </button>
           </div>
 
-          <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.5rem; align-items: end;">
-            <div>
-              <label id="lblInputIdentityP1" style="font-size: 0.68rem; font-weight: 700; color: #3b82f6; display: block; margin-bottom: 0.2rem;">Nome do(a) Parceiro(a) 1</label>
+          <!-- Grade de Personalização de Perfil (Nomes, Avatares e Cores) -->
+          <div id="deviceIdentityFormGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem;">
+            <!-- Box Parceiro 1 -->
+            <div id="deviceCardBoxP1" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.22); border-radius: 10px; padding: 0.65rem 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label id="lblInputIdentityP1" style="font-size: 0.72rem; font-weight: 800; color: #3b82f6; display: flex; align-items: center; gap: 4px; margin: 0;">
+                  <span id="devicePreviewIconP1">👤</span>
+                  <span>Parceiro(a) 1</span>
+                </label>
+                <span style="font-size: 0.65rem; font-weight: 700; color: #3b82f6; opacity: 0.85;">P1</span>
+              </div>
               <input type="text" id="inputIdentityP1Name" class="form-control" placeholder="Ex: Allan"
-                style="padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 700;">
+                style="padding: 0.35rem 0.6rem; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.45rem;">
+              
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div>
+                  <span style="font-size: 0.66rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Avatar:</span>
+                  <div id="deviceAvatarPickerP1" style="display: flex; gap: 0.25rem; flex-wrap: wrap;"></div>
+                  <input type="hidden" id="inputIdentityP1Avatar" value="user">
+                </div>
+                <div>
+                  <span style="font-size: 0.66rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Cor:</span>
+                  <div id="deviceColorPickerP1" style="display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center;"></div>
+                  <input type="hidden" id="inputIdentityP1Color" value="#3b82f6">
+                </div>
+              </div>
             </div>
-            <div>
-              <label id="lblInputIdentityP2" style="font-size: 0.68rem; font-weight: 700; color: #ec4899; display: block; margin-bottom: 0.2rem;">Nome do(a) Parceiro(a) 2</label>
+
+            <!-- Box Parceiro 2 -->
+            <div id="deviceCardBoxP2" style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.22); border-radius: 10px; padding: 0.65rem 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                <label id="lblInputIdentityP2" style="font-size: 0.72rem; font-weight: 800; color: #ec4899; display: flex; align-items: center; gap: 4px; margin: 0;">
+                  <span id="devicePreviewIconP2">❤️</span>
+                  <span>Parceiro(a) 2</span>
+                </label>
+                <span style="font-size: 0.65rem; font-weight: 700; color: #ec4899; opacity: 0.85;">P2</span>
+              </div>
               <input type="text" id="inputIdentityP2Name" class="form-control" placeholder="Ex: Mariana"
-                style="padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 700;">
+                style="padding: 0.35rem 0.6rem; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.45rem;">
+              
+              <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                <div>
+                  <span style="font-size: 0.66rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Avatar:</span>
+                  <div id="deviceAvatarPickerP2" style="display: flex; gap: 0.25rem; flex-wrap: wrap;"></div>
+                  <input type="hidden" id="inputIdentityP2Avatar" value="heart">
+                </div>
+                <div>
+                  <span style="font-size: 0.66rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 3px;">Cor:</span>
+                  <div id="deviceColorPickerP2" style="display: flex; gap: 0.3rem; flex-wrap: wrap; align-items: center;"></div>
+                  <input type="hidden" id="inputIdentityP2Color" value="#ec4899">
+                </div>
+              </div>
             </div>
-            <button type="button" class="btn btn-primary" id="btnSaveIdentityNames" onclick="window.handleSaveIdentityNames()"
-              style="padding: 0.42rem 0.75rem; font-size: 0.76rem; font-weight: 700; height: 34px; white-space: nowrap;">
-              Salvar Nomes
+          </div>
+
+          <!-- Botões de Ação do Card -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline" id="btnOpenCoupleSettingsFromSyncHub" onclick="window.openCoupleSettingsModalDirect()"
+              style="padding: 0.42rem 0.7rem; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;">
+              <i data-lucide="sliders" style="width: 14px; height: 14px;"></i>
+              <span>Mais Opções (Presets & Modo Individual)</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="btnSaveIdentityProfile" onclick="window.handleSaveIdentityProfile()"
+              style="padding: 0.42rem 0.9rem; font-size: 0.76rem; font-weight: 800; height: 34px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+              <i data-lucide="check" style="width: 15px; height: 15px;"></i>
+              <span>Salvar Perfil & Cores</span>
             </button>
           </div>
         </div>
