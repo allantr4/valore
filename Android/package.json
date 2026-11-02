@@ -1,0 +1,25 @@
+{
+  "name": "valore-android",
+  "version": "1.0.0",
+  "description": "Valore Gestão Financeira - Versão Mobile Nativa Android",
+  "main": "www/index.html",
+  "scripts": {
+    "sync": "node scripts/sync_from_desktop.js",
+    "cap:sync": "npx cap sync android",
+    "build:apk": "call scripts/build_apk.bat"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/dialog": "^6.0.2",
+    "@capacitor/haptics": "^6.0.2",
+    "@capacitor/preferences": "^6.0.3",
+    "@capacitor/status-bar": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  },
+  "author": "Allan",
+  "license": "ISC"
+}

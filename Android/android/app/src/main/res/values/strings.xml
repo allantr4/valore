@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Valore</string>
+    <string name="title_activity_main">Valore</string>
+    <string name="package_name">com.valore.financeiro</string>
+    <string name="custom_url_scheme">com.valore.financeiro</string>
+</resources>

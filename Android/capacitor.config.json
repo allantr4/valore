@@ -1,0 +1,19 @@
+{
+  "appId": "com.valore.financeiro",
+  "appName": "Valore",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "backgroundColor": "#0b1120",
+  "android": {
+    "backgroundColor": "#0b1120",
+    "allowMixedContent": true,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "backgroundColor": "#0b1120",
+      "style": "DARK"
+    }
+  }
+}

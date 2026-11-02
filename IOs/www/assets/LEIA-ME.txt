@@ -1,0 +1,7 @@
+VALORE - Pacote de icones para Windows
+
+Valore_Windows.ico: para atalhos e executaveis Windows.
+Valore_1024.png e outros PNGs: para interfaces, instaladores e divulgacao.
+
+Para trocar o icone de um atalho: clique com botao direito > Propriedades > Atalho > Alterar icone e selecione Valore_Windows.ico.
+Para trocar o icone do proprio executavel, e necessario configura-lo durante a geracao/compilacao do aplicativo.

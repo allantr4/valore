@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "releaseDate": "2026-11-01",
+  "minRequiredVersion": "1.0.0",
+  "title": "Valore v1.0.0 - Versão Oficial Multiplataforma",
+  "notes": [
+    "Suporte completo multiplataforma: Windows Desktop, Android e iOS.",
+    "Novo CRUD com abas dedicadas e separação de Contas Bancárias e Cartões de Crédito.",
+    "Seletores inteligentes com agrupamento por tipo de conta e badges visuais.",
+    "Finanças a Dois (Modo Casal) com divisão proporcional de despesas e acerto Pix.",
+    "Sync Hub local direto PC ⇄ Celular com criptografia AES-256 E2EE.",
+    "Sistema oficial de verificação de atualizações online integrado ao GitHub."
+  ],
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
+  "githubReleaseUrl": "https://github.com/allantr4/valore/releases"
+}

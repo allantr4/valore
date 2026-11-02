@@ -1,0 +1,18 @@
+{
+  "appId": "com.valore.financeiro",
+  "appName": "Valore",
+  "webDir": "www",
+  "backgroundColor": "#0b1120",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0b1120",
+    "scrollEnabled": true,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "backgroundColor": "#0b1120",
+      "style": "DARK"
+    }
+  }
+}

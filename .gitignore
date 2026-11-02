@@ -1,0 +1,47 @@
+# Dependências Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Empacotamento Desktop e Builds temporários
+dist/
+build/
+*.tmp
+*.bak
+*.zip
+*.exe
+*.apk
+Instalador/
+
+
+# Android Gradle e SDK
+.gradle/
+Android/.gradle/
+Android/android/.gradle/
+Android/android/build/
+Android/android/app/build/
+Android/android/local.properties
+Android/node_modules/
+
+# iOS Xcode e CocoaPods
+IOs/node_modules/
+IOs/ios/App/Pods/
+IOs/ios/App/build/
+IOs/ios/App/DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcuserdatad/
+
+# Dados locais do Electron / Usuário
+financial_data.json
+financial_data.json.bak
+financial_data.backup*
+*.log
+
+# IDEs e Sistema Operacional
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini
+.DS_Store
+
