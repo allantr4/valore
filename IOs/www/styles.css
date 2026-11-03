@@ -84,6 +84,11 @@ html, body {
   overflow-x: hidden;
 }
 
+html, body, button, a, input, select, textarea, .nav-item, .btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--bg-primary);
   color: var(--text-main);
@@ -803,7 +808,7 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(8px);
-  display: flex;
+  display: none !important; /* Desaloca da GPU e exclui do hit-test quando fechado */
   align-items: center;
   justify-content: center;
   z-index: 10000;
@@ -815,6 +820,7 @@ body {
 }
 
 .modal-overlay.open {
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1075,7 +1081,7 @@ body {
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(6px);
-  display: flex;
+  display: none !important; /* Desaloca da GPU e exclui do hit-test quando fechado */
   align-items: center;
   justify-content: center;
   z-index: 10010;
@@ -1085,6 +1091,7 @@ body {
 }
 
 .calc-overlay.open {
+  display: flex !important;
   opacity: 1;
   pointer-events: auto;
 }
@@ -1513,13 +1520,8 @@ body {
     overflow-x: hidden;
   }
 
-  /* OTIMIZAÇÃO MÁXIMA MOBILE: Desliga 100% de qualquer backdrop-filter no celular
-     Isso liberta a GPU Adreno 506 de convoluções gaussianas contínuas */
-  *, *::before, *::after {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
+  /* OTIMIZAÇÃO MÁXIMA MOBILE: Desliga backdrop-filter nas superfícies visuais do app
+     Isso liberta a GPU Adreno/Mali de convoluções gaussianas contínuas */
   .top-header,
   .sidebar,
   .metric-card,
@@ -1529,15 +1531,12 @@ body {
   .smart-monitor-card,
   .category-item-card,
   .salary-alert-banner,
-  .audit-kpi-card {
+  .audit-kpi-card,
+  .calc-overlay,
+  .modal-overlay {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22) !important;
-  }
-
-  /* Neutraliza cálculos desnecessários de hover em telas de toque */
-  *:hover {
-    transform: none !important;
   }
 
   .top-header {

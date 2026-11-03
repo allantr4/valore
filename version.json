@@ -1,12 +1,13 @@
 {
-  "version": "1.2.4",
+  "version": "1.2.5",
   "releaseDate": "2026-11-02",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.4 - Blindagem da Sidebar Retrátil e Auditoria de Precedência CSS",
+  "title": "Valore v1.2.5 - Otimização Geral de Desempenho & Desalocação de GPU no Mobile",
   "notes": [
-    "Sidebar Retrátil Blindada: eliminação da colisão de transform no CSS móvel, garantindo retração perfeita no toque e início limpo do app.",
-    "Auditoria de Precedência de CSS: novo teste automatizado que valida a cascata computada da interface antes de qualquer release.",
-    "Fluidez Contínua no Mobile: operação estável em 60 FPS sem travamentos ou aquecimento do aparelho.",
+    "Otimização Geral de Desempenho Mobile: desalocação instantânea de 24 camadas fixas de modais da GPU quando fechados, liberando RAM de vídeo e acelerando o hit-testing de toque.",
+    "Correção Definitiva de Lembretes & Alertas: correção do tratamento polimórfico de alertas no dashboard, eliminando falhas de renderização.",
+    "Eliminação de Bloqueio de Toque no Android: supressão de chamada web Notification.requestPermission() dentro do ambiente Capacitor móvel.",
+    "Aceleração de Toque Instantâneo: touch-action manipulation global eliminando atraso de 300ms e remoção de seletores universais de hover.",
     "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
   ],
   "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",

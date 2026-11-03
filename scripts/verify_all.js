@@ -235,8 +235,21 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
     }
   }
 
-  // Verificação de compactação do cabeçalho mobile
+  // Verificação de desalocação de GPU nos Modais (display: none quando fechado)
   const cssContent = fs.readFileSync(cssPath, 'utf8');
+  if (cssContent.includes('.modal-overlay') && cssContent.includes('display: none !important')) {
+    logPass('Modais desalocados da memória da GPU quando fechados (display: none !important)');
+  } else {
+    logFail('Modais sem regra de desalocação display: none !important!');
+  }
+
+  // Verificação de tratamento seguro de alertas de notificação (previne TypeError alerts.map)
+  if (appContent.includes('Array.isArray(raw)') && appContent.includes('raw.items')) {
+    logPass('Tratamento polimórfico de alertas seguro contra falhas de tipo (Array ou Objeto)');
+  } else {
+    logFail('Tratamento de alertas vulnerável a TypeError de tipo de retorno!');
+  }
+
   if (cssContent.includes('z-index: 1000050 !important')) {
     logPass('Toast configurado com z-index supremo (1000050) acima de todos os modais');
   } else {

@@ -12184,39 +12184,40 @@ window.renderDashboardDueAlertBanner = function() {
   const banner = document.getElementById('dashboardDueAlertBanner');
   if (!banner) return;
 
-  const alerts = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : [];
-  if (!alerts || alerts.length === 0) {
+  const raw = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : null;
+  const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
+  if (!items || items.length === 0) {
     banner.style.display = 'none';
     return;
   }
 
   const listEl = document.getElementById('dashboardDueAlertList');
   const countEl = document.getElementById('dashboardDueAlertCount');
-  if (countEl) countEl.textContent = `${alerts.length} lembrete(s)`;
+  if (countEl) countEl.textContent = `${items.length} lembrete(s)`;
 
   if (listEl) {
-    listEl.innerHTML = alerts.map(a => {
+    listEl.innerHTML = items.map(a => {
       let icon = 'clock';
       let badgeColor = 'var(--primary)';
       let badgeBg = 'rgba(59, 130, 246, 0.15)';
-      let label = 'Vence em breve';
+      const diff = typeof a.diffDays === 'number' ? a.diffDays : 1;
+      let label = diff > 0 ? `Vence em ${diff}d` : 'Vence em breve';
 
-      if (a.type === 'overdue') {
+      if (diff < 0) {
         icon = 'alert-triangle';
         badgeColor = '#ef4444';
         badgeBg = 'rgba(239, 68, 68, 0.15)';
         label = 'Em Atraso';
-      } else if (a.type === 'today') {
+      } else if (diff === 0) {
         icon = 'bell-ring';
         badgeColor = '#f59e0b';
         badgeBg = 'rgba(245, 158, 11, 0.15)';
         label = 'Vence Hoje';
-      } else if (a.type === 'card_closing') {
-        icon = 'credit-card';
-        badgeColor = '#8b5cf6';
-        badgeBg = 'rgba(139, 92, 246, 0.15)';
-        label = 'Fatura Fechando';
       }
+
+      const title = escapeHtml(a.description || a.title || 'Conta a pagar');
+      const detail = escapeHtml(`${a.categoryName || 'Geral'} • ${a.accountName || 'Conta'}`);
+      const valStr = typeof currencyFormatter !== 'undefined' ? currencyFormatter.format(a.amount || 0) : 'R$ ' + (a.amount || 0);
 
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.85rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;">
@@ -12225,12 +12226,12 @@ window.renderDashboardDueAlertBanner = function() {
               <i data-lucide="${icon}" style="width: 15px; height: 15px;"></i>
             </span>
             <div style="min-width: 0;">
-              <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${a.title}</div>
-              <div style="font-size: 0.75rem; color: var(--text-secondary);">${a.detail}</div>
+              <div style="font-weight: 600; font-size: 0.85rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${title}</div>
+              <div style="font-size: 0.75rem; color: var(--text-secondary);">${detail}</div>
             </div>
           </div>
           <div style="text-align: right; flex-shrink: 0;">
-            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${typeof currencyFormatter !== 'undefined' ? currencyFormatter.format(a.amount || 0) : 'R$ ' + (a.amount || 0)}</div>
+            <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">${valStr}</div>
             <span style="display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.4rem; border-radius: 4px; background: ${badgeBg}; color: ${badgeColor};">${label}</span>
           </div>
         </div>
@@ -12253,8 +12254,9 @@ window.updateHeaderNotificationBadge = function() {
     return;
   }
 
-  const alerts = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : [];
-  const count = alerts.length;
+  const raw = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : null;
+  const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
+  const count = items.length;
 
   if (count > 0) {
     if (badgeHeader) {
@@ -12312,41 +12314,55 @@ window.closeNotificationSettingsModal = function() {
   if (modal) modal.classList.remove('open');
 };
 
-window.saveNotificationSettingsFromModal = function() {
-  const masterEl = document.getElementById('notifMasterEnabled');
-  const daysBeforeEl = document.getElementById('notifDaysBefore');
-  const dueTimeEl = document.getElementById('notifDueTime');
-  const overdueEl = document.getElementById('notifAlertOverdue');
-  const cardClosingEl = document.getElementById('notifAlertCards');
-  const bankReaderEl = document.getElementById('notifBankReader');
+let _savingNotificationsLock = false;
+window.saveNotificationSettingsFromModal = async function() {
+  if (_savingNotificationsLock) return;
+  _savingNotificationsLock = true;
+  try {
+    const masterEl = document.getElementById('notifMasterEnabled');
+    const daysBeforeEl = document.getElementById('notifDaysBefore');
+    const dueTimeEl = document.getElementById('notifDueTime');
+    const overdueEl = document.getElementById('notifAlertOverdue');
+    const cardClosingEl = document.getElementById('notifAlertCards');
+    const bankReaderEl = document.getElementById('notifBankReader');
 
-  const isEnabled = masterEl ? masterEl.checked : true;
+    const isEnabled = masterEl ? masterEl.checked : true;
 
-  const newSettings = {
-    enabled: isEnabled,
-    notifyOnDueDay: true,
-    dueDayTime: dueTimeEl ? dueTimeEl.value : '09:00',
-    notifyDaysBefore: daysBeforeEl ? parseInt(daysBeforeEl.value, 10) : 2,
-    notifyOverdue: overdueEl ? overdueEl.checked : true,
-    notifyCreditCardClosing: cardClosingEl ? cardClosingEl.checked : true,
-    bankNotificationReader: bankReaderEl ? bankReaderEl.checked : false
-  };
+    const newSettings = {
+      enabled: isEnabled,
+      notifyOnDueDay: true,
+      dueDayTime: dueTimeEl ? dueTimeEl.value : '09:00',
+      notifyDaysBefore: daysBeforeEl ? parseInt(daysBeforeEl.value, 10) : 2,
+      notifyOverdue: overdueEl ? overdueEl.checked : true,
+      notifyCreditCardClosing: cardClosingEl ? cardClosingEl.checked : true,
+      bankNotificationReader: bankReaderEl ? bankReaderEl.checked : false
+    };
 
-  if (typeof finance !== 'undefined' && finance.saveNotificationSettings) {
-    finance.saveNotificationSettings(newSettings);
+    if (typeof finance !== 'undefined' && finance.saveNotificationSettings) {
+      await finance.saveNotificationSettings(newSettings);
+    }
+
+    // Solicita permissão web exclusivamente no navegador desktop, NUNCA dentro de WebView móvel Capacitor/Android
+    const isMobileApp = typeof window !== 'undefined' && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+    if (!isMobileApp && newSettings.enabled && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        Notification.requestPermission().catch(() => {});
+      } catch (_) {}
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Configurações de lembretes e notificações salvas!', 'success');
+    }
+
+    window.closeNotificationSettingsModal();
+    window.updateHeaderNotificationBadge();
+    window.renderDashboardDueAlertBanner();
+  } catch (err) {
+    console.error('Erro ao salvar notificações:', err);
+    window.closeNotificationSettingsModal();
+  } finally {
+    _savingNotificationsLock = false;
   }
-
-  if (newSettings.enabled && typeof Notification !== 'undefined' && Notification.permission === 'default') {
-    Notification.requestPermission().catch(() => {});
-  }
-
-  if (typeof showToast === 'function') {
-    showToast('Configurações de lembretes e notificações salvas!', 'success');
-  }
-
-  window.closeNotificationSettingsModal();
-  window.updateHeaderNotificationBadge();
-  window.renderDashboardDueAlertBanner();
 };
 
 window.testNotificationTrigger = function() {
