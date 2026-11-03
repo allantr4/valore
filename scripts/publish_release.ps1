@@ -9,16 +9,8 @@ Write-Host "======================================================" -ForegroundC
 Write-Host "   Publicador Automatizado de Releases - Valore       " -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
 
-# 1. Obter token do Git Credential Manager
-$git = "C:\Program Files\Git\cmd\git.exe"
-$inputCred = "protocol=https`nhost=github.com`n`n"
-$outputCred = $inputCred | & $git credential fill
-$token = ""
-foreach ($line in $outputCred) {
-    if ($line -like "password=*") {
-        $token = $line.Substring(9)
-    }
-}
+# 1. Obter token do Git Credential Manager com fallback robusto
+$token = (node "$PSScriptRoot\get_github_token.js").Trim()
 
 if (-not $token) {
     Write-Error "Token de acesso do GitHub nao encontrado no Git Credential Manager."
