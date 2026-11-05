@@ -1161,9 +1161,64 @@ function renderDashboard() {
   renderMonthlyAuditReport();
 }
 
+function renderRecentTxCardHtml(tx) {
+  const isTransfer = tx.type === 'transfer';
+  const isIncome = tx.type === 'income';
+
+  let accountLabel = '';
+  let acc = null;
+  if (isTransfer) {
+    const from = finance.state.accounts.find(a => a.id === tx.fromAccountId) || { name: 'Conta' };
+    const to = finance.state.accounts.find(a => a.id === tx.toAccountId) || { name: 'Conta' };
+    accountLabel = `${from.name} ➔ ${to.name}`;
+  } else {
+    acc = finance.state.accounts.find(a => a.id === tx.accountId) || { name: 'Principal' };
+    accountLabel = acc.name;
+  }
+
+  const cat = finance.state.categories.find(c => c.id === tx.categoryId) || { name: isTransfer ? 'Transferência' : 'Geral', color: '#8b5cf6' };
+  const cleanDescription = (tx.installmentTotal > 1) 
+    ? (tx.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '') 
+    : tx.description;
+  const authorInfo = finance.getEntityAuthorInfo(tx);
+  const formattedVal = (isIncome ? '+' : (isTransfer ? '' : '-')) + currencyFormatter.format(Number(tx.amount || 0));
+  const valColor = isIncome ? 'var(--success, #10b981)' : (isTransfer ? 'var(--primary, #3b82f6)' : 'var(--danger, #ef4444)');
+
+  return `
+    <div class="recent-tx-card">
+      <div class="recent-tx-card-left">
+        <div class="recent-tx-cat-icon" style="background: ${cat.color ? cat.color + '22' : 'rgba(99,102,241,0.15)'}; color: ${cat.color || 'var(--primary)'};">
+          <i data-lucide="${isIncome ? 'arrow-down-left' : (isTransfer ? 'arrow-right-left' : 'arrow-up-right')}"></i>
+        </div>
+        <div class="recent-tx-card-info">
+          <div class="recent-tx-desc-row">
+            <span class="recent-tx-desc">${escapeHtml(cleanDescription)}</span>
+            ${tx.installmentTotal > 1 ? `<span class="badge" style="background: rgba(168,85,247,0.15); color: #a855f7; font-size: 0.65rem; padding: 0.1rem 0.35rem; border-radius: 4px;">${tx.installmentIndex}/${tx.installmentTotal}</span>` : ''}
+          </div>
+          <div class="recent-tx-meta-row">
+            <span class="recent-tx-cat-tag" style="color: ${cat.color || 'var(--text-muted)'};">${cat.name}</span>
+            <span class="recent-tx-dot">•</span>
+            <span class="recent-tx-account">${escapeHtml(accountLabel)}</span>
+            <span class="recent-tx-dot">•</span>
+            <span class="recent-tx-date">${formatDate(tx.date)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="recent-tx-card-right">
+        <div class="recent-tx-value" style="color: ${valColor};">${formattedVal}</div>
+        <div class="recent-tx-actions">
+          <button onclick="handleEditTransaction('${tx.id}')" class="btn-tx-action" title="Editar"><i data-lucide="edit-3"></i></button>
+          <button onclick="handleDeleteTransaction('${tx.id}')" class="btn-tx-action delete" title="Excluir"><i data-lucide="trash-2"></i></button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderRecentTransactions() {
   const tbody = document.getElementById('recentTxTableBody');
-  if (!tbody) return;
+  const mobileContainer = document.getElementById('recentMobileCardsContainer');
+  if (!tbody && !mobileContainer) return;
 
   const m = currentDashboardPeriod.month;
   const y = currentDashboardPeriod.year;
@@ -1178,19 +1233,32 @@ function renderRecentTransactions() {
   });
 
   if (monthTxs.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.25rem 1rem;">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.45rem;">
-        <span style="font-size: 1.6rem;">📅</span>
-        <span style="font-weight: 600; color: var(--text-main);">Nenhuma transação registrada em ${monthName} de ${y}</span>
-        <span style="font-size: 0.82rem;">Clique no botão "+ Nova Transação" acima para lançar despesas ou receitas neste período.</span>
-      </div>
-    </td></tr>`;
+    const emptyMsg = `Nenhuma transação registrada em ${monthName} de ${y}`;
+    if (tbody) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.25rem 1rem;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 0.45rem;">
+          <span style="font-size: 1.6rem;">📅</span>
+          <span style="font-weight: 600; color: var(--text-main);">${emptyMsg}</span>
+          <span style="font-size: 0.82rem;">Clique no botão "+ Nova Transação" acima para lançar despesas ou receitas neste período.</span>
+        </div>
+      </td></tr>`;
+    }
+    if (mobileContainer) {
+      mobileContainer.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 2rem 1rem; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">
+          <div style="font-size: 1.6rem; margin-bottom: 0.35rem;">📅</div>
+          <div style="font-weight: 600; color: var(--text-main); font-size: 0.9rem;">${emptyMsg}</div>
+          <p style="font-size: 0.78rem; margin: 0.3rem 0 0.75rem;">Toque no botão "+" flutuante para lançar movimentações.</p>
+        </div>
+      `;
+    }
     return;
   }
 
   // Exibe as movimentações mais recentes do período selecionado
   const recent = monthTxs.slice(0, 7);
-  tbody.innerHTML = recent.map(tx => renderTransactionRow(tx)).join('');
+  if (tbody) tbody.innerHTML = recent.map(tx => renderTransactionRow(tx)).join('');
+  if (mobileContainer) mobileContainer.innerHTML = recent.map(tx => renderRecentTxCardHtml(tx)).join('');
   if (window.lucide) lucide.createIcons();
 }
 
@@ -3670,8 +3738,17 @@ window.handleFilterAccounts = function(filter) {
   renderAccountsView();
 };
 
-// Selecionar conta e exibir seu extrato
+// Selecionar conta e exibir seu extrato (com suporte a alternância / toggle)
 window.handleSelectAccount = function(accId) {
+  const detailsCard = document.getElementById('accountDetailsCard');
+  const isDetailsVisible = detailsCard && detailsCard.style.display !== 'none';
+
+  // Toggle inteligente: se a mesma conta já estiver com extrato aberto, fecha
+  if (selectedAccountId === accId && isDetailsVisible) {
+    closeAccountDetails();
+    return;
+  }
+
   if (selectedAccountId !== accId) {
     currentSelectedCardInvoiceKey = null;
   }
@@ -3679,13 +3756,13 @@ window.handleSelectAccount = function(accId) {
   isMobileAccountSheetOpen = true;
   renderAccountsView();
 
-  const detailsCard = document.getElementById('accountDetailsCard');
   if (detailsCard) {
     if (isMobileViewport()) {
       detailsCard.scrollTop = 0;
       detailsCard.classList.add('mobile-sheet-open');
       detailsCard.style.display = 'block';
     } else {
+      detailsCard.style.display = 'block';
       triggerDesktopDetailsScrollAndPulse(detailsCard);
     }
   }
@@ -3700,25 +3777,28 @@ window.handleSelectCardInvoiceTab = function(invKey) {
 
 function closeAccountDetails() {
   isMobileAccountSheetOpen = false;
+  selectedAccountId = null; // Reseta seleção ativa para evitar estado preso no Desktop
   const detailsCard = document.getElementById('accountDetailsCard');
   if (detailsCard) {
     detailsCard.classList.remove('mobile-sheet-open');
     detailsCard.style.display = 'none';
   }
   syncMobileDetailsSheetBackdrop();
-  // Remove o destaque de seleção nos cards do mobile quando a gaveta é fechada
-  if (isMobileViewport()) {
-    document.querySelectorAll('#accountsGridContainer .account-card-interactive.selected-account')
-      .forEach(el => el.classList.remove('selected-account'));
-    document.querySelectorAll('#accountsGridContainer .btn-open-statement-pill.active-pill')
-      .forEach(btn => {
-        btn.classList.remove('active-pill');
-        const span = btn.querySelector('span');
-        if (span) {
-          span.textContent = span.textContent.includes('Fatura') ? 'Ver Faturas & Extrato ➔' : 'Ver Extrato ➔';
-        }
-      });
-  }
+
+  // Remove o destaque de seleção e restaura os botões em TODAS as plataformas (Desktop e Mobile)
+  document.querySelectorAll('#accountsGridContainer .account-card-interactive.selected-account')
+    .forEach(el => el.classList.remove('selected-account'));
+  document.querySelectorAll('#accountsGridContainer .btn-open-statement-pill.active-pill')
+    .forEach(btn => {
+      btn.classList.remove('active-pill');
+      const span = btn.querySelector('span');
+      if (span) {
+        span.textContent = span.textContent.includes('Fatura') ? 'Ver Fatura ➔' : 'Ver Extrato ➔';
+      }
+    });
+
+  // Re-renderiza a lista para garantir sincronia 100% dos botões e cards
+  renderAccountsView();
 }
 
 // Renderizar o Extrato e Histórico da Conta Selecionada

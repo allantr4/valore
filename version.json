@@ -1,18 +1,18 @@
 {
-  "version": "1.3.1",
+  "version": "1.3.2",
   "releaseDate": "2026-11-05",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.1 - Correção Estrutural do Atualizador e Redesign Moderno do Modal",
+  "title": "Valore v1.3.2 - Correção do Extrato Desktop e Modernização da Visão Geral Mobile",
   "notes": [
-    "Correção Estrutural no Atualizador: resolução definitiva da detecção e persistência de novas versões no Mobile Android e Desktop.",
-    "Novo Design Moderno do Modal de Atualização: Hero Comparativo de versão (v1.3.0 ➔ v1.3.1), cabeçalho fixo e enquadramento vertical ergonômico.",
-    "Changelog Fluido e Legível: container com scroll suave de alta visibilidade e visual limpo para notas longas de atualização.",
-    "Botões com Ergonomia Responsiva: layout otimizado para o toque do polegar no Mobile e alinhamento elegante no Desktop.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.1 (131)."
+    "Correção no Extrato de Bancos e Cartões: resolução do botão 'Ver Extrato' / 'Extrato Aberto' no Desktop com alternância (toggle) inteligente e reset completo.",
+    "Nova Experiência de Transações Recentes na Visão Geral: tabela completa no Desktop e Cards de Movimentação modernos no Mobile sem cortes.",
+    "Toolbar de Período Compacta no Mobile: navegação entre meses fluida em formato de pílula integrada sem quebras visuais.",
+    "Otimização de Gráficos e Métricas no Smartphone: visualização consolidada da saúde financeira do mês na primeira dobra da tela.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.2 (132)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_131.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_131.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_132.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_132.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 31,
-  "releaseNotes": "Correção estrutural de detecção do atualizador e novo modal de atualização moderno e responsivo v1.3.1."
+  "versionCode": 32,
+  "releaseNotes": "Correção do botão de extrato no desktop e modernização da visão geral com cards mobile v1.3.2."
 }

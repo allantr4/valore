@@ -247,7 +247,7 @@
             </div>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <div class="dashboard-period-controls" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; wrap;">
             <button type="button" class="btn btn-outline" id="btnDashPrevMonth"
               onclick="window.navigateDashboardPeriod(-1)" style="padding: 0.35rem 0.65rem; font-size: 0.78rem;"
               title="Mês Anterior">
@@ -451,6 +451,9 @@
               <tbody id="recentTxTableBody"></tbody>
             </table>
           </div>
+
+          <!-- Cards Mobile de Transações Recentes (visíveis apenas no Mobile < 768px) -->
+          <div id="recentMobileCardsContainer" class="recent-tx-mobile-cards" style="display: none;"></div>
         </div>
       </div>
 
@@ -584,7 +587,7 @@
 
         <!-- 1. VISUALIZAÇÃO DESKTOP: TABELA AMPLA DE ALTA DENSIDADE (>= 768px) -->
         <div class="card schedules-desktop-table-card">
-          <div class="tx-table-container">
+          <div class="tx-table-container recent-tx-desktop-table">
             <table class="tx-table">
               <thead>
                 <tr>

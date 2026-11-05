@@ -4743,3 +4743,192 @@ html[data-performance="low"] .sidebar {
   }
 }
 
+/* ==========================================================================
+   VISÃO GERAL (DASHBOARD) - ADAPTAÇÃO MOBILE & CARDS DE TRANSAÇÕES
+   ========================================================================== */
+
+/* Barra de Período Compacta no Mobile */
+@media (max-width: 768px) {
+  .dashboard-period-toolbar {
+    padding: 0.5rem 0.75rem !important;
+    gap: 0.5rem !important;
+    border-radius: var(--radius-md, 12px) !important;
+  }
+  
+  .dashboard-period-toolbar .hide-mobile-period-sub {
+    display: none !important;
+  }
+
+  .dashboard-period-controls {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .dashboard-period-controls .form-control {
+    flex: 1 !important;
+    font-size: 0.8rem !important;
+    padding: 0.35rem 0.4rem !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Transações Recentes Desktop vs Mobile */
+.recent-tx-desktop-table {
+  display: block;
+}
+
+.recent-tx-mobile-cards {
+  display: none;
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .recent-tx-desktop-table {
+    display: none !important;
+  }
+
+  .recent-tx-mobile-cards {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Card de Transação Recente no Mobile */
+.recent-tx-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0.85rem;
+  background: var(--bg-secondary, #0f172a);
+  border: 1px solid var(--border-color, #334155);
+  border-radius: var(--radius-md, 12px);
+  gap: 0.75rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.recent-tx-card:active {
+  transform: scale(0.99);
+}
+
+.recent-tx-card-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.recent-tx-cat-icon {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recent-tx-cat-icon i {
+  width: 18px;
+  height: 18px;
+}
+
+.recent-tx-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.recent-tx-desc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.recent-tx-desc {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-main, #f8fafc);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.recent-tx-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--text-muted, #94a3b8);
+  flex-wrap: wrap;
+}
+
+.recent-tx-cat-tag {
+  font-weight: 600;
+}
+
+.recent-tx-dot {
+  opacity: 0.4;
+}
+
+.recent-tx-account {
+  color: var(--text-secondary, #cbd5e1);
+}
+
+.recent-tx-card-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+  min-width: fit-content;
+}
+
+.recent-tx-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.recent-tx-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.btn-tx-action {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted, #94a3b8);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-tx-action:hover {
+  color: var(--primary, #3b82f6);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.btn-tx-action.delete:hover {
+  color: var(--danger, #ef4444);
+}
+
+.btn-tx-action i {
+  width: 14px;
+  height: 14px;
+}
+
+

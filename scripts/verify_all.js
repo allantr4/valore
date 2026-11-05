@@ -209,6 +209,8 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
 
   // IDs críticos que DEVEM existir no index.html
   const criticalIds = [
+    'btnCloseAccountDetailsBtn',
+    'recentMobileCardsContainer',
     'notificationSettingsModal',
     'notifTestFeedbackBox',
     'btnOpenNotificationSettings',
