@@ -1414,81 +1414,271 @@ function renderTransactionRow(tx) {
   `;
 }
 
+// Estado do filtro de agendamentos ('expense' | 'income' | 'paid' | 'all')
+let currentScheduleFilter = 'expense';
+
+// Atualiza Hero Resumo de Compromissos Futuros do Mês e Badges
+function renderSchedulesHeroSummary() {
+  const schedules = (typeof finance !== 'undefined' && finance.state && finance.state.schedules) ? finance.state.schedules : [];
+
+  const pendingExpenses = schedules.filter(s => s.status !== 'paid' && s.type !== 'income');
+  const pendingIncomes = schedules.filter(s => s.status !== 'paid' && s.type === 'income');
+  const paidSchedules = schedules.filter(s => s.status === 'paid');
+
+  const totalToPay = pendingExpenses.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+  const totalToReceive = pendingIncomes.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+  const netBalance = totalToReceive - totalToPay;
+
+  const elToPay = document.getElementById('heroSchedulesToPay');
+  const elToReceive = document.getElementById('heroSchedulesToReceive');
+  const elNetBalance = document.getElementById('heroSchedulesNetBalance');
+
+  if (elToPay) elToPay.textContent = currencyFormatter.format(totalToPay);
+  if (elToReceive) elToReceive.textContent = currencyFormatter.format(totalToReceive);
+  if (elNetBalance) {
+    elNetBalance.textContent = (netBalance >= 0 ? '+ ' : '') + currencyFormatter.format(netBalance);
+    elNetBalance.style.color = netBalance >= 0 ? '#10b981' : 'var(--danger)';
+  }
+
+  // Badges numéricos das abas
+  const badgeExpense = document.getElementById('tabBadgeSchedExpense');
+  const badgeIncome = document.getElementById('tabBadgeSchedIncome');
+  const badgePaid = document.getElementById('tabBadgeSchedPaid');
+  const badgeAll = document.getElementById('tabBadgeSchedAll');
+
+  if (badgeExpense) badgeExpense.textContent = String(pendingExpenses.length);
+  if (badgeIncome) badgeIncome.textContent = String(pendingIncomes.length);
+  if (badgePaid) badgePaid.textContent = String(paidSchedules.length);
+  if (badgeAll) badgeAll.textContent = String(schedules.length);
+}
+
+// Alternar abas segmentadas de agendamentos
+window.handleSwitchScheduleTab = function(filter) {
+  currentScheduleFilter = filter;
+
+  const tabExpense = document.getElementById('tabSchedExpense');
+  const tabIncome = document.getElementById('tabSchedIncome');
+  const tabPaid = document.getElementById('tabSchedPaid');
+  const tabAll = document.getElementById('tabSchedAll');
+
+  if (tabExpense) tabExpense.className = filter === 'expense' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabIncome) tabIncome.className = filter === 'income' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabPaid) tabPaid.className = filter === 'paid' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabAll) tabAll.className = filter === 'all' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+
+  renderSchedulesView();
+};
+
 // Renderização: Agendamentos (Contas a Pagar & Receber)
 function renderSchedulesView() {
   const tbody = document.getElementById('schedulesTableBody');
-  const schedules = finance.state.schedules;
+  const mobileContainer = document.getElementById('schedulesMobileCardsContainer');
+  const allSchedules = (typeof finance !== 'undefined' && finance.state && finance.state.schedules) ? finance.state.schedules : [];
   const today = localDateStr();
 
+  // Atualiza métricas consolidadas no topo
+  renderSchedulesHeroSummary();
+
+  // Filtra de acordo com a aba ativa
+  let schedules = allSchedules;
+  if (currentScheduleFilter === 'expense') {
+    schedules = allSchedules.filter(s => s.status !== 'paid' && s.type !== 'income');
+  } else if (currentScheduleFilter === 'income') {
+    schedules = allSchedules.filter(s => s.status !== 'paid' && s.type === 'income');
+  } else if (currentScheduleFilter === 'paid') {
+    schedules = allSchedules.filter(s => s.status === 'paid');
+  }
+
+  // Ordena por data de vencimento
+  schedules.sort((a, b) => (a.dueDate || '').localeCompare(b.dueDate || ''));
+
+  // Estado vazio amigável
   if (schedules.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma conta agendada. Cadastre seus boletos, faturas e recebimentos futuros.</td></tr>`;
+    const emptyMsg = currentScheduleFilter === 'expense'
+      ? 'Nenhuma despesa pendente agendada no momento!'
+      : (currentScheduleFilter === 'income'
+          ? 'Nenhuma receita futura cadastrada.'
+          : (currentScheduleFilter === 'paid'
+              ? 'Nenhum agendamento pago/concluído registrado.'
+              : 'Nenhum agendamento encontrado.'));
+
+    const emptyHtml = `
+      <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border-color); width: 100%; box-sizing: border-box;">
+        <div style="font-size: 1.8rem; margin-bottom: 0.4rem;">📅</div>
+        <div style="font-weight: 600; color: var(--text-main); font-size: 0.95rem;">${emptyMsg}</div>
+        <p style="font-size: 0.8rem; margin: 0.35rem 0 1rem;">Mantenha seus compromissos sob controle cadastrando receitas e despesas com vencimento.</p>
+        <button class="btn btn-primary" onclick="document.getElementById('btnOpenNewScheduleModal').click()" style="margin: 0 auto; font-size: 0.82rem;">
+          <i data-lucide="plus"></i> Novo Agendamento
+        </button>
+      </div>
+    `;
+
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">${emptyMsg}</td></tr>`;
+    if (mobileContainer) mobileContainer.innerHTML = emptyHtml;
+    renderSalaryAlerts();
+    if (window.lucide) lucide.createIcons();
     return;
   }
 
-  tbody.innerHTML = schedules.map(s => {
-    const isPaid = s.status === 'paid';
-    const isOverdue = !isPaid && s.dueDate < today;
-    const isIncome = s.type === 'income';
+  // 1. RENDERIZAÇÃO DESKTOP: TABELA CLÁSSICA (>= 768px)
+  if (tbody) {
+    tbody.innerHTML = schedules.map(s => {
+      const isPaid = s.status === 'paid';
+      const isOverdue = !isPaid && s.dueDate < today;
+      const isIncome = s.type === 'income';
 
-    let statusBadge = '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">Pago</span>';
-    if (!isPaid) {
-      if (isOverdue) {
-        statusBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">Atrasado</span>';
-      } else {
-        statusBadge = '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);">Pendente</span>';
+      let statusBadge = '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success);">Pago</span>';
+      if (!isPaid) {
+        if (isOverdue) {
+          statusBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">Atrasado</span>';
+        } else {
+          statusBadge = '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: var(--warning);">Pendente</span>';
+        }
       }
-    }
 
-    const actionBtnText = isIncome ? 'Confirmar Recebimento' : 'Pagar';
-    const actionBtnIcon = isIncome ? 'arrow-down-left' : 'check';
-    let recurrenceLabel = 'Única';
-    if (s.dayRule === '5th_business_clt') recurrenceLabel = '5º Dia Útil CLT (Mensal)';
-    else if (s.dayRule === '5th_business') recurrenceLabel = '5º Dia Útil Bancário (Mensal)';
-    else if (s.dayRule === '1st_business') recurrenceLabel = '1º Dia Útil (Mensal)';
-    else if (s.dayRule === 'last_business') recurrenceLabel = 'Último Dia Útil (Mensal)';
-    else if (s.recurring === 'monthly') recurrenceLabel = 'Mensal';
-    else if (s.recurring === 'yearly') recurrenceLabel = 'Anual';
+      const actionBtnText = isIncome ? 'Confirmar Recebimento' : 'Pagar';
+      const actionBtnIcon = isIncome ? 'arrow-down-left' : 'check';
+      let recurrenceLabel = 'Única';
+      if (s.dayRule === '5th_business_clt') recurrenceLabel = '5º Dia Útil CLT (Mensal)';
+      else if (s.dayRule === '5th_business') recurrenceLabel = '5º Dia Útil Bancário (Mensal)';
+      else if (s.dayRule === '1st_business') recurrenceLabel = '1º Dia Útil (Mensal)';
+      else if (s.dayRule === 'last_business') recurrenceLabel = 'Último Dia Útil (Mensal)';
+      else if (s.recurring === 'monthly') recurrenceLabel = 'Mensal';
+      else if (s.recurring === 'yearly') recurrenceLabel = 'Anual';
 
-    const sAuthorInfo = finance.getEntityAuthorInfo(s);
-    const sCat = finance.state.categories.find(c => c.id === s.categoryId);
+      const sAuthorInfo = finance.getEntityAuthorInfo(s);
+      const sCat = finance.state.categories.find(c => c.id === s.categoryId);
 
-    return `
-      <tr class="tx-row">
-        <td>
-          <div style="font-weight: 600; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-            <span>${s.description}</span>
-            ${sCat ? getCategoryBadgeHtml(sCat) : ''}
-            <span class="author-badge ${sAuthorInfo.role === 'p2' ? 'author-p2' : 'author-p1'}" title="Inserido por ${escapeHtml(sAuthorInfo.name)} via ${sAuthorInfo.deviceLabel}">
-              ${sAuthorInfo.deviceIcon} ${escapeHtml(sAuthorInfo.name)}
-            </span>
-            ${isIncome ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.68rem; padding: 0.1rem 0.4rem;">Receita</span>` : ''}
-          </div>
-        </td>
-        <td>${isIncome ? 'Recebimento (Proventos)' : 'Pagamento (Despesa)'}</td>
-        <td>${formatDateBR(s.dueDate)}</td>
-        <td>${recurrenceLabel}</td>
-        <td>${statusBadge}</td>
-        <td style="text-align: right; font-weight: 700;" class="${isIncome ? 'amount-income' : 'amount-expense'}">
-          ${isIncome ? '+ ' : '- '}${currencyFormatter.format(s.amount)}
-        </td>
-        <td class="td-actions">
-          <div class="table-actions-container">
-            ${!isPaid ? `
-              <button onclick="handleOpenPayBill('${s.id}')" class="btn btn-outline" style="padding: 0.3rem 0.55rem; font-size: 0.75rem; color: ${isIncome ? 'var(--success)' : 'inherit'}; border-color: ${isIncome ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)'};" title="${isIncome ? 'Confirmar entrada do recebimento na conta' : 'Pagar e dar baixa'}">
-                <i data-lucide="${actionBtnIcon}" style="width: 14px; height: 14px;"></i> ${actionBtnText}
+      return `
+        <tr class="tx-row">
+          <td>
+            <div style="font-weight: 600; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+              <span>${s.description}</span>
+              ${sCat ? getCategoryBadgeHtml(sCat) : ''}
+              <span class="author-badge ${sAuthorInfo.role === 'p2' ? 'author-p2' : 'author-p1'}" title="Inserido por ${escapeHtml(sAuthorInfo.name)} via ${sAuthorInfo.deviceLabel}">
+                ${sAuthorInfo.deviceIcon} ${escapeHtml(sAuthorInfo.name)}
+              </span>
+              ${isIncome ? `<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.68rem; padding: 0.1rem 0.4rem;">Receita</span>` : ''}
+            </div>
+          </td>
+          <td>${isIncome ? 'Recebimento (Proventos)' : 'Pagamento (Despesa)'}</td>
+          <td>${formatDateBR(s.dueDate)}</td>
+          <td>${recurrenceLabel}</td>
+          <td>${statusBadge}</td>
+          <td style="text-align: right; font-weight: 700;" class="${isIncome ? 'amount-income' : 'amount-expense'}">
+            ${isIncome ? '+ ' : '- '}${currencyFormatter.format(s.amount)}
+          </td>
+          <td class="td-actions">
+            <div class="table-actions-container">
+              ${!isPaid ? `
+                <button onclick="handleOpenPayBill('${s.id}')" class="btn btn-outline" style="padding: 0.3rem 0.55rem; font-size: 0.75rem; color: ${isIncome ? 'var(--success)' : 'inherit'}; border-color: ${isIncome ? 'rgba(16, 185, 129, 0.4)' : 'var(--border-color)'};" title="${isIncome ? 'Confirmar entrada do recebimento na conta' : 'Pagar e dar baixa'}">
+                  <i data-lucide="${actionBtnIcon}" style="width: 14px; height: 14px;"></i> ${actionBtnText}
+                </button>
+              ` : ''}
+              <button onclick="handleEditSchedule('${s.id}')" class="btn-action-icon" style="color: var(--primary);" title="Editar Agendamento">
+                <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
               </button>
-            ` : ''}
-            <button onclick="handleEditSchedule('${s.id}')" class="btn-action-icon" style="color: var(--primary);" title="Editar Agendamento">
-              <i data-lucide="edit-3" style="width: 16px; height: 16px;"></i>
-            </button>
-            <button onclick="handleDeleteSchedule('${s.id}')" class="btn-action-icon" style="color: var(--danger);" title="Excluir">
-              <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-            </button>
+              <button onclick="handleDeleteSchedule('${s.id}')" class="btn-action-icon" style="color: var(--danger);" title="Excluir">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // 2. RENDERIZAÇÃO MOBILE: CARDS TIMELINE ERGONÔMICOS (< 768px)
+  if (mobileContainer) {
+    mobileContainer.innerHTML = schedules.map(s => {
+      const isPaid = s.status === 'paid';
+      const isOverdue = !isPaid && s.dueDate < today;
+      const isIncome = s.type === 'income';
+
+      // Cálculo de dias até o vencimento
+      let urgencyBadge = '';
+      let cardBorderClass = '';
+
+      if (isPaid) {
+        urgencyBadge = '<span class="badge" style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.68rem; font-weight: 700;">✓ Pago / Baixado</span>';
+        cardBorderClass = 'paid';
+      } else if (isOverdue) {
+        urgencyBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.2); color: var(--danger); font-size: 0.68rem; font-weight: 700;">⚠️ Atrasado</span>';
+        cardBorderClass = 'urgent';
+      } else {
+        const d1 = new Date(today + 'T00:00:00');
+        const d2 = new Date(s.dueDate + 'T00:00:00');
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) {
+          urgencyBadge = '<span class="badge" style="background: rgba(239, 68, 68, 0.18); color: var(--danger); font-size: 0.68rem; font-weight: 700;">🚨 Vence Hoje!</span>';
+          cardBorderClass = 'urgent';
+        } else if (diffDays === 1) {
+          urgencyBadge = '<span class="badge" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-size: 0.68rem; font-weight: 700;">⏰ Vence Amanhã</span>';
+          cardBorderClass = 'warning';
+        } else if (diffDays <= 3) {
+          urgencyBadge = `<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; font-size: 0.68rem; font-weight: 700;">Vence em ${diffDays} dias</span>`;
+          cardBorderClass = 'warning';
+        } else {
+          urgencyBadge = `<span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--primary); font-size: 0.68rem;">Em ${diffDays} dias</span>`;
+        }
+      }
+
+      const sCat = finance.state.categories.find(c => c.id === s.categoryId);
+      const acc = finance.state.accounts.find(a => a.id === s.accountId);
+      const actionBtnText = isIncome ? 'Confirmar Recebimento' : 'Pagar e Baixar';
+      const actionBtnIcon = isIncome ? 'arrow-down-left' : 'check-circle';
+
+      return `
+        <div class="schedule-timeline-card ${cardBorderClass}">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+            ${urgencyBadge}
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
+              📅 ${formatDateBR(s.dueDate)}
+            </span>
           </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+            <div style="min-width: 0; flex: 1;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); line-height: 1.25; word-break: break-word;">
+                ${s.description}
+              </div>
+              <div style="font-size: 0.73rem; color: var(--text-muted); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                ${sCat ? getCategoryBadgeHtml(sCat) : ''}
+                ${acc ? `<span>Conta: <b>${acc.name}</b></span>` : ''}
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <b style="font-size: 1.15rem; font-weight: 800; color: ${isIncome ? 'var(--success)' : (cardBorderClass === 'urgent' ? 'var(--danger)' : '#f59e0b')}; white-space: nowrap;">
+                ${isIncome ? '+ ' : '- '}${currencyFormatter.format(s.amount)}
+              </b>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.55rem; margin-top: 0.2rem; gap: 0.45rem;">
+            ${!isPaid ? `
+              <button onclick="handleOpenPayBill('${s.id}')" class="btn ${cardBorderClass === 'urgent' || cardBorderClass === 'warning' ? 'btn-alert-pay' : 'btn-primary'}" style="flex: 1 1 140px; justify-content: center; padding: 0.4rem 0.75rem; font-size: 0.78rem; min-height: 34px;">
+                <i data-lucide="${actionBtnIcon}" style="width: 14px; height: 14px;"></i>
+                <span>${actionBtnText}</span>
+              </button>
+            ` : `
+              <div style="flex: 1 1 140px; display: flex; align-items: center; justify-content: center; font-size: 0.76rem; color: var(--success); font-weight: 600; min-height: 34px;">
+                ✓ Compromisso Concluído
+              </div>
+            `}
+            <div style="display: flex; gap: 0.35rem; align-items: center;">
+              <button onclick="handleEditSchedule('${s.id}')" class="btn btn-outline" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; min-height: 34px; color: var(--primary); border-color: rgba(59, 130, 246, 0.4);" title="Editar Agendamento">
+                <i data-lucide="edit-3" style="width: 14px; height: 14px;"></i>
+              </button>
+              <button onclick="handleDeleteSchedule('${s.id}')" class="btn btn-outline" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; min-height: 34px; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" title="Excluir">
+                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
 
   renderSalaryAlerts();
   if (window.lucide) lucide.createIcons();

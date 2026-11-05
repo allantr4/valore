@@ -4368,3 +4368,61 @@ html[data-performance="low"] .sidebar {
     font-size: 0.82rem !important;
   }
 }
+
+/* ========================================================
+   MODERNIZAÇÃO DE CONTAS AGENDADAS (TIMELINE & ADAPTIVE)
+   ======================================================== */
+.schedules-mobile-cards-list {
+  display: none !important;
+}
+
+.schedules-desktop-table-card {
+  display: block;
+}
+
+.schedule-timeline-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.schedule-timeline-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.schedule-timeline-card.urgent {
+  border-color: rgba(239, 68, 68, 0.45);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
+}
+
+.schedule-timeline-card.warning {
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);
+}
+
+.schedule-timeline-card.paid {
+  opacity: 0.75;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .schedules-desktop-table-card {
+    display: none !important;
+  }
+
+  .schedules-mobile-cards-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.65rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}

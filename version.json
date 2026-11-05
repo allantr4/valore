@@ -1,19 +1,19 @@
 {
-  "version": "1.2.9",
+  "version": "1.3.0",
   "releaseDate": "2026-11-04",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.9 - Novo Design Fintech de Bancos & Cartões, Hero Resumo e Zero Poluição",
+  "title": "Valore v1.3.0 - Nova Experiência de Contas Agendadas, Hero de Compromissos e Cards Mobile",
   "notes": [
-    "Reformulação Completa de Bancos & Cartões: navegação moderna por abas segmentadas (Bancos, Cartões de Crédito e Boletos) eliminando qualquer poluição visual no celular e desktop.",
-    "Hero Resumo Financeiro no Topo: 3 métricas consolidadas instantâneas (Saldo Disponível em Contas, Faturas a Pagar do Mês e Boletos a Vencer).",
-    "Zero Duplicação de Cards: faturas e cartões agora vivem de forma limpa e unificada dentro de sua aba exclusiva com ordenação inteligente por proximidade de vencimento.",
-    "Botão de Ação Contextual Inteligente: o botão de criação se adapta instantaneamente à aba ativa (+ Nova Conta, + Novo Cartão ou + Novo Boleto).",
-    "Leitor Nativo de Notificações Bancárias Android: captura em segundo plano com atalho de permissão de sistema e sugestão de lançamentos em 1 toque.",
-    "Paridade Total Desktop Windows & Mobile Android com instaladores versionados v1.2.9 (129)."
+    "Nova Experiência de Contas Agendadas: Hero Resumo consolidado no topo exibindo Total a Pagar, Total a Receber e Balanço Líquido Previsto.",
+    "Abas Segmentadas por Intenção: navegação rápida e filtrada entre A Pagar, A Receber e Concluídas/Pagas.",
+    "Layout Adaptativo Inteligente: tabela completa no Desktop e Cards Timeline ergonômicos no smartphone, facilitando a baixa com 1 toque.",
+    "Novo Design de Bancos e Cartões: abas segmentadas (Bancos, Cartões, Boletos) com zero duplicação e visual fintech.",
+    "Leitor Nativo de Notificações Bancárias Android em segundo plano com atalho de permissão de sistema.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.0 (130)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_129.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_129.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_130.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_130.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 29,
-  "releaseNotes": "Novo design de Bancos e Cartões com abas segmentadas, Hero Resumo financeiro consolidado, zero duplicação e instalador versionado v1.2.9."
+  "versionCode": 30,
+  "releaseNotes": "Modernização completa de Contas Agendadas com Hero Resumo, abas segmentadas e cards timeline no mobile v1.3.0."
 }
