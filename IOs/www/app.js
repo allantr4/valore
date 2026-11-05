@@ -2674,8 +2674,8 @@ function renderCategoriesView() {
   if (window.lucide) lucide.createIcons();
 }
 
-// Estado do filtro de contas ('all' | 'checking' | 'credit' | 'bills')
-let currentAccountFilter = 'all';
+// Estado do filtro de contas ('checking' | 'credit' | 'bills' | 'all')
+let currentAccountFilter = 'checking';
 let isMobileAccountSheetOpen = false;
 
 function isMobileViewport() {
@@ -2716,18 +2716,114 @@ window.closeAllMobileDetailSheets = function() {
   syncMobileDetailsSheetBackdrop();
 };
 
+// Atualiza o Hero Resumo Financeiro Consolidado e os Badges das Abas
+function renderAccountsHeroSummary() {
+  const accounts = (typeof finance !== 'undefined' && finance.state && finance.state.accounts) ? finance.state.accounts : [];
+  const bills = (typeof finance !== 'undefined' && finance.getBillsInsights) ? finance.getBillsInsights() : [];
+
+  const bankAccounts = accounts.filter(a => a.type !== 'credit');
+  const creditAccounts = accounts.filter(a => a.type === 'credit');
+
+  // 1. Saldo somado em contas correntes / poupança
+  const totalBankBalance = bankAccounts.reduce((sum, a) => sum + (parseFloat(a.balance) || 0), 0);
+  const elBankBalance = document.getElementById('heroAccountsBalance');
+  if (elBankBalance) {
+    elBankBalance.textContent = currencyFormatter.format(totalBankBalance);
+    elBankBalance.style.color = totalBankBalance >= 0 ? '#10b981' : 'var(--danger)';
+  }
+
+  // 2. Total das faturas de cartões do mês
+  let totalCardInvoices = 0;
+  creditAccounts.forEach(c => {
+    try {
+      const inv = finance.getCardInvoices(c.id);
+      if (inv && inv.currentInvoice) {
+        totalCardInvoices += (parseFloat(inv.currentInvoice.total) || 0);
+      }
+    } catch (_) {}
+  });
+  const elCardInvoices = document.getElementById('heroCardsInvoices');
+  if (elCardInvoices) {
+    elCardInvoices.textContent = currencyFormatter.format(totalCardInvoices);
+  }
+
+  // 3. Total de boletos a vencer do mês
+  const totalBillsAmount = bills.reduce((sum, b) => sum + (parseFloat(b.amount) || 0), 0);
+  const elBillsTotal = document.getElementById('heroBillsTotal');
+  if (elBillsTotal) {
+    elBillsTotal.textContent = currencyFormatter.format(totalBillsAmount);
+  }
+
+  // 4. Badges numéricos das abas
+  const badgeChecking = document.getElementById('tabBadgeChecking');
+  const badgeCredit = document.getElementById('tabBadgeCredit');
+  const badgeBills = document.getElementById('tabBadgeBills');
+
+  if (badgeChecking) badgeChecking.textContent = String(bankAccounts.length);
+  if (badgeCredit) badgeCredit.textContent = String(creditAccounts.length);
+  if (badgeBills) badgeBills.textContent = String(bills.length);
+}
+
+// Alternar abas segmentadas ('checking' | 'credit' | 'bills')
+window.handleSwitchAccountsTab = function(tab) {
+  if (tab === 'all') tab = 'checking';
+  currentAccountFilter = tab;
+
+  // Atualiza classes ativas das abas
+  const tabChecking = document.getElementById('tabBtnChecking');
+  const tabCredit = document.getElementById('tabBtnCredit');
+  const tabBills = document.getElementById('tabBtnBills');
+
+  if (tabChecking) tabChecking.className = tab === 'checking' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabCredit) tabCredit.className = tab === 'credit' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabBills) tabBills.className = tab === 'bills' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+
+  // Atualiza rótulo do botão contextual
+  const txtContext = document.getElementById('txtAccountsContextualAction');
+  if (txtContext) {
+    if (tab === 'checking') txtContext.textContent = 'Nova Conta';
+    else if (tab === 'credit') txtContext.textContent = 'Novo Cartão';
+    else if (tab === 'bills') txtContext.textContent = 'Novo Boleto';
+  }
+
+  // Mantém retrocompatibilidade dos botões legados se existirem
+  const btnAll = document.getElementById('btnFilterAllAccounts');
+  const btnChecking = document.getElementById('btnFilterCheckingOnly');
+  const btnCredit = document.getElementById('btnFilterCreditOnly');
+  const btnBills = document.getElementById('btnFilterBillsOnly');
+  if (btnAll) btnAll.className = tab === 'all' ? 'btn btn-primary' : 'btn btn-outline';
+  if (btnChecking) btnChecking.className = tab === 'checking' ? 'btn btn-primary' : 'btn btn-outline';
+  if (btnCredit) btnCredit.className = tab === 'credit' ? 'btn btn-primary' : 'btn btn-outline';
+  if (btnBills) btnBills.className = tab === 'bills' ? 'btn btn-primary' : 'btn btn-outline';
+
+  renderAccountsView();
+};
+
+window.handleAccountsContextualAction = function() {
+  if (currentAccountFilter === 'checking') {
+    handleOpenNewAccountModal(false);
+  } else if (currentAccountFilter === 'credit') {
+    handleOpenNewAccountModal(true);
+  } else if (currentAccountFilter === 'bills') {
+    handleOpenNewBill();
+  } else {
+    handleOpenNewAccountModal(false);
+  }
+};
+
 // Renderização: Contas & Bancos (Com seleção, extrato e ações integradas)
 function renderAccountsView() {
   const container = document.getElementById('accountsGridContainer');
   if (!container) return;
 
-  // Renderiza Monitor Inteligente de Cartões e Faturas
-  renderCreditCardsSmartMonitor();
+  // Atualiza Hero Resumo Financeiro Consolidado
+  renderAccountsHeroSummary();
 
-  // Renderiza Monitor Inteligente de Boletos & Contas Recorrentes
+  // Renderiza Monitores Inteligentes em background
+  renderCreditCardsSmartMonitor();
   renderBillsSmartMonitor();
 
-  // Visualização especial quando filtro for exclusivamente "Boletos & Contas Fixas"
+  // ABA 3: Boletos & Contas Recorrentes
   if (currentAccountFilter === 'bills') {
     closeAccountDetails();
     const bills = finance.getBillsInsights();
@@ -2749,11 +2845,29 @@ function renderAccountsView() {
     container.innerHTML = bills.map(b => {
       const isUrgent = b.reminderLevel === 'urgent';
       const isWarning = b.reminderLevel === 'warning';
+      const isAlert = isUrgent || isWarning || b.daysUntilDue <= 3;
       const badgeColor = isUrgent ? '#ef4444' : (isWarning ? '#f59e0b' : 'var(--success)');
       const badgeBg = isUrgent ? 'rgba(239, 68, 68, 0.15)' : (isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)');
 
+      const cardBorder = isAlert 
+        ? (isUrgent ? '2px solid #ef4444 !important' : '2px solid #f59e0b !important')
+        : '1px solid var(--border-color)';
+      const cardGlow = isAlert 
+        ? (isUrgent ? '0 0 18px rgba(239, 68, 68, 0.32)' : '0 0 18px rgba(245, 158, 11, 0.30)')
+        : 'none';
+      const cardBg = isAlert 
+        ? (isUrgent ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.05)')
+        : 'var(--bg-secondary)';
+
       return `
-        <div class="metric-card" style="border-color: ${b.daysUntilDue <= 1 ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-color)'};">
+        <div class="metric-card ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
+          ${isAlert ? `
+            <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
+              <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
+              <span>${isUrgent ? 'URGENTE • BOLETO VENCIDO OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+            </div>
+          ` : ''}
+
           <div class="metric-header" style="align-items: flex-start; gap: 0.5rem;">
             <div style="min-width: 0; flex: 1;">
               <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
@@ -2773,7 +2887,7 @@ function renderAccountsView() {
 
           <div style="margin: 0.5rem 0 0.35rem;">
             <span style="font-size: 0.74rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">Valor do Boleto:</span>
-            <div class="metric-value" style="color: var(--danger); margin: 0.15rem 0 0;">
+            <div class="metric-value" style="color: ${isAlert ? (isUrgent ? 'var(--danger)' : '#f59e0b') : 'var(--danger)'}; margin: 0.15rem 0 0;">
               ${currencyFormatter.format(b.amount)}
             </div>
           </div>
@@ -2789,10 +2903,16 @@ function renderAccountsView() {
             ` : ''}
           </div>
 
-          <div class="metric-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.55rem; margin-top: 0.45rem;">
-            <button onclick="handleOpenPayBill('${b.id}')" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.78rem; width: 100%; justify-content: center;">
+          <div class="metric-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.55rem; margin-top: 0.45rem; gap: 0.4rem;">
+            <button onclick="handleOpenPayBill('${b.id}')" class="btn ${isAlert ? 'btn-alert-pay' : 'btn-primary'}" style="padding: 0.4rem 0.85rem; font-size: 0.78rem; flex: 1 1 140px; justify-content: center;">
               <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
               <span>Pagar Boleto & Renovar</span>
+            </button>
+            <button onclick="handleEditSchedule('${b.id}')" class="btn btn-outline" style="padding: 0.35rem 0.55rem; font-size: 0.74rem; color: var(--primary); border-color: rgba(59, 130, 246, 0.4);" title="Editar agendamento">
+              <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
+            </button>
+            <button onclick="handleDeleteSchedule('${b.id}')" class="btn btn-outline" style="padding: 0.35rem 0.55rem; font-size: 0.74rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" title="Excluir boleto">
+              <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
             </button>
           </div>
         </div>
@@ -2808,10 +2928,27 @@ function renderAccountsView() {
     accountsToShow = accountsToShow.filter(a => a.type !== 'credit');
   } else if (currentAccountFilter === 'credit') {
     accountsToShow = accountsToShow.filter(a => a.type === 'credit');
+
+    // Ordena priorizando cartões com fatura próxima de vencer no topo
+    try {
+      const cardInsights = finance.getCreditCardInsights() || [];
+      const alertMap = {};
+      cardInsights.forEach(ci => { if (ci.reminderActive) alertMap[ci.id] = ci; });
+      accountsToShow.sort((a, b) => {
+        const aAlert = alertMap[a.id] ? 1 : 0;
+        const bAlert = alertMap[b.id] ? 1 : 0;
+        return bAlert - aAlert;
+      });
+    } catch (_) {}
   }
 
   if (accountsToShow.length === 0) {
-    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2.5rem;">Nenhuma conta ou cartão encontrado para este filtro. Clique em "+ Nova Conta / Cartão" para começar.</div>`;
+    const msg = currentAccountFilter === 'checking'
+      ? 'Nenhuma conta bancária cadastrada. Clique em "+ Nova Conta" acima para adicionar.'
+      : (currentAccountFilter === 'credit'
+          ? 'Nenhum cartão de crédito cadastrado. Clique em "+ Novo Cartão" acima para adicionar.'
+          : 'Nenhuma conta encontrada. Clique em "+ Nova Conta" para começar.');
+    container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">${msg}</div>`;
     closeAccountDetails();
     return;
   }
@@ -2850,8 +2987,37 @@ function renderAccountsView() {
       const totalDebt = invData.totalCommittedLimit;
       const usedPercent = totalLimit > 0 ? Math.min(100, Math.round((totalDebt / totalLimit) * 100)) : 0;
 
+      // Alerta inteligente de vencimento integrado no próprio card
+      let isAlert = false;
+      let isUrgent = false;
+      try {
+        const cardInsights = finance.getCreditCardInsights() || [];
+        const cInsight = cardInsights.find(ci => ci.id === acc.id);
+        if (cInsight && cInsight.reminderActive) {
+          isAlert = true;
+          isUrgent = cInsight.reminderLevel === 'urgent';
+        }
+      } catch (_) {}
+
+      const cardBorder = isAlert 
+        ? (isUrgent ? '2px solid #ef4444 !important' : '2px solid #f59e0b !important')
+        : (isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)');
+      const cardGlow = isAlert 
+        ? (isUrgent ? '0 0 18px rgba(239, 68, 68, 0.32)' : '0 0 18px rgba(245, 158, 11, 0.30)')
+        : 'none';
+      const cardBg = isAlert 
+        ? (isUrgent ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.05)')
+        : 'var(--bg-secondary)';
+
       return `
-        <div class="metric-card account-card-interactive ${isSelected ? 'selected-account' : ''}" onclick="handleSelectAccount('${acc.id}')" title="Clique para abrir detalhes e extrato deste cartão">
+        <div class="metric-card account-card-interactive ${isSelected ? 'selected-account' : ''} ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;" onclick="handleSelectAccount('${acc.id}')" title="Clique para abrir detalhes e extrato deste cartão">
+          ${isAlert ? `
+            <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
+              <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
+              <span>${isUrgent ? 'URGENTE • FATURA VENCIDA OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+            </div>
+          ` : ''}
+
           <div class="metric-header">
             <div>
               <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
@@ -2884,7 +3050,7 @@ function renderAccountsView() {
                 ` : ''}
               </div>
             </div>
-            <div style="color: ${invoiceAmount > 0 ? 'var(--danger)' : 'var(--success)'}; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 0.35rem;">
+            <div style="color: ${isAlert ? (isUrgent ? 'var(--danger)' : '#f59e0b') : (invoiceAmount > 0 ? 'var(--danger)' : 'var(--success)')}; font-size: 1.55rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 0.35rem;">
               ${currencyFormatter.format(invoiceAmount)}
             </div>
 
@@ -2899,26 +3065,19 @@ function renderAccountsView() {
               </span>
               <b style="color: ${availableLimit <= (totalLimit * 0.2) && totalLimit > 0 ? '#f59e0b' : 'var(--text-main)'}; font-size: 0.88rem;">${currencyFormatter.format(availableLimit)}</b>
             </div>
-          </div>
 
-          <!-- Barra de consumo do limite -->
-          <div class="progress-bar-bg" style="height: 6px; margin: 0.5rem 0; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden;" title="Total de compras em aberto: ${currencyFormatter.format(totalDebt)} (${usedPercent}%)">
-            <div class="progress-bar-fill" style="width: ${usedPercent}%; height: 100%; background: ${usedPercent >= 85 ? 'var(--danger)' : (usedPercent >= 60 ? '#f59e0b' : 'var(--primary)')}; border-radius: 999px;"></div>
-          </div>
-
-          <div class="metric-footer" style="display: flex; flex-direction: column; gap: 0.45rem; border-top: 1px dashed var(--border-color); padding-top: 0.45rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; font-size: 0.73rem; color: var(--text-muted);">
-              <span>Fecha dia <b>${acc.closingDay || 25}</b> • Vence dia <b>${acc.dueDay || 5}</b>${invData.currentInvoice && invData.currentInvoice.dueDateStr ? ` <span style="font-weight: 600; color: ${invData.hasUnpaidClosedInvoice ? 'var(--danger)' : 'var(--text-muted)'};">(${invData.currentInvoice.dueDateStr.slice(0, 5)})</span>` : ''}</span>
-              <span>Limite: <b>${currencyFormatter.format(totalLimit)}</b></span>
+            <div class="smart-progress-track" style="margin: 0.35rem 0 0.5rem; height: 5px; background: rgba(255,255,255,0.06); border-radius: 999px; overflow: hidden;">
+              <div style="width: ${usedPercent}%; height: 100%; background: ${usedPercent >= 85 ? '#ef4444' : (usedPercent >= 60 ? '#f59e0b' : '#3b82f6')}; border-radius: 999px;"></div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 0.4rem; flex-wrap: wrap;">
-              <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap;">
-                <button onclick="event.stopPropagation(); handleSelectAccount('${acc.id}')" class="btn-open-statement-pill ${isSelected ? 'active-pill' : ''}" title="Abrir faturas e extrato completo deste cartão">
+
+            <div class="metric-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-color); padding-top: 0.45rem; margin-top: 0.2rem; gap: 0.4rem; flex-wrap: wrap;">
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+                <button onclick="event.stopPropagation(); handleSelectAccount('${acc.id}')" class="btn-open-statement-pill ${isSelected ? 'active-pill' : ''}" title="Ver faturas e extrato">
                   <i data-lucide="file-text" style="width: 12px; height: 12px;"></i>
-                  <span>${isSelected ? '● Fatura Aberta' : 'Ver Faturas & Extrato ➔'}</span>
+                  <span>${isSelected ? '● Fatura Aberta' : 'Ver Fatura ➔'}</span>
                 </button>
                 ${invoiceAmount > 0 ? `
-                  <button onclick="event.stopPropagation(); handleOpenPayInvoice('${acc.id}')" class="btn btn-outline" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: var(--success); border-color: rgba(16, 185, 129, 0.4);" title="Pagar fatura deste cartão">
+                  <button onclick="event.stopPropagation(); handleOpenPayInvoice('${acc.id}')" class="btn ${isAlert ? 'btn-alert-pay' : 'btn-outline'}" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; ${isAlert ? '' : 'color: var(--success); border-color: rgba(16, 185, 129, 0.4);'}" title="Pagar fatura deste cartão">
                     Pagar Fatura
                   </button>
                 ` : `
@@ -2926,10 +3085,6 @@ function renderAccountsView() {
                     ✓ Em Dia
                   </span>
                 `}
-                <button onclick="event.stopPropagation(); window.switchTab('forecast')" class="btn btn-outline" style="padding: 0.2rem 0.45rem; font-size: 0.72rem; color: #a855f7; border-color: rgba(168, 85, 247, 0.4);" title="Ver impacto das parcelas e comprometimento de renda futura">
-                  <i data-lucide="layers" style="width: 12px; height: 12px;"></i>
-                  <span>Impacto Futuro</span>
-                </button>
               </div>
               <div style="display: flex; gap: 0.35rem; align-items: center;" onclick="event.stopPropagation()">
                 <button onclick="handleEditAccount('${acc.id}')" style="background: none; border: none; cursor: pointer; color: var(--primary); padding: 3px;" title="Editar dados da conta/cartão">

@@ -4163,3 +4163,208 @@ html[data-performance="low"] .sidebar {
     border-radius: 12px !important;
   }
 }
+
+/* ========================================================
+   NOVO DESIGN DE BANCOS & CARTÕES (FINTECH SEGMENTED UX)
+   ======================================================== */
+.accounts-hero-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.accounts-hero-metric-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.accounts-hero-metric-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.accounts-hero-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.accounts-hero-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.accounts-hero-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  line-height: 1.2;
+}
+
+.accounts-hero-value {
+  font-size: 1.18rem;
+  font-weight: 800;
+  line-height: 1.3;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Barra Segmentada de Navegação Fintech */
+.accounts-segmented-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.accounts-segmented-group {
+  display: inline-flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 0.3rem;
+  gap: 0.35rem;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.segmented-tab-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.segmented-tab-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.segmented-tab-btn.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+}
+
+.segmented-tab-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  line-height: 1;
+}
+
+.segmented-tab-btn.active .segmented-tab-badge {
+  background: rgba(255, 255, 255, 0.28);
+  color: #fff;
+}
+
+.btn-accounts-contextual {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.45rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-accounts-contextual:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+  .accounts-hero-summary {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.45rem !important;
+    margin-bottom: 0.65rem !important;
+  }
+
+  .accounts-hero-metric-card {
+    padding: 0.55rem 0.45rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    gap: 0.3rem !important;
+  }
+
+  .accounts-hero-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+  }
+
+  .accounts-hero-label {
+    font-size: 0.62rem !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .accounts-hero-value {
+    font-size: 0.84rem !important;
+    font-weight: 800 !important;
+  }
+
+  .accounts-segmented-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.55rem !important;
+  }
+
+  .accounts-segmented-group {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    justify-content: space-between !important;
+  }
+
+  .segmented-tab-btn {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+    padding: 0.45rem 0.35rem !important;
+    font-size: 0.74rem !important;
+    gap: 0.3rem !important;
+  }
+
+  .btn-accounts-contextual {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.55rem 1rem !important;
+    font-size: 0.82rem !important;
+  }
+}

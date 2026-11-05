@@ -1,19 +1,19 @@
 {
-  "version": "1.2.8",
+  "version": "1.2.9",
   "releaseDate": "2026-11-04",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.8 - Leitor Nativo de Notificações Bancárias & Padronização Premium de Alertas",
+  "title": "Valore v1.2.9 - Novo Design Fintech de Bancos & Cartões, Hero Resumo e Zero Poluição",
   "notes": [
-    "Leitor Nativo de Notificações Bancárias no Android: interceptação automática de compras do Nubank, Itaú, Inter, C6, Bradesco, Santander, Caixa, BB e Mercado Pago com sugestão de lançamento em 1 toque.",
-    "Serviço Nativo em Segundo Plano: integração com NotificationListenerService do Android e permissão de Acesso a Notificações em 1 clique.",
-    "Padronização Visual Premium de Alertas: paridade total entre Faturas e Boletos com moldura âmbar e tarja superior translúcida fintech com tipografia dourada.",
-    "Badges de Resumo Unificados: cabeçalhos de faturas e boletos alinhados com pílulas arredondadas elegantes e mensagens padronizadas.",
-    "Extrato e Abas de Faturas Mobile: rolagem horizontal suave no carrossel de faturas e abertura fluida da gaveta de lançamentos do cartão.",
-    "Assinatura e Versionamento Contínuo: APK assinado com instalação direta e versionamento progressivo sequencial (v1.2.8 / 128)."
+    "Reformulação Completa de Bancos & Cartões: navegação moderna por abas segmentadas (Bancos, Cartões de Crédito e Boletos) eliminando qualquer poluição visual no celular e desktop.",
+    "Hero Resumo Financeiro no Topo: 3 métricas consolidadas instantâneas (Saldo Disponível em Contas, Faturas a Pagar do Mês e Boletos a Vencer).",
+    "Zero Duplicação de Cards: faturas e cartões agora vivem de forma limpa e unificada dentro de sua aba exclusiva com ordenação inteligente por proximidade de vencimento.",
+    "Botão de Ação Contextual Inteligente: o botão de criação se adapta instantaneamente à aba ativa (+ Nova Conta, + Novo Cartão ou + Novo Boleto).",
+    "Leitor Nativo de Notificações Bancárias Android: captura em segundo plano com atalho de permissão de sistema e sugestão de lançamentos em 1 toque.",
+    "Paridade Total Desktop Windows & Mobile Android com instaladores versionados v1.2.9 (129)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_128.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_128.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_129.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_129.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 28,
-  "releaseNotes": "Leitor nativo de compras bancárias no Android em segundo plano, alertas visuais premium de vencimento e novo instalador versionado v1.2.8."
+  "versionCode": 29,
+  "releaseNotes": "Novo design de Bancos e Cartões com abas segmentadas, Hero Resumo financeiro consolidado, zero duplicação e instalador versionado v1.2.9."
 }

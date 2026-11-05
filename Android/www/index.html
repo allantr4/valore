@@ -818,72 +818,75 @@
 
       <!-- View: Contas & Bancos -->
       <div id="view-accounts" class="view-container" style="display: none; flex-direction: column; gap: 1.25rem;">
-        <div class="accounts-toolbar"
-          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: -0.25rem;">
-          <div class="accounts-filter-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" id="btnFilterAllAccounts"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Todas</button>
-            <button class="btn btn-outline" id="btnFilterCheckingOnly"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Contas Bancárias</button>
-            <button class="btn btn-outline" id="btnFilterCreditOnly"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Cartões de Crédito</button>
-            <button class="btn btn-outline" id="btnFilterBillsOnly" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
-              <i data-lucide="receipt" style="width: 13px; height: 13px;"></i>
-              <span>Boletos & Contas Fixas</span>
-            </button>
+        <!-- HERO RESUMO FINANCEIRO CONSOLIDADO -->
+        <div class="accounts-hero-summary" id="accountsHeroSummary">
+          <div class="accounts-hero-metric-card" title="Saldo somado de todas as suas contas bancárias">
+            <span class="accounts-hero-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              <i data-lucide="wallet" style="width: 18px; height: 18px;"></i>
+            </span>
+            <div class="accounts-hero-content">
+              <div class="accounts-hero-label">Saldo em Contas</div>
+              <div class="accounts-hero-value" id="heroAccountsBalance" style="color: #10b981;">R$ 0,00</div>
+            </div>
           </div>
-          <div class="accounts-action-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-outline" id="btnOpenNewBillModal" style="font-size: 0.82rem;">
-              <i data-lucide="file-text"></i>
-              <span>Novo Boleto / Conta</span>
-            </button>
-            <button class="btn btn-primary" id="btnOpenNewAccountModal" style="font-size: 0.82rem;">
-              <i data-lucide="plus"></i>
-              <span>Nova Conta / Cartão</span>
-            </button>
+
+          <div class="accounts-hero-metric-card" title="Total das faturas abertas e fechadas a pagar neste mês">
+            <span class="accounts-hero-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+              <i data-lucide="credit-card" style="width: 18px; height: 18px;"></i>
+            </span>
+            <div class="accounts-hero-content">
+              <div class="accounts-hero-label">Faturas do Mês</div>
+              <div class="accounts-hero-value" id="heroCardsInvoices" style="color: #f59e0b;">R$ 0,00</div>
+            </div>
+          </div>
+
+          <div class="accounts-hero-metric-card" title="Total de boletos e contas recorrentes a vencer neste mês">
+            <span class="accounts-hero-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+              <i data-lucide="receipt" style="width: 18px; height: 18px;"></i>
+            </span>
+            <div class="accounts-hero-content">
+              <div class="accounts-hero-label">Boletos a Vencer</div>
+              <div class="accounts-hero-value" id="heroBillsTotal" style="color: #ef4444;">R$ 0,00</div>
+            </div>
           </div>
         </div>
 
-        <!-- Banner Inteligente: Monitor de Cartões e Vencimentos Próximos -->
-        <div id="creditCardsSmartMonitor" class="card smart-monitor-card smart-cards-monitor" style="display: none;">
-          <div class="smart-monitor-header"
-            style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 0.75rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex: 1 1 200px;">
-              <span class="metric-icon-badge"
-                style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; width: 30px; height: 30px; flex-shrink: 0;">
-                <i data-lucide="bell-ring" style="width: 16px; height: 16px;"></i>
-              </span>
-              <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; line-height: 1.3; word-break: break-word;">
-                Faturas e Cartões próximos do vencimento</h4>
-            </div>
-            <span id="smartCardsAlertSummary" class="badge smart-monitor-summary-badge"
-              style="background: rgba(59, 130, 246, 0.15); color: var(--primary); font-size: 0.75rem; max-width: 100%; white-space: normal; word-break: break-word;"></span>
+        <!-- BARRA SEGMENTADA DE NAVEGAÇÃO FINTECH & BOTÃO CONTEXTUAL -->
+        <div class="accounts-segmented-bar">
+          <div class="accounts-segmented-group" id="accountsSegmentedNav" role="tablist">
+            <button type="button" class="segmented-tab-btn active" id="tabBtnChecking" onclick="handleSwitchAccountsTab('checking')">
+              <i data-lucide="landmark" style="width: 14px; height: 14px;"></i>
+              <span>Bancos</span>
+              <span class="segmented-tab-badge" id="tabBadgeChecking">0</span>
+            </button>
+            <button type="button" class="segmented-tab-btn" id="tabBtnCredit" onclick="handleSwitchAccountsTab('credit')">
+              <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i>
+              <span>Cartões</span>
+              <span class="segmented-tab-badge" id="tabBadgeCredit">0</span>
+            </button>
+            <button type="button" class="segmented-tab-btn" id="tabBtnBills" onclick="handleSwitchAccountsTab('bills')">
+              <i data-lucide="receipt" style="width: 14px; height: 14px;"></i>
+              <span>Boletos</span>
+              <span class="segmented-tab-badge" id="tabBadgeBills">0</span>
+            </button>
           </div>
-          <div id="creditCardsSmartList"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 0.75rem; align-items: stretch;">
-            <!-- Itens de faturas próximas de vencer e limites inseridos dinamicamente -->
-          </div>
+
+          <button type="button" class="btn-accounts-contextual" id="btnAccountsContextualAction" onclick="handleAccountsContextualAction()">
+            <i data-lucide="plus" style="width: 15px; height: 15px;"></i>
+            <span id="txtAccountsContextualAction">Nova Conta</span>
+          </button>
         </div>
 
-        <!-- Banner Inteligente: Monitor de Boletos & Contas Recorrentes -->
-        <div id="billsSmartMonitor" class="card smart-monitor-card smart-bills-monitor" style="display: none;">
-          <div class="smart-monitor-header"
-            style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.55rem; margin-bottom: 0.75rem;">
-            <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0; flex: 1 1 200px;">
-              <span class="metric-icon-badge"
-                style="background: rgba(16, 185, 129, 0.15); color: #10b981; width: 30px; height: 30px; flex-shrink: 0;">
-                <i data-lucide="receipt" style="width: 16px; height: 16px;"></i>
-              </span>
-              <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; line-height: 1.3; word-break: break-word;">
-                Boletos & Contas do Mês (Água, Luz, Internet, etc.)</h4>
-            </div>
-            <span id="smartBillsAlertSummary" class="badge smart-monitor-summary-badge"
-              style="background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 0.75rem; max-width: 100%; white-space: normal; word-break: break-word;"></span>
-          </div>
-          <div id="billsSmartList"
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 0.75rem; align-items: stretch;">
-            <!-- Itens de boletos inseridos dinamicamente -->
-          </div>
+        <!-- Elementos ocultos para garantir 100% de retrocompatibilidade com atalhos de teste -->
+        <div style="display: none;" aria-hidden="true">
+          <button id="btnFilterAllAccounts" onclick="handleSwitchAccountsTab('all')"></button>
+          <button id="btnFilterCheckingOnly" onclick="handleSwitchAccountsTab('checking')"></button>
+          <button id="btnFilterCreditOnly" onclick="handleSwitchAccountsTab('credit')"></button>
+          <button id="btnFilterBillsOnly" onclick="handleSwitchAccountsTab('bills')"></button>
+          <button id="btnOpenNewBillModal" onclick="handleOpenNewBill()"></button>
+          <button id="btnOpenNewAccountModal" onclick="handleOpenNewAccountModal(false)"></button>
+          <div id="creditCardsSmartMonitor"><span id="smartCardsAlertSummary"></span><div id="creditCardsSmartList"></div></div>
+          <div id="billsSmartMonitor"><span id="smartBillsAlertSummary"></span><div id="billsSmartList"></div></div>
         </div>
 
         <div class="accounts-grid" id="accountsGridContainer"></div>
