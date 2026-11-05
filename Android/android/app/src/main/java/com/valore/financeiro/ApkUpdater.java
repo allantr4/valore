@@ -43,17 +43,48 @@ public class ApkUpdater {
         }
     }
 
+    private String extractFileNameFromUrl(String fileUrl) {
+        try {
+            if (fileUrl != null && !fileUrl.trim().isEmpty()) {
+                String clean = fileUrl;
+                int qIdx = clean.indexOf('?');
+                if (qIdx != -1) clean = clean.substring(0, qIdx);
+                int hIdx = clean.indexOf('#');
+                if (hIdx != -1) clean = clean.substring(0, hIdx);
+
+                int lastSlash = clean.lastIndexOf('/');
+                if (lastSlash != -1 && lastSlash < clean.length() - 1) {
+                    String name = clean.substring(lastSlash + 1).trim();
+                    if (name.toLowerCase().endsWith(".apk") && name.length() > 4) {
+                        return name;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
+        return "Valore_Update.apk";
+    }
+
     @JavascriptInterface
     public void retryInstall() {
         activity.runOnUiThread(() -> {
+            if (pendingApkFile != null && pendingApkFile.exists()) {
+                installApkFile(pendingApkFile);
+                return;
+            }
             File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
             if (downloadDir == null) downloadDir = activity.getCacheDir();
-            File apk = new File(downloadDir, "Valore_Update.apk");
-            if (apk.exists()) {
-                installApkFile(apk);
-            } else {
-                sendError("Arquivo de atualização não encontrado no celular. Toque em Atualizar para baixar novamente.");
+            if (downloadDir.exists()) {
+                File[] files = downloadDir.listFiles((d, name) -> name.startsWith("Valore_") && name.endsWith(".apk"));
+                if (files != null && files.length > 0) {
+                    File newest = files[0];
+                    for (File f : files) {
+                        if (f.lastModified() > newest.lastModified()) newest = f;
+                    }
+                    installApkFile(newest);
+                    return;
+                }
             }
+            sendError("Arquivo de atualização não encontrado no celular. Toque em Atualizar para baixar novamente.");
         });
     }
 
@@ -64,12 +95,20 @@ public class ApkUpdater {
             return;
         }
 
-        // Garante que qualquer APK residual de versoes anteriores seja excluido antes do novo download
+        final String targetFileName = extractFileNameFromUrl(fileUrl);
+
+        // Limpa APKs anteriores do Valore no diretório para evitar colisões e liberar espaço
         File downloadDir = activity.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
         if (downloadDir == null) downloadDir = activity.getCacheDir();
-        File existingApk = new File(downloadDir, "Valore_Update.apk");
-        if (existingApk.exists()) {
-            try { existingApk.delete(); } catch (Exception ignored) {}
+        if (downloadDir.exists()) {
+            File[] oldFiles = downloadDir.listFiles();
+            if (oldFiles != null) {
+                for (File f : oldFiles) {
+                    if (f.getName().startsWith("Valore_") && f.getName().endsWith(".apk")) {
+                        try { f.delete(); } catch (Exception ignored) {}
+                    }
+                }
+            }
         }
 
         isDownloading = true;
@@ -81,8 +120,9 @@ public class ApkUpdater {
                 if (dir == null) dir = activity.getCacheDir();
                 if (!dir.exists()) dir.mkdirs();
 
-                tempApk = new File(dir, "Valore_Update.apk");
+                tempApk = new File(dir, targetFileName);
                 if (tempApk.exists()) tempApk.delete();
+                pendingApkFile = tempApk;
 
                 URL url = new URL(fileUrl);
                 HttpURLConnection conn = openConnectionFollowingRedirects(url);

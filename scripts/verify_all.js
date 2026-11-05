@@ -204,7 +204,11 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
     'btnUpdateViaBrowser',
     'txModal',
     'accountModal',
-    'calcOverlay'
+    'calcOverlay',
+    'sidebarFooter',
+    'sidebarFooterToggle',
+    'sidebarRetractableBody',
+    'sidebarFooterChevron'
   ];
 
   let missingCount = 0;
@@ -235,8 +239,23 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
     }
   }
 
-  // Verificação de desalocação de GPU nos Modais (display: none quando fechado)
+  // Verificação de estilos e integridade de UI
   const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+  // Verificação do Menu Retrátil do Rodapé da Sidebar
+  if (cssContent.includes('.sidebar-retractable-body') && cssContent.includes('.sidebar-retractable-body.expanded')) {
+    logPass('Menu retrátil do rodapé da Sidebar devidamente estilizado com estados recolhido e expandido');
+  } else {
+    logFail('Classes de estilização do menu retrátil da Sidebar ausentes no CSS!');
+  }
+
+  if (appContent.includes('toggleSidebarFooter') && appContent.includes('initSidebarFooterRetraction')) {
+    logPass('Lógica de retração e persistência de preferência da Sidebar presente no app.js');
+  } else {
+    logFail('Funções de controle do menu retrátil da Sidebar ausentes no app.js!');
+  }
+
+  // Verificação de desalocação de GPU nos Modais (display: none quando fechado)
   if (cssContent.includes('.modal-overlay') && cssContent.includes('display: none !important')) {
     logPass('Modais desalocados da memória da GPU quando fechados (display: none !important)');
   } else {

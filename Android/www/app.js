@@ -935,6 +935,9 @@ async function initApp() {
   setupThemeManager();
   setupAppAlertListeners();
   await finance.init();
+    if (typeof finance.processRecurringTransactions === 'function') {
+      await finance.processRecurringTransactions();
+    }
 
   setupNavigation();
   setupEntityFilter();
@@ -3071,21 +3074,35 @@ function renderCreditCardsSmartMonitor() {
 
   monitor.style.display = 'block';
 
-  // Contagem de alertas ativos
+  // Contagem e identificação nominal de alertas ativos
   const activeAlerts = cards.filter(c => c.reminderActive);
   if (alertSummary) {
-    alertSummary.textContent = activeAlerts.length > 0 
-      ? `🔔 ${activeAlerts.length} ${activeAlerts.length === 1 ? 'fatura requer atenção' : 'faturas requerem atenção'}`
-      : `✓ Faturas monitoradas em dia (${cards.length})`;
-    alertSummary.style.background = activeAlerts.length > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)';
-    alertSummary.style.color = activeAlerts.length > 0 ? 'var(--danger)' : 'var(--success)';
+    if (activeAlerts.length === 1) {
+      const single = activeAlerts[0];
+      alertSummary.innerHTML = `⚠️ <b>Atenção:</b> ${single.name} (${single.reminderMessage})`;
+      alertSummary.style.background = 'rgba(245, 158, 11, 0.22)';
+      alertSummary.style.color = '#f59e0b';
+      alertSummary.style.border = '1px solid rgba(245, 158, 11, 0.45)';
+    } else if (activeAlerts.length > 1) {
+      alertSummary.innerHTML = `⚠️ <b>${activeAlerts.length} faturas requerem atenção:</b> ${activeAlerts.map(a => a.name).join(', ')}`;
+      alertSummary.style.background = 'rgba(239, 68, 68, 0.2)';
+      alertSummary.style.color = 'var(--danger)';
+      alertSummary.style.border = '1px solid rgba(239, 68, 68, 0.45)';
+    } else {
+      alertSummary.innerHTML = `✓ Faturas monitoradas em dia (${cards.length})`;
+      alertSummary.style.background = 'rgba(16, 185, 129, 0.15)';
+      alertSummary.style.color = 'var(--success)';
+      alertSummary.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+    }
   }
 
   listContainer.innerHTML = cards.map(c => {
     const isUrgent = c.reminderLevel === 'urgent';
     const isWarning = c.reminderLevel === 'warning';
+    const isAlert = !!c.reminderActive;
+
     const badgeColor = isUrgent ? '#ef4444' : (isWarning ? '#f59e0b' : 'var(--text-muted)');
-    const badgeBg = isUrgent ? 'rgba(239, 68, 68, 0.15)' : (isWarning ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-tertiary)');
+    const badgeBg = isUrgent ? 'rgba(239, 68, 68, 0.18)' : (isWarning ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-tertiary)');
 
     const closingInfo = c.hasUnpaidClosedInvoice
       ? `Fatura Fechada • Vence dia ${c.dueDay} (${c.dueDateStr.slice(0, 5)})`
@@ -3093,8 +3110,31 @@ function renderCreditCardsSmartMonitor() {
           ? `Fecha dia ${c.closingDay} <span style="font-size: 0.68rem; color: ${c.isInvoiceClosed ? 'var(--text-muted)' : (c.daysUntilClosing <= 2 ? '#f59e0b' : 'var(--primary)')}; font-weight: 600;">(${c.closingBadgeText})</span> • Vence dia ${c.dueDay}`
           : `Fecha dia ${c.closingDay} • Vence dia ${c.dueDay}`);
 
+    // Estilo especial de destaque absoluto para cartões que requerem atenção
+    const cardBorder = isAlert 
+      ? (isUrgent ? '2px solid #ef4444 !important' : '2px solid #f59e0b !important')
+      : '1px solid var(--border-color)';
+    const cardGlow = isAlert 
+      ? (isUrgent ? '0 0 18px rgba(239, 68, 68, 0.32)' : '0 0 18px rgba(245, 158, 11, 0.30)')
+      : 'none';
+    const cardBg = isAlert 
+      ? (isUrgent ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.05)')
+      : 'var(--bg-secondary)';
+
+    // Valor da fatura: se for alerta, destaca em cor de alarme; se normal, tom neutro elegante sem ruído
+    const invoiceColor = isAlert 
+      ? (isUrgent ? 'var(--danger)' : '#f59e0b') 
+      : (c.invoiceAmount > 0 ? 'var(--text-main)' : 'var(--success)');
+
     return `
-      <div class="smart-monitor-item" style="border-color: ${c.reminderActive ? (isUrgent ? 'rgba(239, 68, 68, 0.4)' : 'rgba(245, 158, 11, 0.4)') : 'var(--border-color)'};">
+      <div class="smart-monitor-item ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
+        ${isAlert ? `
+          <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
+            <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
+            <span>${isUrgent ? 'URGENTE • FATURA VENCIDA OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+          </div>
+        ` : ''}
+
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.45rem;">
           <div style="display: flex; align-items: flex-start; gap: 0.55rem; min-width: 0; flex: 1 1 160px;">
             ${getBankBadgeHtml(c.bankId || 'other', 34, c.color)}
@@ -3110,7 +3150,7 @@ function renderCreditCardsSmartMonitor() {
 
         <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.35rem;">
           <span style="font-size: 0.76rem; color: var(--text-muted);">${c.hasUnpaidClosedInvoice ? 'Fatura Fechada a Pagar:' : 'Fatura Atual:'}</span>
-          <b style="font-size: 1.12rem; color: ${c.invoiceAmount > 0 ? 'var(--danger)' : 'var(--success)'};">${currencyFormatter.format(c.invoiceAmount)}</b>
+          <b style="font-size: 1.15rem; font-weight: 800; color: ${invoiceColor};">${currencyFormatter.format(c.invoiceAmount)}</b>
         </div>
         ${c.hasUnpaidClosedInvoice && c.openCycleAmount > 0 ? `
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.25rem; font-size: 0.73rem; color: var(--text-muted); margin-top: 0.15rem;">
@@ -3143,7 +3183,7 @@ function renderCreditCardsSmartMonitor() {
             <span>Ver Fatura</span>
           </button>
           ${c.invoiceAmount > 0 ? `
-            <button onclick="handleOpenPayInvoice('${c.id}')" class="btn btn-primary" style="padding: 0.38rem 0.7rem; font-size: 0.76rem; flex: 1 1 135px; justify-content: center; min-height: 34px;">
+            <button onclick="handleOpenPayInvoice('${c.id}')" class="btn ${isAlert ? 'btn-alert-pay' : 'btn-primary'}" style="padding: 0.38rem 0.7rem; font-size: 0.76rem; flex: 1 1 135px; justify-content: center; min-height: 34px; ${isAlert ? (isUrgent ? 'background: linear-gradient(135deg, #ef4444, #dc2626) !important; color: #fff !important; font-weight: 700 !important; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;' : 'background: linear-gradient(135deg, #f59e0b, #d97706) !important; color: #000 !important; font-weight: 700 !important; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;') : ''}">
               <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
               <span>Pagar Agora</span>
             </button>
@@ -3177,24 +3217,59 @@ function renderBillsSmartMonitor() {
 
   monitor.style.display = 'block';
 
-  const urgentBills = bills.filter(b => b.daysUntilDue <= 3);
+  const urgentBills = bills.filter(b => b.daysUntilDue <= 3 || b.reminderLevel === 'warning' || b.reminderLevel === 'urgent');
   if (alertSummary) {
-    alertSummary.textContent = urgentBills.length > 0 
-      ? `⏰ ${urgentBills.length} ${urgentBills.length === 1 ? 'boleto vence em breve' : 'boletos vencem em breve'}`
-      : `✓ ${bills.length} contas programadas`;
-    alertSummary.style.background = urgentBills.length > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)';
-    alertSummary.style.color = urgentBills.length > 0 ? 'var(--danger)' : 'var(--success)';
+    if (urgentBills.length === 1) {
+      const single = urgentBills[0];
+      alertSummary.innerHTML = `⚠️ <b>Atenção:</b> ${single.description} (${single.reminderMessage})`;
+      alertSummary.style.background = 'rgba(245, 158, 11, 0.16)';
+      alertSummary.style.color = '#fbbf24';
+      alertSummary.style.border = '1px solid rgba(245, 158, 11, 0.35)';
+    } else if (urgentBills.length > 1) {
+      alertSummary.innerHTML = `⚠️ <b>${urgentBills.length} boletos requerem atenção:</b> ${urgentBills.map(b => b.description).join(', ')}`;
+      alertSummary.style.background = 'rgba(239, 68, 68, 0.18)';
+      alertSummary.style.color = 'var(--danger)';
+      alertSummary.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+    } else {
+      alertSummary.innerHTML = `✓ Boletos programados em dia (${bills.length})`;
+      alertSummary.style.background = 'rgba(16, 185, 129, 0.12)';
+      alertSummary.style.color = 'var(--success)';
+      alertSummary.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+    }
   }
 
   // Exibe até os 3 boletos mais urgentes no banner de topo
   listContainer.innerHTML = bills.slice(0, 3).map(b => {
     const isUrgent = b.reminderLevel === 'urgent';
     const isWarning = b.reminderLevel === 'warning';
+    const isAlert = isUrgent || isWarning || b.daysUntilDue <= 3;
+
     const badgeColor = isUrgent ? '#ef4444' : (isWarning ? '#f59e0b' : 'var(--success)');
-    const badgeBg = isUrgent ? 'rgba(239, 68, 68, 0.15)' : (isWarning ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)');
+    const badgeBg = isUrgent ? 'rgba(239, 68, 68, 0.18)' : (isWarning ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.15)');
+
+    const cardBorder = isAlert 
+      ? (isUrgent ? '2px solid #ef4444 !important' : '2px solid #f59e0b !important')
+      : '1px solid var(--border-color)';
+    const cardGlow = isAlert 
+      ? (isUrgent ? '0 0 18px rgba(239, 68, 68, 0.32)' : '0 0 18px rgba(245, 158, 11, 0.30)')
+      : 'none';
+    const cardBg = isAlert 
+      ? (isUrgent ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.05)')
+      : 'var(--bg-secondary)';
+
+    const amountColor = isAlert 
+      ? (isUrgent ? 'var(--danger)' : '#f59e0b') 
+      : 'var(--text-main)';
 
     return `
-      <div class="smart-monitor-item" style="border-color: ${b.daysUntilDue <= 1 ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-color)'};">
+      <div class="smart-monitor-item ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
+        ${isAlert ? `
+          <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
+            <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
+            <span>${isUrgent ? 'URGENTE • BOLETO VENCIDO OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+          </div>
+        ` : ''}
+
         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
           <div style="min-width: 0; flex: 1 1 150px;">
             <div style="font-weight: 700; font-size: 0.90rem; color: var(--text-main); line-height: 1.25; word-break: break-word;" title="${b.description}">${b.description}</div>
@@ -3207,7 +3282,7 @@ function renderBillsSmartMonitor() {
 
         <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.25rem; margin: 0.35rem 0 0.55rem;">
           <span style="font-size: 0.76rem; color: var(--text-muted);">Valor do Boleto:</span>
-          <b style="font-size: 1.15rem; color: var(--danger);">${currencyFormatter.format(b.amount)}</b>
+          <b style="font-size: 1.15rem; font-weight: 800; color: ${amountColor};">${currencyFormatter.format(b.amount)}</b>
         </div>
 
         <div class="smart-monitor-actions" style="display: flex; gap: 0.4rem; flex-wrap: wrap; min-height: 34px; align-items: center;">
@@ -3216,7 +3291,7 @@ function renderBillsSmartMonitor() {
               <i data-lucide="copy" style="width: 12px; height: 12px;"></i> Copiar
             </button>
           ` : ''}
-          <button onclick="handleOpenPayBill('${b.id}')" class="btn btn-primary" style="padding: 0.35rem 0.65rem; font-size: 0.76rem; flex: 1 1 130px; justify-content: center; min-height: 34px;">
+          <button onclick="handleOpenPayBill('${b.id}')" class="btn ${isAlert ? 'btn-alert-pay' : 'btn-primary'}" style="padding: 0.35rem 0.65rem; font-size: 0.76rem; flex: 1 1 130px; justify-content: center; min-height: 34px;">
             <i data-lucide="check-circle" style="width: 14px; height: 14px; flex-shrink: 0;"></i>
             <span>Pagar & Renovar</span>
           </button>
@@ -3263,12 +3338,16 @@ window.handleSelectAccount = function(accId) {
   if (detailsCard) {
     if (isMobileViewport()) {
       detailsCard.scrollTop = 0;
+      detailsCard.classList.add('mobile-sheet-open');
+      detailsCard.style.display = 'block';
     } else {
       triggerDesktopDetailsScrollAndPulse(detailsCard);
     }
   }
+  syncMobileDetailsSheetBackdrop();
 };
 
+// Alternar entre abas de faturas do cartão
 window.handleSelectCardInvoiceTab = function(invKey) {
   currentSelectedCardInvoiceKey = invKey;
   renderSelectedAccountDetails();
@@ -12100,12 +12179,16 @@ window.checkAppUpdates = async function(isManualClick = false) {
       const release = await res.json();
       if (release && release.tag_name) {
         const ver = release.tag_name.replace(/^v/i, '').trim();
-        let apkUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Valore.apk`;
-        let exeUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Instalador.Valore.Financeiro.exe`;
+        const cleanVer = ver.replace(/\./g, '');
+        let apkUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Valore_${cleanVer}.apk`;
+        let exeUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Instalador_Valore_Financeiro_${cleanVer}.exe`;
 
         if (Array.isArray(release.assets)) {
-          const apkAsset = release.assets.find(a => a.name && a.name.endsWith('.apk'));
-          const exeAsset = release.assets.find(a => a.name && a.name.endsWith('.exe'));
+          // Prioriza instaladores versionados oficiais com underline
+          const apkAsset = release.assets.find(a => a.name && a.name.toLowerCase().startsWith('valore_') && a.name.endsWith('.apk')) ||
+                           release.assets.find(a => a.name && a.name.endsWith('.apk'));
+          const exeAsset = release.assets.find(a => a.name && a.name.toLowerCase().includes('instalador') && a.name.endsWith('.exe')) ||
+                           release.assets.find(a => a.name && a.name.endsWith('.exe'));
           if (apkAsset && apkAsset.browser_download_url) apkUrl = apkAsset.browser_download_url;
           if (exeAsset && exeAsset.browser_download_url) exeUrl = exeAsset.browser_download_url;
         }
@@ -12342,6 +12425,21 @@ window.saveNotificationSettingsFromModal = async function() {
       await finance.saveNotificationSettings(newSettings);
     }
 
+    // Se o usuário ativou o leitor de bancos no Android, valida se tem permissão de sistema
+    if (newSettings.bankNotificationReader && typeof window.AndroidBankNotificationBridge !== 'undefined') {
+      const hasPerm = window.AndroidBankNotificationBridge.isPermissionGranted();
+      if (!hasPerm) {
+        if (typeof showToast === 'function') {
+          showToast('Para interceptar compras, ative a chave do Valore na tela do Android!', 'warning', 5000);
+        }
+        setTimeout(() => {
+          try {
+            window.AndroidBankNotificationBridge.openPermissionSettings();
+          } catch (_) {}
+        }, 800);
+      }
+    }
+
     // Solicita permissão web exclusivamente no navegador desktop, NUNCA dentro de WebView móvel Capacitor/Android
     const isMobileApp = typeof window !== 'undefined' && !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
     if (!isMobileApp && newSettings.enabled && typeof Notification !== 'undefined' && Notification.permission === 'default') {
@@ -12391,7 +12489,25 @@ window.testNotificationTrigger = function() {
     setTimeout(() => { if (feedbackBox) feedbackBox.style.display = 'none'; }, 5000);
   }
 
-  // 3. Web Notification se disponível no ambiente
+  // 3. Simulação no Android do Leitor Bancário Nativo
+  if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.simulateTestNotification) {
+    try {
+      window.AndroidBankNotificationBridge.simulateTestNotification('Nubank', 'Compra de R$ 45,90 aprovada em Padaria Bella Vista');
+    } catch (_) {}
+  } else {
+    // Simulação visual direta no navegador/desktop
+    setTimeout(() => {
+      window.handleNativeBankNotificationReceived({
+        id: 'test_sample_' + Date.now(),
+        bankName: 'Nubank',
+        title: 'Nubank',
+        text: 'Compra de R$ 45,90 aprovada em Padaria Bella Vista',
+        timestamp: Date.now()
+      });
+    }, 600);
+  }
+
+  // 4. Web Notification se disponível no ambiente
   const title = 'Lembrete Valore Financeiro';
   const body = 'Você tem um alerta de teste: lembretes de contas configurados com sucesso!';
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -12402,9 +12518,199 @@ window.testNotificationTrigger = function() {
     }
   }
 
-  // 4. Toast Supremo visível no topo da tela acima de qualquer modal
+  // 5. Toast Supremo visível no topo da tela acima de qualquer modal
   if (typeof showToast === 'function') {
-    showToast('🔔 Lembrete de Teste: Suas contas e vencimentos serão avisados no horário definido!', 'success', 4500);
+    showToast('🔔 Lembrete de Teste: Suas contas e compras bancárias serão avisadas com sucesso!', 'success', 4500);
+  }
+};
+
+// ========================================================
+// LEITOR INTELIGENTE DE NOTIFICAÇÕES BANCÁRIAS (ANDROID)
+// ========================================================
+function parseBankNotificationData(notif) {
+  if (!notif) return null;
+  const rawText = ((notif.title || '') + ' ' + (notif.text || '')).trim();
+  if (!rawText) return null;
+
+  // 1. Extração do valor em Reais (R$ 1.234,56 ou R$ 45,90 ou 45,90)
+  let amount = 0;
+  let formattedAmount = '0,00';
+  const valMatch = rawText.match(/(?:R\$\s*|valor\s*(?:de)?\s*R?\$?\s*)([\d\.,]+)/i) || rawText.match(/([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})/);
+  if (valMatch && valMatch[1]) {
+    const cleanNum = valMatch[1].replace(/\./g, '').replace(',', '.');
+    amount = parseFloat(cleanNum) || 0;
+    formattedAmount = valMatch[1];
+  }
+
+  // 2. Extração do Estabelecimento / Destino
+  let description = '';
+  const descMatch = rawText.match(/(?:em|no|na|para|loja)\s+([A-Za-z0-9\s\.\-_&]{3,35})(?:[\.,;]|$)/i);
+  if (descMatch && descMatch[1]) {
+    description = descMatch[1].trim();
+  } else {
+    description = notif.title || `Compra ${notif.bankName || 'Cartão'}`;
+  }
+
+  // 3. Detecção da Conta ou Cartão correspondente no Valore
+  let matchedAccountId = '';
+  try {
+    if (typeof finance !== 'undefined' && finance.getAccounts) {
+      const accounts = finance.getAccounts() || [];
+      const bankLower = (notif.bankName || '').toLowerCase();
+      const rawLower = rawText.toLowerCase();
+
+      // Procura primeiro por banco correspondente
+      const found = accounts.find(a => {
+        const aBank = (a.bankId || '').toLowerCase();
+        const aName = (a.name || '').toLowerCase();
+        return (bankLower && (aBank.includes(bankLower) || aName.includes(bankLower))) ||
+               (rawLower.includes(aBank) && aBank.length >= 3) ||
+               (rawLower.includes(aName) && aName.length >= 4);
+      });
+      if (found) matchedAccountId = found.id;
+    }
+  } catch (_) {}
+
+  return {
+    id: notif.id || ('bn_' + Date.now()),
+    bankName: notif.bankName || 'Banco',
+    amount: amount,
+    formattedAmount: formattedAmount,
+    description: description,
+    accountId: matchedAccountId,
+    rawText: rawText,
+    timestamp: notif.timestamp || Date.now()
+  };
+}
+
+window.showBankTransactionSuggestion = function(parsed) {
+  if (!parsed || parsed.amount <= 0) return;
+
+  // Evita duplicidade do mesmo alerta
+  const existing = document.getElementById('bankNotifSuggestionBanner');
+  if (existing) existing.remove();
+
+  const banner = document.createElement('div');
+  banner.id = 'bankNotifSuggestionBanner';
+  banner.className = 'glass-card';
+  banner.style.cssText = `
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(92vw, 440px);
+    z-index: 1000100;
+    background: linear-gradient(135deg, rgba(17, 24, 39, 0.96) 0%, rgba(30, 41, 59, 0.98) 100%);
+    border: 1.5px solid #f59e0b;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.25);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    animation: slideDownFade 0.3s ease;
+  `;
+
+  banner.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+      <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
+        <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-radius: 8px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+        </span>
+        <div style="min-width: 0;">
+          <div style="font-weight: 700; font-size: 0.82rem; color: #fbbf24; line-height: 1.2;">Compra Detectada • ${parsed.bankName}</div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${parsed.description}</div>
+        </div>
+      </div>
+      <b style="font-size: 1.05rem; font-weight: 800; color: #f87171; white-space: nowrap;">R$ ${parsed.formattedAmount}</b>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; margin-top: 0.2rem;">
+      <button id="btnDismissBankNotif" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.75rem; min-height: 32px; border-color: rgba(255,255,255,0.2); color: var(--text-secondary);">
+        Ignorar
+      </button>
+      <button id="btnLaunchBankNotifTx" class="btn btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; min-height: 32px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+        <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+        Lançar em 1 Toque
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(banner);
+  if (window.lucide) lucide.createIcons();
+
+  document.getElementById('btnDismissBankNotif').onclick = () => {
+    banner.remove();
+  };
+
+  document.getElementById('btnLaunchBankNotifTx').onclick = () => {
+    banner.remove();
+    window.openTxModalFromBankNotification(parsed);
+  };
+
+  // Auto-remove após 20 segundos se não interagir
+  setTimeout(() => {
+    if (document.body.contains(banner)) banner.remove();
+  }, 20000);
+};
+
+window.openTxModalFromBankNotification = function(parsed) {
+  const btnOpenTx = document.getElementById('btnOpenNewTxModal');
+  if (btnOpenTx) btnOpenTx.click();
+
+  setTimeout(() => {
+    const toggleExp = document.getElementById('toggleExpense');
+    if (toggleExp) toggleExp.click();
+
+    const amountInput = document.getElementById('txAmount');
+    if (amountInput) {
+      amountInput.value = parsed.formattedAmount;
+      amountInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    const descInput = document.getElementById('txDesc');
+    if (descInput) {
+      descInput.value = parsed.description;
+    }
+
+    if (parsed.accountId) {
+      const accSelect = document.getElementById('txAccount');
+      if (accSelect) accSelect.value = parsed.accountId;
+    }
+
+    if (typeof showToast === 'function') {
+      showToast('Dados da compra preenchidos! Confirme a categoria para salvar.', 'success', 4000);
+    }
+  }, 350);
+};
+
+window.handleNativeBankNotificationReceived = function(jsonStr) {
+  try {
+    const notif = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
+    const parsed = parseBankNotificationData(notif);
+    if (parsed) {
+      window.showBankTransactionSuggestion(parsed);
+    }
+  } catch (err) {
+    console.warn('Erro ao processar notificação bancária nativa:', err);
+  }
+};
+
+window.checkPendingBankNotifications = function() {
+  if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.getPendingNotifications) {
+    try {
+      const raw = window.AndroidBankNotificationBridge.getPendingNotifications();
+      if (!raw || raw === '[]') return;
+      const list = JSON.parse(raw);
+      if (Array.isArray(list) && list.length > 0) {
+        const latest = list[list.length - 1];
+        const parsed = parseBankNotificationData(latest);
+        if (parsed) {
+          window.showBankTransactionSuggestion(parsed);
+        }
+        window.AndroidBankNotificationBridge.clearPendingNotifications();
+      }
+    } catch (_) {}
   }
 };
 
@@ -12824,6 +13130,43 @@ function setupUpdateModalListeners() {
   }
 }
 
+
+// =========================================================================
+// --- CONTROLE DO MENU RETRÁTIL DO RODAPÉ DA SIDEBAR (AJUSTES & SISTEMA) ---
+// =========================================================================
+window.toggleSidebarFooter = function(forcedState = null) {
+  const toggleBtn = document.getElementById('sidebarFooterToggle');
+  const bodyEl = document.getElementById('sidebarRetractableBody');
+  if (!toggleBtn || !bodyEl) return;
+
+  const isCurrentlyExpanded = bodyEl.classList.contains('expanded');
+  const willExpand = forcedState !== null ? Boolean(forcedState) : !isCurrentlyExpanded;
+
+  if (willExpand) {
+    bodyEl.classList.add('expanded');
+    toggleBtn.setAttribute('aria-expanded', 'true');
+    try { localStorage.setItem('valore_sidebar_footer_expanded', 'true'); } catch (_) {}
+  } else {
+    bodyEl.classList.remove('expanded');
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    try { localStorage.setItem('valore_sidebar_footer_expanded', 'false'); } catch (_) {}
+  }
+
+  if (window.lucide && typeof window.lucide.createIcons === 'function') {
+    window.lucide.createIcons();
+  }
+};
+
+window.initSidebarFooterRetraction = function() {
+  const savedState = localStorage.getItem('valore_sidebar_footer_expanded');
+  // Por padrão recolhido para garantir espaço total imediato aos menus de navegação
+  if (savedState === 'true') {
+    window.toggleSidebarFooter(true);
+  } else {
+    window.toggleSidebarFooter(false);
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
   setupCalculator();
@@ -12831,7 +13174,9 @@ document.addEventListener('DOMContentLoaded', () => {
   initMobileBackButtonListener();
   setupUpdateModalListeners();
   setupNotificationListeners();
+  initSidebarFooterRetraction();
   setTimeout(() => { if (window.updateHeaderNotificationBadge) window.updateHeaderNotificationBadge(); }, 1000);
+  setTimeout(() => { if (window.checkPendingBankNotifications) window.checkPendingBankNotifications(); }, 2000);
   setTimeout(() => {
     window.checkAppUpdates(false);
   }, 3000);

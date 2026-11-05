@@ -96,52 +96,65 @@
         </li>
       </ul>
 
-      <!-- Seletor de Tema Elegante (Dark / Light / Auto) e Modo Econômico -->
-      <div class="sidebar-footer">
-        <div class="theme-selector" id="themeSelector">
-          <button class="theme-btn" data-theme-val="light" title="Tema Claro">
-            <i data-lucide="sun"></i>
-            <span>Claro</span>
-          </button>
-          <button class="theme-btn" data-theme-val="dark" title="Tema Escuro">
-            <i data-lucide="moon"></i>
-            <span>Escuro</span>
-          </button>
-          <button class="theme-btn active" data-theme-val="auto" title="Seguir Horário/SO">
-            <i data-lucide="monitor"></i>
-            <span>Auto</span>
-          </button>
-        </div>
-        <button type="button" id="btnOpenWelcomeTour" class="btn-lite-mode-toggle"
-          title="Ver Dicas Rápidas e Funcionalidades do Valore"
-          onclick="window.openWelcomeModal(true)"
-          style="margin-top: 0.35rem; border-color: rgba(99, 102, 241, 0.3); color: var(--primary);">
-          <i data-lucide="help-circle" style="width: 14px; height: 14px;"></i>
-          <span>Dicas & Boas-Vindas</span>
-        </button>
-        <button type="button" id="btnSidebarNotifications" class="btn-lite-mode-toggle"
-          title="Configurar Lembretes de Vencimento e Notificações"
-          onclick="window.openNotificationSettingsModal()"
-          style="margin-top: 0.35rem; border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;">
-          <i data-lucide="bell" style="width: 14px; height: 14px;"></i>
-          <span>Lembretes & Alertas</span>
-        </button>
-        <button type="button" id="btnToggleLiteMode" class="btn-lite-mode-toggle"
-          title="Ativar Modo Leve para computadores fracos (Desativa blur e sombras para economizar CPU e RAM)"
-          onclick="window.togglePerformanceMode()">
-          <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
-          <span id="liteModeText">Modo Padrão</span>
-        </button>
-      
-        <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
-          <div style="display: flex; align-items: center; gap: 0.45rem;">
-            <span class="version-dot" id="sidebarVersionDot">●</span>
-            <span class="version-number" id="sidebarVersionText">Valore v1.2.5</span>
+      <!-- Rodapé Retrátil da Barra Lateral (Otimização Máxima de Espaço Vertical) -->
+      <div class="sidebar-footer" id="sidebarFooter">
+        <button type="button" class="sidebar-footer-toggle" id="sidebarFooterToggle" onclick="window.toggleSidebarFooter()" title="Alternar menu de Ajustes & Sistema" aria-expanded="false">
+          <div class="sidebar-footer-toggle-left">
+            <i data-lucide="sliders-horizontal" class="toggle-icon"></i>
+            <span class="toggle-label">Ajustes & Sistema</span>
           </div>
-          <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
+          <div class="sidebar-footer-toggle-right">
+            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.2.6</span>
+            <i data-lucide="chevron-up" class="sidebar-footer-chevron" id="sidebarFooterChevron"></i>
+          </div>
+        </button>
+
+        <div class="sidebar-retractable-body" id="sidebarRetractableBody">
+          <div class="theme-selector" id="themeSelector">
+            <button class="theme-btn" data-theme-val="light" title="Tema Claro">
+              <i data-lucide="sun"></i>
+              <span>Claro</span>
+            </button>
+            <button class="theme-btn" data-theme-val="dark" title="Tema Escuro">
+              <i data-lucide="moon"></i>
+              <span>Escuro</span>
+            </button>
+            <button class="theme-btn active" data-theme-val="auto" title="Seguir Horário/SO">
+              <i data-lucide="monitor"></i>
+              <span>Auto</span>
+            </button>
+          </div>
+          <button type="button" id="btnOpenWelcomeTour" class="btn-lite-mode-toggle"
+            title="Ver Dicas Rápidas e Funcionalidades do Valore"
+            onclick="window.openWelcomeModal(true)"
+            style="margin-top: 0.35rem; border-color: rgba(99, 102, 241, 0.3); color: var(--primary);">
+            <i data-lucide="help-circle" style="width: 14px; height: 14px;"></i>
+            <span>Dicas & Boas-Vindas</span>
+          </button>
+          <button type="button" id="btnSidebarNotifications" class="btn-lite-mode-toggle"
+            title="Configurar Lembretes de Vencimento e Notificações"
+            onclick="window.openNotificationSettingsModal()"
+            style="margin-top: 0.35rem; border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;">
+            <i data-lucide="bell" style="width: 14px; height: 14px;"></i>
+            <span>Lembretes & Alertas</span>
+          </button>
+          <button type="button" id="btnToggleLiteMode" class="btn-lite-mode-toggle"
+            title="Ativar Modo Leve para computadores fracos (Desativa blur e sombras para economizar CPU e RAM)"
+            onclick="window.togglePerformanceMode()">
+            <i data-lucide="zap" style="width: 14px; height: 14px;"></i>
+            <span id="liteModeText">Modo Padrão</span>
+          </button>
+        
+          <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              <span class="version-dot" id="sidebarVersionDot">●</span>
+              <span class="version-number" id="sidebarVersionText">Valore v1.2.7</span>
+            </div>
+            <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
+          </div>
         </div>
       </div>
-    </aside>
+      </aside>
 
     <!-- Área Principal de Conteúdo -->
     <main class="main-content">
@@ -805,6 +818,32 @@
 
       <!-- View: Contas & Bancos -->
       <div id="view-accounts" class="view-container" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div class="accounts-toolbar"
+          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: -0.25rem;">
+          <div class="accounts-filter-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btnFilterAllAccounts"
+              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Todas</button>
+            <button class="btn btn-outline" id="btnFilterCheckingOnly"
+              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Contas Bancárias</button>
+            <button class="btn btn-outline" id="btnFilterCreditOnly"
+              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Cartões de Crédito</button>
+            <button class="btn btn-outline" id="btnFilterBillsOnly" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+              <i data-lucide="receipt" style="width: 13px; height: 13px;"></i>
+              <span>Boletos & Contas Fixas</span>
+            </button>
+          </div>
+          <div class="accounts-action-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="btnOpenNewBillModal" style="font-size: 0.82rem;">
+              <i data-lucide="file-text"></i>
+              <span>Novo Boleto / Conta</span>
+            </button>
+            <button class="btn btn-primary" id="btnOpenNewAccountModal" style="font-size: 0.82rem;">
+              <i data-lucide="plus"></i>
+              <span>Nova Conta / Cartão</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Banner Inteligente: Monitor de Cartões e Vencimentos Próximos -->
         <div id="creditCardsSmartMonitor" class="card smart-monitor-card smart-cards-monitor" style="display: none;">
           <div class="smart-monitor-header"
@@ -815,7 +854,7 @@
                 <i data-lucide="bell-ring" style="width: 16px; height: 16px;"></i>
               </span>
               <h4 style="margin: 0; font-size: 0.95rem; font-weight: 700; line-height: 1.3; word-break: break-word;">
-                Gestão Inteligente de Faturas e Cartões</h4>
+                Faturas e Cartões próximos do vencimento</h4>
             </div>
             <span id="smartCardsAlertSummary" class="badge smart-monitor-summary-badge"
               style="background: rgba(59, 130, 246, 0.15); color: var(--primary); font-size: 0.75rem; max-width: 100%; white-space: normal; word-break: break-word;"></span>
@@ -847,31 +886,6 @@
           </div>
         </div>
 
-        <div class="accounts-toolbar"
-          style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: -0.25rem;">
-          <div class="accounts-filter-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" id="btnFilterAllAccounts"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Todas</button>
-            <button class="btn btn-outline" id="btnFilterCheckingOnly"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Contas Bancárias</button>
-            <button class="btn btn-outline" id="btnFilterCreditOnly"
-              style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">Cartões de Crédito</button>
-            <button class="btn btn-outline" id="btnFilterBillsOnly" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
-              <i data-lucide="receipt" style="width: 13px; height: 13px;"></i>
-              <span>Boletos & Contas Fixas</span>
-            </button>
-          </div>
-          <div class="accounts-action-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button class="btn btn-outline" id="btnOpenNewBillModal" style="font-size: 0.82rem;">
-              <i data-lucide="file-text"></i>
-              <span>Novo Boleto / Conta</span>
-            </button>
-            <button class="btn btn-primary" id="btnOpenNewAccountModal" style="font-size: 0.82rem;">
-              <i data-lucide="plus"></i>
-              <span>Nova Conta / Cartão</span>
-            </button>
-          </div>
-        </div>
         <div class="accounts-grid" id="accountsGridContainer"></div>
 
         <!-- Painel de Detalhes e Extrato da Conta Selecionada -->
@@ -4714,13 +4728,17 @@
        <b style="font-size: 0.82rem; color: var(--primary);">Leitor de Notificações Bancárias</b>
        <label class="switch" style="transform: scale(0.85);">
          <input type="checkbox" id="notifBankReader">
-         <span class="slider"></span>
-       </label>
-     </div>
+          <span class="slider"></span>
+        </label>
+      </div>
             </div>
             <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
-              O Valore está preparado para interceptar compras do <b>Nubank, Itaú, Inter, Bradesco e C6</b> no Android e sugerir lançamentos em 1 toque.
+              O Valore intercepta compras do <b>Nubank, Itaú, Inter, Bradesco, C6 e Santander</b> no Android para lançamentos em 1 toque.
             </p>
+            <button type="button" id="btnRequestBankNotifPermission" onclick="if(typeof window.AndroidBankNotificationBridge !== 'undefined'){window.AndroidBankNotificationBridge.openPermissionSettings();}else{alert('O leitor nativo opera diretamente no smartphone Android.');}" class="btn btn-outline" style="font-size: 0.72rem; padding: 0.28rem 0.6rem; margin-top: 0.45rem; border-color: rgba(59,130,246,0.35); color: var(--primary); gap: 0.35rem; display: inline-flex; align-items: center;">
+              <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i>
+              <span>Autorizar Acesso a Notificações no Android</span>
+            </button>
           </div>
         </div>
       </div>
@@ -4817,8 +4835,8 @@
   <script src="qrcode.js"></script>
   <script src="jsQR.js"></script>
   <script src="xlsx.full.min.js" defer></script>
-  <script src="core/storage.js"></script>
-  <script src="core/financeService.js"></script>
+  <script src="../core/storage.js"></script>
+  <script src="../core/financeService.js"></script>
   <script src="app.js"></script>
 </body>
 

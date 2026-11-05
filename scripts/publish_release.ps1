@@ -1,6 +1,6 @@
 param(
-    [string]$TagName = "v1.0.3",
-    [string]$ReleaseName = "Valore v1.0.3 - Titularidade Inteligente de Contas & Cartoes"
+    [string]$TagName = "",
+    [string]$ReleaseName = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,6 +8,20 @@ $ErrorActionPreference = "Stop"
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host "   Publicador Automatizado de Releases - Valore       " -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
+
+# 0. Lê dados dinâmicos do version.json
+$verData = Get-Content "version.json" -Raw | ConvertFrom-Json
+$currentVersion = $verData.version
+$cleanVer = $currentVersion.Replace(".", "")
+
+if (-not $TagName) {
+    $TagName = "v$currentVersion"
+}
+if (-not $ReleaseName) {
+    $ReleaseName = if ($verData.title) { $verData.title } else { "Valore v$currentVersion" }
+}
+
+Write-Host "Versão Alvo: $TagName ($ReleaseName)" -ForegroundColor Green
 
 # 1. Obter token do Git Credential Manager com fallback robusto
 $token = (node "$PSScriptRoot\get_github_token.js").Trim()
@@ -31,13 +45,12 @@ try {
     Write-Host "Release '$TagName' ja existe (ID: $($release.id))." -ForegroundColor Green
 } catch {
     Write-Host "Criando nova Release '$TagName'..." -ForegroundColor Yellow
-    $verData = Get-Content "version.json" -Raw | ConvertFrom-Json
     $notesFormatted = ($verData.notes | ForEach-Object { "- $_" }) -join "`n"
-    $bodyText = "# $($verData.title)`n`n### Destaques desta Versao:`n$notesFormatted`n`n### Downloads Disponiveis:`n- **Desktop Windows:** [Instalador Valore Financeiro.exe](https://github.com/allantr4/valore/releases/download/$TagName/Instalador%20Valore%20Financeiro.exe)`n- **Mobile Android:** [Valore.apk](https://github.com/allantr4/valore/releases/download/$TagName/Valore.apk)`n"
+    $bodyText = "# $($verData.title)`n`n### Destaques desta Versao:`n$notesFormatted`n`n### Downloads Disponiveis:`n- **Desktop Windows (Versionado):** [Instalador_Valore_Financeiro_$cleanVer.exe](https://github.com/allantr4/valore/releases/download/$TagName/Instalador_Valore_Financeiro_$cleanVer.exe)`n- **Mobile Android (Versionado):** [Valore_$cleanVer.apk](https://github.com/allantr4/valore/releases/download/$TagName/Valore_$cleanVer.apk)`n- **Desktop Windows (Padrao):** [Instalador Valore Financeiro.exe](https://github.com/allantr4/valore/releases/download/$TagName/Instalador%20Valore%20Financeiro.exe)`n- **Mobile Android (Padrao):** [Valore.apk](https://github.com/allantr4/valore/releases/download/$TagName/Valore.apk)`n"
     
     $payloadObj = @{
         tag_name = $TagName
-        name = if ($ReleaseName) { $ReleaseName } else { $verData.title }
+        name = $ReleaseName
         body = $bodyText
         draft = $false
         prerelease = $false
@@ -48,66 +61,55 @@ try {
     Write-Host "Release criada com sucesso! (ID: $($release.id))" -ForegroundColor Green
 }
 
-# 3. Upload do Instalador Desktop Windows
-Write-Host "`n[2/3] Processando upload do Instalador Desktop Windows..." -ForegroundColor Yellow
-$installerPath = "E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe"
-if (Test-Path $installerPath) {
-    $installerName = [System.IO.Path]::GetFileName($installerPath)
-    $encodedName = [System.Uri]::EscapeDataString($installerName)
+# Função auxiliar de upload com verificação
+function Upload-ReleaseAsset([string]$filePath, [string]$contentType) {
+    if (-not (Test-Path $filePath)) {
+        Write-Warning "Arquivo nao encontrado para upload: $filePath"
+        return
+    }
+
+    $fileName = [System.IO.Path]::GetFileName($filePath)
+    $encodedName = [System.Uri]::EscapeDataString($fileName)
     $uploadUri = "https://uploads.github.com/repos/allantr4/valore/releases/$($release.id)/assets?name=$encodedName"
-    
+
     $currentRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/allantr4/valore/releases/$($release.id)" -Headers $headers -Method Get
-    $existing = $currentRelease.assets | Where-Object { $_.name -eq $installerName }
-    
+    $existing = $currentRelease.assets | Where-Object { $_.name -eq $fileName }
+
     if ($existing) {
-        Write-Host "Asset '$installerName' ja existe na release (ID: $($existing.id))." -ForegroundColor Gray
+        Write-Host "Asset '$fileName' ja existe na release (ID: $($existing.id))." -ForegroundColor Gray
         Write-Host "Link direto: $($existing.browser_download_url)" -ForegroundColor Cyan
     } else {
-        $fileSizeMB = [math]::Round(((Get-Item $installerPath).Length / 1MB), 2)
-        Write-Host "Enviando '$installerName' ($fileSizeMB MB) para o GitHub... Aguarde..." -ForegroundColor Yellow
-        
+        $fileSizeMB = [math]::Round(((Get-Item $filePath).Length / 1MB), 2)
+        Write-Host "Enviando '$fileName' ($fileSizeMB MB) para o GitHub... Aguarde..." -ForegroundColor Yellow
+
         $uploadHeaders = @{
             "Authorization" = "token $token"
             "User-Agent" = "Valore-Release-Bot"
-            "Content-Type" = "application/octet-stream"
+            "Content-Type" = $contentType
         }
-        $asset = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $uploadHeaders -InFile $installerPath -TimeoutSec 900
-        Write-Host "Upload de '$installerName' concluido com sucesso!" -ForegroundColor Green
+        $asset = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $uploadHeaders -InFile $filePath -TimeoutSec 900
+        Write-Host "Upload de '$fileName' concluido com sucesso!" -ForegroundColor Green
         Write-Host "Link direto: $($asset.browser_download_url)" -ForegroundColor Cyan
     }
-} else {
-    Write-Warning "Arquivo nao encontrado: $installerPath"
 }
 
-# 4. Upload do APK Android
-Write-Host "`n[3/3] Processando upload do APK Android..." -ForegroundColor Yellow
-$apkPath = "E:\Gestor Financeiro\Android\Valore.apk"
-if (Test-Path $apkPath) {
-    $apkName = [System.IO.Path]::GetFileName($apkPath)
-    $encodedName = [System.Uri]::EscapeDataString($apkName)
-    $uploadUri = "https://uploads.github.com/repos/allantr4/valore/releases/$($release.id)/assets?name=$encodedName"
-    
-    $currentRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/allantr4/valore/releases/$($release.id)" -Headers $headers -Method Get
-    $existingApk = $currentRelease.assets | Where-Object { $_.name -eq $apkName }
-    
-    if ($existingApk) {
-        Write-Host "Asset '$apkName' ja existe na release (ID: $($existingApk.id))." -ForegroundColor Gray
-        Write-Host "Link direto: $($existingApk.browser_download_url)" -ForegroundColor Cyan
-    } else {
-        $fileSizeMB = [math]::Round(((Get-Item $apkPath).Length / 1MB), 2)
-        Write-Host "Enviando '$apkName' ($fileSizeMB MB) para o GitHub... Aguarde..." -ForegroundColor Yellow
-        
-        $uploadHeaders = @{
-            "Authorization" = "token $token"
-            "User-Agent" = "Valore-Release-Bot"
-            "Content-Type" = "application/vnd.android.package-archive"
-        }
-        $assetApk = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $uploadHeaders -InFile $apkPath -TimeoutSec 600
-        Write-Host "Upload de '$apkName' concluido com sucesso!" -ForegroundColor Green
-        Write-Host "Link direto: $($assetApk.browser_download_url)" -ForegroundColor Cyan
-    }
-} else {
-    Write-Warning "Arquivo nao encontrado: $apkPath"
+# 3. Upload dos Instaladores Desktop Windows
+Write-Host "`n[2/3] Processando upload dos Instaladores Desktop Windows..." -ForegroundColor Yellow
+Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador_Valore_Financeiro_$cleanVer.exe" "application/octet-stream"
+Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe" "application/octet-stream"
+
+# 4. Upload dos APKs Android
+Write-Host "`n[3/3] Processando upload dos APKs Mobile Android..." -ForegroundColor Yellow
+Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk" "application/vnd.android.package-archive"
+
+# Garante cópia temporária para quem busca Valore.apk no release
+$tempApk = "E:\Gestor Financeiro\Android\Valore.apk"
+if (-not (Test-Path $tempApk) -and (Test-Path "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk")) {
+    Copy-Item "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk" -Destination $tempApk -Force
+}
+Upload-ReleaseAsset $tempApk "application/vnd.android.package-archive"
+if (Test-Path $tempApk) {
+    Remove-Item $tempApk -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host "`n======================================================" -ForegroundColor Green

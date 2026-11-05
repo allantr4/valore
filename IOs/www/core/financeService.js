@@ -331,7 +331,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.2.5';
+    return '1.2.8';
   }
 
   getAppBuildDate() {
@@ -553,6 +553,7 @@ class FinanceService {
       this.loadSeedData();
       await this.save({ skipAutoSync: true });
     }
+    await this.processRecurringTransactions();
     return this.state;
   }
 
@@ -1582,6 +1583,110 @@ class FinanceService {
     this.syncCreditCardBalances();
     await this.save();
     return { success: true, transaction: payTx, creditTx, card, sourceAcc, renewedTxs };
+  }
+
+
+  // Processamento autônomo de compras e assinaturas recorrentes (mensais/anuais)
+  async processRecurringTransactions() {
+    if (!this.state || !Array.isArray(this.state.transactions)) return [];
+
+    const todayStr = localDateStr();
+    const [tY, tM, tD] = todayStr.split('-').map(Number);
+    const todayDate = new Date(tY, tM - 1, tD);
+
+    // Identifica transações despesa marcadas com recorrência (monthly ou yearly)
+    const recurringTxs = this.state.transactions.filter(t => 
+      t.recurring && (t.recurring === 'monthly' || t.recurring === 'yearly') && t.type === 'expense'
+    );
+
+    if (recurringTxs.length === 0) return [];
+
+    // Agrupa por cadeia de recorrência (chave: accountId + descricao)
+    const chains = new Map();
+    recurringTxs.forEach(tx => {
+      const key = `${tx.accountId || 'none'}|${(tx.description || '').trim().toLowerCase()}`;
+      if (!chains.has(key)) {
+        chains.set(key, []);
+      }
+      chains.get(key).push(tx);
+    });
+
+    const createdTxs = [];
+
+    for (const [key, txList] of chains.entries()) {
+      // Ordena por data decrescente para pegar a mais recente e a mais antiga (dia original)
+      txList.sort((a, b) => b.date.localeCompare(a.date));
+      const latestTx = txList[0];
+      const baseRec = latestTx.recurring;
+
+      const oldestTx = txList[txList.length - 1];
+      const [oldY, oldM, origDueDay] = oldestTx.date.split('-').map(Number);
+
+      let [curY, curM] = latestTx.date.split('-').map(Number);
+
+      // Limite máximo de ciclos para evitar looping
+      let safetyCounter = 0;
+      while (safetyCounter < 48) {
+        safetyCounter++;
+        if (baseRec === 'monthly') {
+          curM++;
+          if (curM > 12) {
+            curM = 1;
+            curY++;
+          }
+        } else if (baseRec === 'yearly') {
+          curY++;
+        }
+
+        const daysInTargetMonth = new Date(curY, curM, 0).getDate();
+        const finalDay = Math.min(origDueDay, daysInTargetMonth);
+        const nextDateStr = `${curY}-${String(curM).padStart(2, '0')}-${String(finalDay).padStart(2, '0')}`;
+        const nextDateObj = new Date(curY, curM - 1, finalDay);
+
+        // Se a data de vencimento desta renovação ainda está no futuro relativo a hoje, não gera agora
+        if (nextDateObj > todayDate) {
+          break;
+        }
+
+        // Verifica se essa renovação já foi gerada
+        const alreadyExists = this.state.transactions.some(t => 
+          t.accountId === latestTx.accountId &&
+          (t.description || '').trim().toLowerCase() === (latestTx.description || '').trim().toLowerCase() &&
+          t.date === nextDateStr
+        );
+
+        if (!alreadyExists) {
+          const newTx = {
+            id: genId('tx'),
+            description: latestTx.description,
+            amount: latestTx.amount,
+            type: 'expense',
+            categoryId: latestTx.categoryId,
+            accountId: latestTx.accountId,
+            date: nextDateStr,
+            status: 'paid',
+            recurring: baseRec,
+            reconciled: false,
+            costCenterId: latestTx.costCenterId || null,
+            sideHustleId: latestTx.sideHustleId || null,
+            entityType: latestTx.entityType || 'pf',
+            notes: `↻ Renovação Automática da assinatura (${nextDateStr})`
+          };
+
+          this._touchEntity(newTx, 'system');
+          this.state.transactions.unshift(newTx);
+          this.updateAccountBalance(newTx.accountId, newTx.amount, 'expense', 'add');
+          createdTxs.push(newTx);
+        }
+      }
+    }
+
+    if (createdTxs.length > 0) {
+      this.syncCreditCardBalances();
+      await this.save();
+    }
+
+    return createdTxs;
   }
 
   // --- INTELIGÊNCIA DE FATURAS E CICLOS DE CARTÃO DE CRÉDITO ---

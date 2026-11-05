@@ -1,16 +1,19 @@
 {
-  "version": "1.2.5",
-  "releaseDate": "2026-11-02",
+  "version": "1.2.8",
+  "releaseDate": "2026-11-04",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.2.5 - Otimização Geral de Desempenho & Desalocação de GPU no Mobile",
+  "title": "Valore v1.2.8 - Leitor Nativo de Notificações Bancárias & Padronização Premium de Alertas",
   "notes": [
-    "Otimização Geral de Desempenho Mobile: desalocação instantânea de 24 camadas fixas de modais da GPU quando fechados, liberando RAM de vídeo e acelerando o hit-testing de toque.",
-    "Correção Definitiva de Lembretes & Alertas: correção do tratamento polimórfico de alertas no dashboard, eliminando falhas de renderização.",
-    "Eliminação de Bloqueio de Toque no Android: supressão de chamada web Notification.requestPermission() dentro do ambiente Capacitor móvel.",
-    "Aceleração de Toque Instantâneo: touch-action manipulation global eliminando atraso de 300ms e remoção de seletores universais de hover.",
-    "Paridade e sincronização contínua entre Desktop Windows, Mobile Android e iOS."
+    "Leitor Nativo de Notificações Bancárias no Android: interceptação automática de compras do Nubank, Itaú, Inter, C6, Bradesco, Santander, Caixa, BB e Mercado Pago com sugestão de lançamento em 1 toque.",
+    "Serviço Nativo em Segundo Plano: integração com NotificationListenerService do Android e permissão de Acesso a Notificações em 1 clique.",
+    "Padronização Visual Premium de Alertas: paridade total entre Faturas e Boletos com moldura âmbar e tarja superior translúcida fintech com tipografia dourada.",
+    "Badges de Resumo Unificados: cabeçalhos de faturas e boletos alinhados com pílulas arredondadas elegantes e mensagens padronizadas.",
+    "Extrato e Abas de Faturas Mobile: rolagem horizontal suave no carrossel de faturas e abertura fluida da gaveta de lançamentos do cartão.",
+    "Assinatura e Versionamento Contínuo: APK assinado com instalação direta e versionamento progressivo sequencial (v1.2.8 / 128)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador.Valore.Financeiro.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore.apk",
-  "githubReleaseUrl": "https://github.com/allantr4/valore/releases"
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_128.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_128.apk",
+  "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
+  "versionCode": 28,
+  "releaseNotes": "Leitor nativo de compras bancárias no Android em segundo plano, alertas visuais premium de vencimento e novo instalador versionado v1.2.8."
 }
