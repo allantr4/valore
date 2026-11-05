@@ -551,8 +551,9 @@ ipcMain.handle('updater:download-and-install', async (event, downloadUrl) => {
       }
     });
 
-    // Inicia o instalador desanexado do processo do Electron
-    const child = child_process.spawn(destPath, ['--update'], {
+    // Inicia o instalador desanexado do processo do Electron passando o diretório de instalação atual
+    const currentInstallDir = process.resourcesPath ? path.dirname(process.resourcesPath) : app.getAppPath();
+    const child = child_process.spawn(destPath, ['--update', '--dir', currentInstallDir], {
       detached: true,
       stdio: 'ignore'
     });

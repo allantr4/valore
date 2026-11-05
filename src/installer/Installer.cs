@@ -76,10 +76,13 @@ namespace ValoreInstaller
         private string finalInstallPath = "";
         private Image appLogo = null;
         private bool isAutoUpdateMode = false;
+        private string explicitDir = null;
+        private const string AppVersion = "1.3.1";
 
-        public InstallerForm(bool autoUpdate = false)
+        public InstallerForm(bool autoUpdate = false, string explicitInstallDir = null)
         {
             this.isAutoUpdateMode = autoUpdate;
+            this.explicitDir = explicitInstallDir;
             this.Text = "Valore - Instalador Oficial";
             this.Size = new Size(720, 520);
             this.FormBorderStyle = FormBorderStyle.None;
@@ -104,7 +107,11 @@ namespace ValoreInstaller
             BuildProgressPanel();
             BuildSuccessPanel();
 
-            if (isAutoUpdateMode)
+            if (!string.IsNullOrEmpty(explicitDir) && Directory.Exists(explicitDir))
+            {
+                txtPath.Text = explicitDir;
+            }
+            else if (isAutoUpdateMode)
             {
                 try
                 {
@@ -121,11 +128,14 @@ namespace ValoreInstaller
                     }
                 }
                 catch {}
+            }
 
+            if (isAutoUpdateMode)
+            {
                 this.Shown += (s, e) =>
                 {
                     KillRunningValoreProcesses();
-                    Thread.Sleep(300);
+                    Thread.Sleep(500);
                     StartInstallation();
                 };
             }
@@ -709,31 +719,48 @@ namespace ValoreInstaller
             if (shellType == null) return;
             dynamic shell = Activator.CreateInstance(shellType);
 
-            // Atalho na Área de Trabalho
+            // Atalho na Área de Trabalho (suporta Desktop clássico e OneDrive Área de Trabalho)
             if (chkDesktopShortcut.Checked)
             {
                 string desktopFolder = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-                string desktopLink = Path.Combine(desktopFolder, "Valore - Gestão Financeira.lnk");
-                dynamic scDesk = shell.CreateShortcut(desktopLink);
-                scDesk.TargetPath = exePath;
-                scDesk.WorkingDirectory = finalInstallPath;
-                scDesk.IconLocation = exePath + ",0";
-                scDesk.Description = "Valore - Gestão Financeira Inteligente";
-                scDesk.Save();
+                CreateShortcutInFolder(shell, desktopFolder, exePath);
+
+                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string oneDriveDesktopBr = Path.Combine(userProfile, "OneDrive", "Área de Trabalho");
+                if (Directory.Exists(oneDriveDesktopBr) && !string.Equals(desktopFolder, oneDriveDesktopBr, StringComparison.OrdinalIgnoreCase))
+                {
+                    CreateShortcutInFolder(shell, oneDriveDesktopBr, exePath);
+                }
+
+                string oneDriveDesktopEn = Path.Combine(userProfile, "OneDrive", "Desktop");
+                if (Directory.Exists(oneDriveDesktopEn) && !string.Equals(desktopFolder, oneDriveDesktopEn, StringComparison.OrdinalIgnoreCase))
+                {
+                    CreateShortcutInFolder(shell, oneDriveDesktopEn, exePath);
+                }
             }
 
             // Atalho no Menu Iniciar
             if (chkStartMenuShortcut.Checked)
             {
                 string startMenuFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.StartMenu), "Programs");
-                string startLink = Path.Combine(startMenuFolder, "Valore - Gestão Financeira.lnk");
-                dynamic scStart = shell.CreateShortcut(startLink);
-                scStart.TargetPath = exePath;
-                scStart.WorkingDirectory = finalInstallPath;
-                scStart.IconLocation = exePath + ",0";
-                scStart.Description = "Valore - Gestão Financeira Inteligente";
-                scStart.Save();
+                CreateShortcutInFolder(shell, startMenuFolder, exePath);
             }
+        }
+
+        private void CreateShortcutInFolder(dynamic shell, string folder, string exePath)
+        {
+            try
+            {
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                string linkPath = Path.Combine(folder, "Valore - Gestão Financeira.lnk");
+                dynamic sc = shell.CreateShortcut(linkPath);
+                sc.TargetPath = exePath;
+                sc.WorkingDirectory = Path.GetDirectoryName(exePath);
+                sc.IconLocation = exePath + ",0";
+                sc.Description = "Valore - Gestão Financeira Inteligente";
+                sc.Save();
+            }
+            catch {}
         }
 
         private void RegisterUninstaller()
@@ -754,6 +781,8 @@ namespace ValoreInstaller
                     "pause > nul\r\n" +
                     "echo Removendo atalhos...\r\n" +
                     "del /q \"%USERPROFILE%\\Desktop\\Valore - Gestao Financeira.lnk\" 2>nul\r\n" +
+                    "del /q \"%USERPROFILE%\\OneDrive\\Área de Trabalho\\Valore - Gestao Financeira.lnk\" 2>nul\r\n" +
+                    "del /q \"%USERPROFILE%\\OneDrive\\Desktop\\Valore - Gestao Financeira.lnk\" 2>nul\r\n" +
                     "del /q \"%APPDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Valore - Gestao Financeira.lnk\" 2>nul\r\n" +
                     "echo Removendo registros do Windows...\r\n" +
                     "reg delete \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Valore\" /f 2>nul\r\n" +
@@ -773,7 +802,7 @@ namespace ValoreInstaller
                     if (key != null)
                     {
                         key.SetValue("DisplayName", "Valore - Gestão Financeira Inteligente");
-                        key.SetValue("DisplayVersion", "1.0.0");
+                        key.SetValue("DisplayVersion", AppVersion);
                         key.SetValue("Publisher", "Valore Finanças");
                         key.SetValue("InstallLocation", finalInstallPath);
                         key.SetValue("DisplayIcon", exePath + ",0");
@@ -825,13 +854,20 @@ namespace ValoreInstaller
             try
             {
                 Process current = Process.GetCurrentProcess();
-                foreach (Process p in Process.GetProcessesByName("Valore"))
+                for (int attempt = 0; attempt < 5; attempt++)
                 {
-                    if (p.Id != current.Id)
+                    Process[] procs = Process.GetProcessesByName("Valore");
+                    bool anyAlive = false;
+                    foreach (Process p in procs)
                     {
-                        p.Kill();
-                        p.WaitForExit(3000);
+                        if (p.Id != current.Id)
+                        {
+                            anyAlive = true;
+                            try { p.Kill(); } catch {}
+                        }
                     }
+                    if (!anyAlive) break;
+                    Thread.Sleep(250);
                 }
             }
             catch {}
@@ -850,23 +886,28 @@ namespace ValoreInstaller
         static void Main(string[] args)
         {
             bool autoUpdate = false;
+            string explicitDir = null;
             if (args != null && args.Length > 0)
             {
-                foreach (string arg in args)
+                for (int i = 0; i < args.Length; i++)
                 {
+                    string arg = args[i];
                     if (arg.Equals("--update", StringComparison.OrdinalIgnoreCase) ||
                         arg.Equals("/update", StringComparison.OrdinalIgnoreCase) ||
                         arg.Equals("/silent", StringComparison.OrdinalIgnoreCase))
                     {
                         autoUpdate = true;
-                        break;
+                    }
+                    else if ((arg.Equals("--dir", StringComparison.OrdinalIgnoreCase) || arg.Equals("/dir", StringComparison.OrdinalIgnoreCase)) && i + 1 < args.Length)
+                    {
+                        explicitDir = args[i + 1].Trim('\"', '\'');
                     }
                 }
             }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new InstallerForm(autoUpdate));
+            Application.Run(new InstallerForm(autoUpdate, explicitDir));
         }
     }
 }

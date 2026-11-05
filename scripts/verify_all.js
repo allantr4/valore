@@ -112,6 +112,29 @@ try {
   logFail(`Erro ao validar financeService.js: ${e.message}`);
 }
 
+// Validação dos assets embarcados no Android e iOS
+const androidAssetsPublicCore = path.join(rootDir, 'Android/android/app/src/main/assets/public/core/financeService.js');
+if (fs.existsSync(androidAssetsPublicCore)) {
+  const coreAndroid = fs.readFileSync(androidAssetsPublicCore, 'utf8');
+  const match = coreAndroid.match(/getAppVersion\(\)\s*\{\s*return\s*['"]([^'"]+)['"]/);
+  if (match && match[1] === versionJsonVer) {
+    logPass(`Android assets public/core/financeService.js: v${match[1]} (Alinhado)`);
+  } else {
+    logFail(`Divergência de versão em Android assets public/core/financeService.js: ${match ? 'v' + match[1] : 'não encontrada'} vs v${versionJsonVer}`);
+  }
+}
+
+const androidGradlePath = path.join(rootDir, 'Android/android/app/build.gradle');
+if (fs.existsSync(androidGradlePath)) {
+  const gradleContent = fs.readFileSync(androidGradlePath, 'utf8');
+  const match = gradleContent.match(/versionName\s*["']([^"']+)["']/);
+  if (match && match[1] === versionJsonVer) {
+    logPass(`Android build.gradle versionName: v${match[1]} (Alinhado)`);
+  } else {
+    logFail(`Divergência de versão no build.gradle: ${match ? 'v' + match[1] : 'não encontrada'} vs v${versionJsonVer}`);
+  }
+}
+
 // 4. Verificação de Enquadramento, Scrollbar & Responsividade (UI Layout Audit)
 console.log('\n[4/5] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
 const cssPath = path.join(rootDir, 'src/ui/styles.css');

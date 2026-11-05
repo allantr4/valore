@@ -13138,11 +13138,14 @@ window.openUpdateModal = function(info, currentVer) {
 
   if (changelogEl) {
     if (Array.isArray(info.notes) && info.notes.length > 0) {
-      changelogEl.innerHTML = '<ul style="margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.35rem;">' +
-        info.notes.map(note => `<li>${note}</li>`).join('') +
+      changelogEl.innerHTML = '<ul class="update-notes-list">' +
+        info.notes.map(note => {
+          const cleanNote = String(note).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          return `<li class="update-note-item"><i data-lucide="check" class="update-note-icon"></i><span>${cleanNote}</span></li>`;
+        }).join('') +
         '</ul>';
     } else {
-      changelogEl.innerHTML = '<p style="margin: 0;">Melhorias contínuas de estabilidade, desempenho e interface.</p>';
+      changelogEl.innerHTML = '<p style="margin: 0; color: var(--text-muted); font-size: 0.85rem;">Melhorias contínuas de estabilidade, desempenho e interface.</p>';
     }
   }
 

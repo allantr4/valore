@@ -4825,66 +4825,77 @@
 
   <!-- Modal de Atualização Online -->
   <div class="modal-overlay" id="updateModal" style="z-index: 10050;">
-    <div class="modal-card" style="max-width: 480px;">
-      <div class="card-title-row">
-        <div style="display: flex; align-items: center; gap: 0.65rem;">
-          <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(59, 130, 246, 0.15); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+    <div class="modal-card update-modal-card">
+      <!-- Cabeçalho Fixo -->
+      <div class="update-modal-header">
+        <div class="update-header-info">
+          <div class="update-header-icon">
             <i data-lucide="sparkles"></i>
           </div>
           <div>
-            <h3 id="updateModalTitle" style="margin: 0; font-size: 1.15rem;">Atualização Disponível!</h3>
-            <span id="updateModalSubtitle" style="font-size: 0.78rem; color: var(--text-muted);">Uma nova versão do Valore está pronta para uso</span>
+            <h3 id="updateModalTitle" class="update-modal-title">Atualização Disponível!</h3>
+            <span id="updateModalSubtitle" class="update-modal-subtitle">Uma nova versão do Valore está pronta para uso</span>
           </div>
         </div>
-        <button type="button" id="btnCloseUpdateModal" style="background: none; border: none; cursor: pointer; color: var(--text-muted);">
+        <button type="button" id="btnCloseUpdateModal" class="update-close-btn" aria-label="Fechar">
           <i data-lucide="x"></i>
         </button>
       </div>
 
-      <div style="margin: 1.25rem 0 1rem; padding: 0.85rem 1rem; border-radius: var(--radius-md); background: var(--bg-secondary); border: 1px solid var(--border-color);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-          <span style="font-size: 0.82rem; color: var(--text-muted);">Versão instalada:</span>
-          <b style="font-size: 0.88rem; color: var(--text-main);" id="updateCurrentVersion">v1.0.0</b>
+      <!-- Corpo Rolável com Enquadramento Blindado -->
+      <div class="update-modal-body">
+        <!-- Hero Comparativo de Versão -->
+        <div class="update-version-hero">
+          <div class="version-hero-box current">
+            <span class="version-hero-label">Versão Atual</span>
+            <span class="version-hero-val" id="updateCurrentVersion">v1.3.0</span>
+          </div>
+          <div class="version-hero-arrow">
+            <i data-lucide="arrow-right"></i>
+          </div>
+          <div class="version-hero-box latest">
+            <span class="version-hero-label">Nova Versão</span>
+            <span class="version-hero-val badge-green" id="updateNewVersion">v1.3.1</span>
+          </div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 0.82rem; color: var(--text-muted);">Nova versão disponível:</span>
-          <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; font-size: 0.82rem; padding: 0.2rem 0.6rem;" id="updateNewVersion">v1.0.1</span>
+
+        <!-- Box O que há de novo / Changelog -->
+        <div class="update-changelog-card">
+          <div class="update-changelog-header">
+            <i data-lucide="zap" style="width: 15px; height: 15px; color: #f59e0b;"></i>
+            <span>Novidades desta Atualização:</span>
+          </div>
+          <div id="updateChangelogList" class="update-changelog-list custom-scrollbar">
+            <!-- Itens dinâmicos -->
+          </div>
+        </div>
+
+        <!-- Barra de Progresso de Download e Instalação (One-Click Update) -->
+        <div id="updateProgressContainer" class="update-progress-card" style="display: none;">
+          <div class="update-progress-row">
+            <span id="updateProgressStatus" class="update-progress-status">Baixando atualização...</span>
+            <span id="updateProgressPercent" class="update-progress-percent">0%</span>
+          </div>
+          <div class="update-progress-track">
+            <div id="updateProgressBar" class="update-progress-bar"></div>
+          </div>
+          <div class="update-progress-meta">
+            <span id="updateProgressDetail">Conectando aos servidores do Valore...</span>
+            <span id="updateProgressSpeed">In-App Auto-Update</span>
+          </div>
         </div>
       </div>
 
-      <div style="margin-bottom: 1.25rem;">
-        <label style="font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); display: block; margin-bottom: 0.45rem;">
-          O que há de novo:
-        </label>
-        <div id="updateChangelogList" style="max-height: 180px; overflow-y: auto; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color); border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45; color: var(--text-secondary);">
-          <!-- Itens dinâmicos -->
-        </div>
-      </div>
-
-      <!-- Barra de Progresso de Download e Instalação (One-Click Update) -->
-      <div id="updateProgressContainer" style="display: none; margin-bottom: 1.25rem; padding: 0.9rem 1rem; border-radius: var(--radius-md); background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.84rem;">
-          <span id="updateProgressStatus" style="font-weight: 700; color: var(--primary);">Baixando atualização...</span>
-          <span id="updateProgressPercent" style="font-weight: 800; color: var(--text-main);">0%</span>
-        </div>
-        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.08); border-radius: 9999px; overflow: hidden; margin-bottom: 0.45rem;">
-          <div id="updateProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1); border-radius: 9999px; transition: width 0.15s ease;"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: var(--text-muted);">
-          <span id="updateProgressDetail">Conectando aos servidores do Valore...</span>
-          <span id="updateProgressSpeed">In-App Auto-Update</span>
-        </div>
-      </div>
-
-      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-        <button type="button" class="btn btn-outline" id="btnUpdateViaBrowser" style="display: none; gap: 0.45rem; font-size: 0.82rem; border-color: rgba(59, 130, 246, 0.4); color: var(--primary);" title="Baixar diretamente pelo navegador do aparelho sem bloqueios de segurança">
-          <i data-lucide="globe" style="width: 14px; height: 14px;"></i>
+      <!-- Rodapé Fixo Adaptativo -->
+      <div class="update-modal-footer">
+        <button type="button" class="btn btn-outline" id="btnUpdateViaBrowser" style="display: none; gap: 0.45rem;" title="Baixar diretamente pelo navegador do aparelho sem bloqueios de segurança">
+          <i data-lucide="globe" style="width: 15px; height: 15px;"></i>
           <span>Baixar pelo Navegador</span>
         </button>
         <button type="button" class="btn btn-outline" id="btnDismissUpdate">Depois</button>
         <button type="button" class="btn btn-primary" id="btnActionUpdate" style="gap: 0.5rem;">
-          <i data-lucide="download"></i>
-          <span id="btnActionUpdateText">Baixar Atualização</span>
+          <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+          <span id="btnActionUpdateText">Atualizar Agora (1-Clique)</span>
         </button>
       </div>
     </div>

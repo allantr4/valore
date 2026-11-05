@@ -1,19 +1,18 @@
 {
-  "version": "1.3.0",
-  "releaseDate": "2026-11-04",
+  "version": "1.3.1",
+  "releaseDate": "2026-11-05",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.0 - Nova Experiência de Contas Agendadas, Hero de Compromissos e Cards Mobile",
+  "title": "Valore v1.3.1 - Correção Estrutural do Atualizador e Redesign Moderno do Modal",
   "notes": [
-    "Nova Experiência de Contas Agendadas: Hero Resumo consolidado no topo exibindo Total a Pagar, Total a Receber e Balanço Líquido Previsto.",
-    "Abas Segmentadas por Intenção: navegação rápida e filtrada entre A Pagar, A Receber e Concluídas/Pagas.",
-    "Layout Adaptativo Inteligente: tabela completa no Desktop e Cards Timeline ergonômicos no smartphone, facilitando a baixa com 1 toque.",
-    "Novo Design de Bancos e Cartões: abas segmentadas (Bancos, Cartões, Boletos) com zero duplicação e visual fintech.",
-    "Leitor Nativo de Notificações Bancárias Android em segundo plano com atalho de permissão de sistema.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.0 (130)."
+    "Correção Estrutural no Atualizador: resolução definitiva da detecção e persistência de novas versões no Mobile Android e Desktop.",
+    "Novo Design Moderno do Modal de Atualização: Hero Comparativo de versão (v1.3.0 ➔ v1.3.1), cabeçalho fixo e enquadramento vertical ergonômico.",
+    "Changelog Fluido e Legível: container com scroll suave de alta visibilidade e visual limpo para notas longas de atualização.",
+    "Botões com Ergonomia Responsiva: layout otimizado para o toque do polegar no Mobile e alinhamento elegante no Desktop.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.1 (131)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_130.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_130.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_131.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_131.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 30,
-  "releaseNotes": "Modernização completa de Contas Agendadas com Hero Resumo, abas segmentadas e cards timeline no mobile v1.3.0."
+  "versionCode": 31,
+  "releaseNotes": "Correção estrutural de detecção do atualizador e novo modal de atualização moderno e responsivo v1.3.1."
 }
