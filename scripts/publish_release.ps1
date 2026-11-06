@@ -1,6 +1,7 @@
 param(
     [string]$TagName = "",
-    [string]$ReleaseName = ""
+    [string]$ReleaseName = "",
+    [switch]$Overwrite = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -69,11 +70,23 @@ function Upload-ReleaseAsset([string]$filePath, [string]$contentType) {
     }
 
     $fileName = [System.IO.Path]::GetFileName($filePath)
+    $normalizedName = $fileName.Replace(" ", ".")
     $encodedName = [System.Uri]::EscapeDataString($fileName)
     $uploadUri = "https://uploads.github.com/repos/allantr4/valore/releases/$($release.id)/assets?name=$encodedName"
 
     $currentRelease = Invoke-RestMethod -Uri "https://api.github.com/repos/allantr4/valore/releases/$($release.id)" -Headers $headers -Method Get
-    $existing = $currentRelease.assets | Where-Object { $_.name -eq $fileName }
+    $existing = $currentRelease.assets | Where-Object { $_.name -eq $fileName -or $_.name -eq $normalizedName }
+
+    if ($existing -and $Overwrite) {
+        Write-Host "Asset '$fileName' existente detectado (ID: $($existing.id)). Removendo para atualizar com o novo binario..." -ForegroundColor Yellow
+        try {
+            Invoke-RestMethod -Uri "https://api.github.com/repos/allantr4/valore/releases/assets/$($existing.id)" -Headers $headers -Method Delete
+            Start-Sleep -Seconds 2
+            $existing = $null
+        } catch {
+            Write-Host "Falha ao remover asset antigo: $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
 
     if ($existing) {
         Write-Host "Asset '$fileName' ja existe na release (ID: $($existing.id))." -ForegroundColor Gray
