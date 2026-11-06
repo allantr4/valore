@@ -1402,12 +1402,16 @@ function getCategoryBadgeHtml(cat) {
 }
 
 function renderTransactionRow(tx) {
-  const isTransfer = tx.type === 'transfer';
+  const isVaultTx = tx.isVaultAllocation || (tx.description && tx.description.startsWith('[Cofrinho'));
+  const isTransfer = tx.type === 'transfer' && !isVaultTx;
   const isIncome = tx.type === 'income';
 
   let accountLabel = '';
   let acc = null;
-  if (isTransfer) {
+  if (isVaultTx) {
+    acc = finance.state.accounts.find(a => a.id === (tx.accountId || tx.fromAccountId || tx.toAccountId)) || { name: 'Conta' };
+    accountLabel = `${acc.name} (Reserva)`;
+  } else if (isTransfer) {
     const from = finance.state.accounts.find(a => a.id === tx.fromAccountId) || { name: 'Conta' };
     const to = finance.state.accounts.find(a => a.id === tx.toAccountId) || { name: 'Conta' };
     accountLabel = `${from.name} ➔ ${to.name}`;
@@ -1422,7 +1426,6 @@ function renderTransactionRow(tx) {
     ? (tx.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '') 
     : tx.description;
 
-  const isVaultTx = tx.isVaultAllocation || (tx.description && tx.description.startsWith('[Cofrinho'));
   const authorInfo = finance.getEntityAuthorInfo(tx);
 
   return `
@@ -1785,17 +1788,20 @@ function renderSalaryAlerts() {
       const alertClass = isToday ? 'salary-alert-today' : (isPast ? 'salary-alert-past' : 'salary-alert-soon');
       const badgeColor = isToday ? 'var(--success)' : (isPast ? 'var(--warning)' : 'var(--primary)');
       const badgeText = isToday ? 'Previsto Para HOJE' : (isPast ? 'Pendente de Confirmação' : `Em ${a.daysUntilDue} dias`);
+      const iconEmoji = a.iconEmoji || (isToday ? '💰' : (isPast ? '⚠️' : '🗓️'));
+      const iconBg = isToday ? 'rgba(16, 185, 129, 0.18)' : (isPast ? 'rgba(245, 158, 11, 0.18)' : 'rgba(99, 102, 241, 0.18)');
+      const cleanTitle = (a.alertTitle || '').replace(/^[^\w\sÀ-ÿ]+\s*/, '');
 
       return `
         <div class="salary-alert-banner ${alertClass}">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 0.85rem;">
-              <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.2); display: flex; align-items: center; justify-content: center; color: var(--success); font-size: 1.35rem; flex-shrink: 0;">
-                💰
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: ${iconBg}; display: flex; align-items: center; justify-content: center; font-size: 1.35rem; flex-shrink: 0;">
+                ${iconEmoji}
               </div>
               <div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">${a.alertTitle}</h4>
+                  <h4 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-main);">${cleanTitle}</h4>
                   <span class="badge" style="background: var(--bg-tertiary); color: ${badgeColor}; font-size: 0.72rem; font-weight: 700; border: 1px solid var(--border-color);">${badgeText}</span>
                   <span style="font-size: 0.72rem; color: var(--text-muted); background: var(--bg-tertiary); padding: 0.15rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-color);">${a.ruleDesc}</span>
                 </div>
@@ -3041,14 +3047,23 @@ window.handleSwitchAccountsTab = function(tab) {
   if (tab === 'all') tab = 'checking';
   currentAccountFilter = tab;
 
-  // Atualiza classes ativas das abas
+  // Atualiza classes ativas das abas métricas unificadas
   const tabChecking = document.getElementById('tabBtnChecking');
   const tabCredit = document.getElementById('tabBtnCredit');
   const tabBills = document.getElementById('tabBtnBills');
 
-  if (tabChecking) tabChecking.className = tab === 'checking' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
-  if (tabCredit) tabCredit.className = tab === 'credit' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
-  if (tabBills) tabBills.className = tab === 'bills' ? 'segmented-tab-btn active' : 'segmented-tab-btn';
+  if (tabChecking) {
+    tabChecking.classList.toggle('active', tab === 'checking');
+    tabChecking.setAttribute('aria-selected', tab === 'checking');
+  }
+  if (tabCredit) {
+    tabCredit.classList.toggle('active', tab === 'credit');
+    tabCredit.setAttribute('aria-selected', tab === 'credit');
+  }
+  if (tabBills) {
+    tabBills.classList.toggle('active', tab === 'bills');
+    tabBills.setAttribute('aria-selected', tab === 'bills');
+  }
 
   // Atualiza rótulo do botão contextual
   const txtContext = document.getElementById('txtAccountsContextualAction');
@@ -4137,11 +4152,14 @@ function renderSelectedAccountDetails() {
     badgeEl.innerHTML = getBankBadgeHtml(account.bankId || 'other', 30, account.color);
   }
 
-  // Filtra transações vinculadas a esta conta (diretas ou transferências)
+  // Filtra transações vinculadas a esta conta (diretas, transferências ou cofrinhos/reservas)
   const txTableBody = document.getElementById('accountTxTableBody');
   if (!txTableBody) return;
 
   let accountTransactions = finance.state.transactions.filter(t => {
+    if (t.isVaultAllocation || (t.description && t.description.startsWith('[Cofrinho'))) {
+      return t.accountId === account.id || t.fromAccountId === account.id || t.toAccountId === account.id;
+    }
     if (t.type === 'transfer') {
       return t.fromAccountId === account.id || t.toAccountId === account.id;
     }
@@ -12949,23 +12967,25 @@ window.getAllActiveNotifications = function() {
       const raw = finance.getPendingDueAlerts();
       const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
       items.forEach(item => {
-        const id = 'bill_' + (item.id || item.scheduleId || item.description) + '_' + (item.date || '');
-        const isOverdue = item.daysUntil !== undefined ? item.daysUntil < 0 : false;
-        const isToday = item.daysUntil === 0;
+        const dueDateVal = item.dueDate || item.date;
+        const id = 'bill_' + (item.id || item.scheduleId || item.description) + '_' + (dueDateVal || '');
+        const diffDays = item.diffDays !== undefined ? item.diffDays : (item.daysUntil !== undefined ? item.daysUntil : 0);
+        const isOverdue = diffDays < 0;
+        const isToday = diffDays === 0;
         
         let tagText = 'Vence em breve';
         let severity = 'warning';
         if (isOverdue) {
-          tagText = 'Vencido (' + Math.abs(item.daysUntil) + 'd atrás)';
+          tagText = 'Vencido (' + Math.abs(diffDays) + 'd atrás)';
           severity = 'urgent';
         } else if (isToday) {
           tagText = 'Vence Hoje!';
           severity = 'urgent';
-        } else if (item.daysUntil === 1) {
+        } else if (diffDays === 1) {
           tagText = 'Vence Amanhã';
           severity = 'warning';
-        } else if (item.daysUntil !== undefined) {
-          tagText = 'Vence em ' + item.daysUntil + ' dias';
+        } else if (diffDays !== undefined) {
+          tagText = 'Vence em ' + diffDays + ' dias';
           severity = 'warning';
         }
 
@@ -12976,7 +12996,7 @@ window.getAllActiveNotifications = function() {
           tagText: tagText,
           icon: isOverdue ? 'alert-triangle' : (isToday ? 'clock' : 'calendar'),
           title: item.description || 'Conta Agendada',
-          desc: 'Data: ' + (formatDateBR ? formatDateBR(item.date) : item.date) + (item.accountName ? ' • ' + item.accountName : ''),
+          desc: 'Vencimento: ' + (dueDateVal && typeof formatDateBR === 'function' ? formatDateBR(dueDateVal) : (dueDateVal || 'A definir')) + (item.accountName ? ' • ' + item.accountName : ''),
           amount: parseFloat(item.amount || 0),
           isRead: readSet.has(id),
           actionType: 'pay_bill',
@@ -13234,8 +13254,9 @@ window.renderNotificationCenter = function() {
           ${n.amount > 0 ? `<div class="notif-card-value">${amtFormatted}</div>` : ''}
         </div>
         <div class="notif-card-actions">
-          <button type="button" class="notif-action-btn outline" onclick="window.dismissNotificationItem('${n.id}')">
-            <span>Dispensar</span>
+          <button type="button" class="notif-action-btn outline" onclick="window.dismissNotificationItem('${n.id}')" title="${n.isRead ? 'Notificação lida' : 'Marcar esta notificação como lida'}">
+            <i data-lucide="${n.isRead ? 'check-check' : 'check'}" style="width: 13px; height: 13px;"></i>
+            <span>${n.isRead ? '✓ Lida' : 'Marcar como Lida'}</span>
           </button>
           ${n.actionType ? `
             <button type="button" class="notif-action-btn ${n.severity === 'urgent' ? 'urgent' : 'primary'}" onclick="window.actOnNotificationItem('${n.actionType}', '${rawEncoded}')">
@@ -13694,8 +13715,15 @@ function setupNotificationListeners() {
   const btnTest = document.getElementById('btnTestNotification');
   const btnViewBills = document.getElementById('btnDashboardViewPendingBills');
 
-  if (btnHeader) btnHeader.addEventListener('click', window.openNotificationSettingsModal);
-  if (btnSidebar) btnSidebar.addEventListener('click', window.openNotificationSettingsModal);
+  // O sininho do topo e da barra lateral abrem estritamente a Central de Notificações (gaveta lateral)
+  if (btnHeader) btnHeader.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof window.openNotificationCenter === 'function') window.openNotificationCenter();
+  });
+  if (btnSidebar) btnSidebar.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (typeof window.openNotificationCenter === 'function') window.openNotificationCenter();
+  });
   if (btnClose) btnClose.addEventListener('click', window.closeNotificationSettingsModal);
   if (btnCloseAlt) btnCloseAlt.addEventListener('click', window.closeNotificationSettingsModal);
   if (btnCancel) btnCancel.addEventListener('click', window.closeNotificationSettingsModal);
