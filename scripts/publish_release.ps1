@@ -87,9 +87,28 @@ function Upload-ReleaseAsset([string]$filePath, [string]$contentType) {
             "User-Agent" = "Valore-Release-Bot"
             "Content-Type" = $contentType
         }
-        $asset = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $uploadHeaders -InFile $filePath -TimeoutSec 900
-        Write-Host "Upload de '$fileName' concluido com sucesso!" -ForegroundColor Green
-        Write-Host "Link direto: $($asset.browser_download_url)" -ForegroundColor Cyan
+
+        $maxRetries = 3
+        $attempt = 0
+        $success = $false
+
+        while (-not $success -and $attempt -lt $maxRetries) {
+            $attempt++
+            try {
+                $asset = Invoke-RestMethod -Uri $uploadUri -Method Post -Headers $uploadHeaders -InFile $filePath -TimeoutSec 1200
+                $success = $true
+                Write-Host "Upload de '$fileName' concluido com sucesso!" -ForegroundColor Green
+                Write-Host "Link direto: $($asset.browser_download_url)" -ForegroundColor Cyan
+            } catch {
+                Write-Host "Tentativa $attempt falhou para '$fileName': $_. Mensagem: $($_.Exception.Message)" -ForegroundColor Red
+                if ($attempt -lt $maxRetries) {
+                    Write-Host "Aguardando 5 segundos antes de tentar novamente..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 5
+                } else {
+                    throw $_
+                }
+            }
+        }
     }
 }
 
@@ -101,16 +120,7 @@ Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador Valore Financeir
 # 4. Upload dos APKs Android
 Write-Host "`n[3/3] Processando upload dos APKs Mobile Android..." -ForegroundColor Yellow
 Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk" "application/vnd.android.package-archive"
-
-# Garante cópia temporária para quem busca Valore.apk no release
-$tempApk = "E:\Gestor Financeiro\Android\Valore.apk"
-if (-not (Test-Path $tempApk) -and (Test-Path "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk")) {
-    Copy-Item "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk" -Destination $tempApk -Force
-}
-Upload-ReleaseAsset $tempApk "application/vnd.android.package-archive"
-if (Test-Path $tempApk) {
-    Remove-Item $tempApk -Force -ErrorAction SilentlyContinue
-}
+Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore.apk" "application/vnd.android.package-archive"
 
 Write-Host "`n======================================================" -ForegroundColor Green
 Write-Host "   Publicacao da Release concluida com Sucesso!       " -ForegroundColor Green
