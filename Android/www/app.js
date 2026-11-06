@@ -932,7 +932,18 @@ function setupSmartCategorySuggestions() {
 }
 
 
+window.syncAllAppVersionBadges = function() {
+  const curVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.3.4';
+  const miniBadge = document.getElementById('sidebarMiniBadge');
+  if (miniBadge) miniBadge.textContent = `v${curVer}`;
+  const pillText = document.getElementById('sidebarVersionText');
+  if (pillText) pillText.textContent = `Valore v${curVer}`;
+  const updateCur = document.getElementById('updateCurrentVersion');
+  if (updateCur) updateCur.textContent = `v${curVer}`;
+};
+
 async function initApp() {
+  window.syncAllAppVersionBadges();
   setupThemeManager();
   setupAppAlertListeners();
   await finance.init();
@@ -954,12 +965,7 @@ async function initApp() {
   window.syncDashboardPeriodControls();
   renderDashboard();
 
-  // Sincroniza badges e textos de versão em tempo real
-  const curAppVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.3.4';
-  const miniBadge = document.getElementById('sidebarMiniBadge');
-  if (miniBadge) miniBadge.textContent = `v${curAppVer}`;
-  const pillVerText = document.getElementById('sidebarVersionText');
-  if (pillVerText) pillVerText.textContent = `Valore v${curAppVer}`;
+  window.syncAllAppVersionBadges();
 
   if (window.lucide) lucide.createIcons();
 
@@ -12727,6 +12733,9 @@ function compareSemanticVersions(v1, v2) {
 let latestUpdateData = null;
 
 window.checkAppUpdates = async function(isManualClick = false) {
+  if (typeof window.syncAllAppVersionBadges === 'function') {
+    window.syncAllAppVersionBadges();
+  }
   const currentVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.0.0';
   const pillText = document.getElementById('sidebarVersionText');
   const pillDot = document.getElementById('sidebarVersionDot');
@@ -13749,6 +13758,7 @@ window.initSidebarFooterRetraction = function() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  window.syncAllAppVersionBadges();
   initApp();
   setupCalculator();
   initPerformanceMode();

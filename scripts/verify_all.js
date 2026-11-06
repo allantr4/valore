@@ -135,6 +135,24 @@ if (fs.existsSync(androidGradlePath)) {
   }
 }
 
+const indexHtmlPath = path.join(rootDir, 'src/ui/index.html');
+if (fs.existsSync(indexHtmlPath)) {
+  const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+  const miniBadgeMatch = indexHtml.match(/id=["']sidebarMiniBadge["'][^>]*>([^<]+)</);
+  if (miniBadgeMatch && miniBadgeMatch[1].trim() === 'v' + versionJsonVer) {
+    logPass(`index.html #sidebarMiniBadge: ${miniBadgeMatch[1].trim()} (Alinhado)`);
+  } else {
+    logFail(`Divergência em index.html #sidebarMiniBadge: ${miniBadgeMatch ? miniBadgeMatch[1].trim() : 'não encontrado'} vs v${versionJsonVer}`);
+  }
+
+  const verTextMatch = indexHtml.match(/id=["']sidebarVersionText["'][^>]*>([^<]+)</);
+  if (verTextMatch && verTextMatch[1].trim() === 'Valore v' + versionJsonVer) {
+    logPass(`index.html #sidebarVersionText: ${verTextMatch[1].trim()} (Alinhado)`);
+  } else {
+    logFail(`Divergência em index.html #sidebarVersionText: ${verTextMatch ? verTextMatch[1].trim() : 'não encontrado'} vs Valore v${versionJsonVer}`);
+  }
+}
+
 // 4. Verificação de Enquadramento, Scrollbar & Responsividade (UI Layout Audit)
 console.log('\n[4/5] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
 const cssPath = path.join(rootDir, 'src/ui/styles.css');
