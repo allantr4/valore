@@ -8,12 +8,12 @@ Sempre que qualquer alteração de código, correção de bug, ajuste visual ou 
 `E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe`
 
 ### Procedimento de Atualização do Instalador:
-1. Executar o empacotamento com electron-packager:
-   `npx electron-packager . Valore --platform=win32 --arch=x64 --out=dist --overwrite --icon="src/ui/assets/Valore_Windows.ico" --prune=true --asar --ignore="^/(dist|Instalador)"`
+1. Executar o empacotamento otimizado com electron-packager (ignorando pastas móveis e de scripts):
+   `npx electron-packager . Valore --platform=win32 --arch=x64 --out=dist --overwrite --icon="src/ui/assets/Valore_Windows.ico" --prune=true --asar --ignore="^/(dist|Instalador|Android|IOs|scripts|\.git)"`
 2. Gerar o payload comprimido `dist/Valore_Payload.zip` com o conteúdo de `dist/Valore-win32-x64/*`.
 3. Compilar o instalador C# `src/installer/Installer.cs` utilizando o C# Compiler nativo do Windows:
    `& "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:"e:\Gestor Financeiro\src\ui\assets\Valore_Windows.ico" /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /resource:"e:\Gestor Financeiro\dist\Valore_Payload.zip,payload.zip" /resource:"e:\Gestor Financeiro\src\ui\assets\logo_completo.png,logo.png" /out:"e:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe" "e:\Gestor Financeiro\src\installer\Installer.cs"`
-4. Garantir que `Instalador Valore Financeiro.exe` esteja atualizado e disponível para distribuição.
+4. Garantir que `Instalador Valore Financeiro.exe` e `Instalador_Valore_Financeiro_<versao>.exe` estejam disponíveis exclusivamente na pasta `E:\Gestor Financeiro\Instalador`.
 
 ## Regra Obrigatória: Paridade e Sincronização Contínua Desktop & Mobile Android
 A partir de agora, qualquer nova funcionalidade, alteração de regras de negócio, correção de bug ou aprimoramento visual implementado no Valore Desktop DEVE OBRIGATORIAMENTE ser refletido, testado e sincronizado no aplicativo Mobile Android localizado em:
@@ -21,10 +21,14 @@ A partir de agora, qualquer nova funcionalidade, alteração de regras de negóc
 
 O Core financeiro (`financeService.js`), os adaptadores de armazenamento e a camada visual devem manter paridade total entre as plataformas Desktop e Android.
 
-## Regra Obrigatória: Geração do Arquivo .APK para Instalação Direta
-Sempre que o aplicativo for atualizado ou compilado, deve-se gerar e disponibilizar o arquivo `.apk` oficial pronto para instalação direta no celular Android nos seguintes locais:
-- `E:\Gestor Financeiro\Android\Valore.apk`
-- `E:\Gestor Financeiro\Instalador\Valore.apk`
+## Regra Obrigatória: Geração e Separação Estrita de Pastas (PC x Mobile Android)
+1. **Pasta Exclusiva do PC (`E:\Gestor Financeiro\Instalador`)**:
+   - Esta pasta armazena APENAS os instaladores executáveis do Windows (`.exe`).
+   - É expressamente proibido duplicar ou copiar arquivos `.apk` para a pasta `Instalador`.
+2. **Pasta Exclusiva do Mobile (`E:\Gestor Financeiro\Android`)**:
+   - Esta pasta armazena o aplicativo móvel e os arquivos de distribuição Android:
+     - `E:\Gestor Financeiro\Android\Valore.apk`
+     - `E:\Gestor Financeiro\Android\Valore_<versao>.apk`
 
 O APK para download direto deve permitir que o usuário envie o arquivo via WhatsApp, Google Drive ou cabo USB e instale no smartphone sem complicações.
 

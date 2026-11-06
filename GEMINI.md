@@ -3,18 +3,30 @@
 ## Plano Detalhado de Implementação
 Em toda e qualquer solicitação do usuário, você DEVE OBRIGATORIAMENTE gerar primeiro um plano detalhado de implementação para aprovação do usuário antes de executar quaisquer alterações definitivas no código.
 
-## Atualização Automática do Instalador
+## Atualização Automática do Instalador (Otimizado)
 Sempre que qualquer alteração de código, correção de bug, ajuste visual ou nova funcionalidade for finalizada no projeto do Valore, você DEVE OBRIGATORIAMENTE atualizar o Instalador oficial do aplicativo localizado em:
 `E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe`
+
+### Procedimento de Atualização do Instalador Otimizado:
+1. Executar o empacotamento com electron-packager ignorando pastas de mobile e scripts:
+   `npx electron-packager . Valore --platform=win32 --arch=x64 --out=dist --overwrite --icon="src/ui/assets/Valore_Windows.ico" --prune=true --asar --ignore="^/(dist|Instalador|Android|IOs|scripts|\.git)"`
+2. Gerar o payload comprimido `dist/Valore_Payload.zip` com o conteúdo de `dist/Valore-win32-x64/*`.
+3. Compilar o instalador C# `src/installer/Installer.cs` utilizando o C# Compiler nativo do Windows:
+   `& "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" /nologo /target:winexe /platform:x64 /win32icon:"e:\Gestor Financeiro\src\ui\assets\Valore_Windows.ico" /r:System.Drawing.dll /r:System.Windows.Forms.dll /r:System.IO.Compression.dll /r:System.IO.Compression.FileSystem.dll /resource:"e:\Gestor Financeiro\dist\Valore_Payload.zip,payload.zip" /resource:"e:\Gestor Financeiro\src\ui\assets\logo_completo.png,logo.png" /out:"e:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe" "e:\Gestor Financeiro\src\installer\Installer.cs"`
+4. Copiar para `e:\Gestor Financeiro\Instalador\Instalador_Valore_Financeiro_<versao>.exe`.
 
 ## Paridade e Sincronização Obrigatória com o Mobile Android
 A partir de agora, qualquer alteração, correção ou nova funcionalidade criada para o desktop deve ser automaticamente aplicada e sincronizada no projeto mobile Android em:
 `E:\Gestor Financeiro\Android`
 
-## Geração Obrigatória do Arquivo .APK para Instalação Direta
-Sempre disponibilizar o arquivo `.apk` oficial em:
-- `E:\Gestor Financeiro\Android\Valore.apk`
-- `E:\Gestor Financeiro\Instalador\Valore.apk`
+## Geração Obrigatória e Separação Estrita de Pastas (PC x Mobile Android)
+1. **Pasta Exclusiva do PC (`E:\Gestor Financeiro\Instalador`)**:
+   - Esta pasta armazena APENAS os instaladores executáveis do Windows (`.exe`).
+   - NUNCA copiar ou duplicar arquivos `.apk` para a pasta `Instalador`.
+2. **Pasta Exclusiva do Mobile (`E:\Gestor Financeiro\Android`)**:
+   - Esta pasta armazena o aplicativo móvel e os arquivos de distribuição Android:
+     - `E:\Gestor Financeiro\Android\Valore.apk`
+     - `E:\Gestor Financeiro\Android\Valore_<versao>.apk`
 
 ## Análise Contínua e Testes de Enquadramento (Mobile & Desktop)
 Em qualquer ajuste visual, criação ou refatoração de telas, componentes, formulários, modais, tabelas ou carrosséis, você DEVE OBRIGATORIAMENTE realizar uma análise e validação minuciosa de enquadramento e responsividade nos dois ambientes:
