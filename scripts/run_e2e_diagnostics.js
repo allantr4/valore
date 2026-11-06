@@ -83,6 +83,11 @@ app.whenReady().then(async () => {
         logs.push('Agendamentos no estado: ' + (finance.state.schedules ? finance.state.schedules.length : 0));
       }
 
+      // Validação do Badge de Versão da Sidebar
+      const appVer = finance.getAppVersion ? finance.getAppVersion() : '1.3.4';
+      const miniBadgeEl = document.getElementById('sidebarMiniBadge');
+      assert(miniBadgeEl && miniBadgeEl.textContent.trim() === 'v' + appVer, 'Badge de versão da sidebar exibe v' + appVer);
+
       // 2. Teste de cada aba da Sidebar usando seletores reais do app
       const navTabs = [
         'dashboard',
@@ -132,6 +137,52 @@ app.whenReady().then(async () => {
             window.handleSwitchAccountTab('bills');
             window.handleSwitchAccountTab('all');
             logs.push('✔ Filtros da tela Bancos e Cartões chaveados com sucesso');
+          }
+
+          // Teste dos Botões Contextuais de Criação (+ Nova Conta, + Novo Cartão, + Novo Boleto)
+          const btnCtx = document.getElementById('btnAccountsContextualAction');
+          assert(btnCtx !== null, 'Botão de ação contextual existe na tela Bancos e Cartões');
+
+          if (btnCtx && typeof window.handleSwitchAccountsTab === 'function') {
+            // Teste 1: Aba Checking -> Nova Conta Bancária
+            window.handleSwitchAccountsTab('checking');
+            await new Promise(r => setTimeout(r, 100));
+            btnCtx.click();
+            await new Promise(r => setTimeout(r, 150));
+            const accModal = document.getElementById('accountModal');
+            const accTitle = document.getElementById('accountModalTitle');
+            assert(accModal && accModal.classList.contains('open'), 'Modal de Nova Conta abre ao clicar em + Nova Conta');
+            assert(accTitle && accTitle.textContent.includes('Conta'), 'Título do modal reflete "Nova Conta Bancária"');
+            const btnCloseAcc = document.getElementById('btnCloseAccountModal');
+            if (btnCloseAcc) btnCloseAcc.click();
+            await new Promise(r => setTimeout(r, 100));
+
+            // Teste 2: Aba Credit -> Novo Cartão de Crédito
+            window.handleSwitchAccountsTab('credit');
+            await new Promise(r => setTimeout(r, 100));
+            btnCtx.click();
+            await new Promise(r => setTimeout(r, 150));
+            assert(accModal && accModal.classList.contains('open'), 'Modal de Novo Cartão abre ao clicar em + Novo Cartão');
+            assert(accTitle && accTitle.textContent.includes('Cartão'), 'Título do modal reflete "Novo Cartão de Crédito"');
+            if (btnCloseAcc) btnCloseAcc.click();
+            await new Promise(r => setTimeout(r, 100));
+
+            // Teste 3: Aba Bills -> Novo Boleto
+            window.handleSwitchAccountsTab('bills');
+            await new Promise(r => setTimeout(r, 100));
+            btnCtx.click();
+            await new Promise(r => setTimeout(r, 150));
+            const schModal = document.getElementById('schModal');
+            const schTitle = document.getElementById('schModalTitle');
+            assert(schModal && schModal.classList.contains('open'), 'Modal de Novo Boleto abre ao clicar em + Novo Boleto');
+            assert(schTitle && schTitle.textContent.includes('Boleto'), 'Título do modal reflete "Novo Boleto"');
+            const btnCloseSch = document.getElementById('btnCloseSchModal');
+            if (btnCloseSch) btnCloseSch.click();
+            await new Promise(r => setTimeout(r, 100));
+
+            // Retorna para checking
+            window.handleSwitchAccountsTab('checking');
+            await new Promise(r => setTimeout(r, 100));
           }
 
           // Teste de Extrato

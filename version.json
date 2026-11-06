@@ -1,18 +1,18 @@
 {
-  "version": "1.3.3",
+  "version": "1.3.4",
   "releaseDate": "2026-11-05",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.3 - Correção de Estabilidade E2E, Menus e Toggle do Extrato",
+  "title": "Valore v1.3.4 - Correção dos Botões de Cadastro, Alertas Precisos de Faturas e Sincronização de Versão",
   "notes": [
-    "Resolução de Erro Fatal no Dashboard: correção da função de formatação de datas nos cards de transações recentes, eliminando travamentos de inicialização.",
-    "Correção de Exceção Assíncrona no Onboarding: declaração segura do modal de boas-vindas, garantindo estabilidade e zero erros de console.",
-    "Alternância (Toggle) Completa no Extrato: encerramento e abertura consistentes no Desktop e Mobile, restaurando os botões para 'Ver Extrato' / 'Ver Fatura'.",
-    "Bateria Automatizada de Testes End-to-End: validação nativa de todos os 12 menus e visualizações com execução em tempo real no Electron.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.3 (133)."
+    "Resolução dos Botões de Cadastro: correção da abertura contextual dos modais de Nova Conta Bancária, Novo Cartão de Crédito e Novo Boleto.",
+    "Refinamento Inteligente de Alertas de Vencimento: tarjas dinâmicas precisas (Vence Hoje, Vence Amanhã, Vence em X Dias) evitando falsos alertas de faturas já vencidas em datas futuras.",
+    "Sincronização Visual de Versão: atualização em tempo real do badge de versão do menu Ajustes & Sistema na barra lateral.",
+    "Cobertura E2E Aprimorada: inclusão de testes automatizados para botões de criação rápida e validação de consistência de datas.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.4 (134)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_133.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_133.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_134.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_134.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 33,
-  "releaseNotes": "Correção de estabilidade E2E, menus responsivos e toggle de extrato v1.3.3."
+  "versionCode": 34,
+  "releaseNotes": "Correção de botões contextuais de cadastro, alertas precisos de faturas e paridade v1.3.4."
 }

@@ -954,6 +954,13 @@ async function initApp() {
   window.syncDashboardPeriodControls();
   renderDashboard();
 
+  // Sincroniza badges e textos de versão em tempo real
+  const curAppVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.3.4';
+  const miniBadge = document.getElementById('sidebarMiniBadge');
+  if (miniBadge) miniBadge.textContent = `v${curAppVer}`;
+  const pillVerText = document.getElementById('sidebarVersionText');
+  if (pillVerText) pillVerText.textContent = `Valore v${curAppVer}`;
+
   if (window.lucide) lucide.createIcons();
 
   // Auto-exibição do Onboarding na primeira instalação
@@ -3058,15 +3065,70 @@ window.handleSwitchAccountsTab = function(tab) {
   renderAccountsView();
 };
 
+window.handleOpenNewAccountModal = function(isCard = false) {
+  const accModal = document.getElementById('accountModal');
+  if (!accModal) return;
+  const accForm = document.getElementById('accountForm');
+  if (accForm) accForm.reset();
+  const accEditId = document.getElementById('accEditId');
+  if (accEditId) accEditId.value = '';
+
+  const mode = isCard ? 'card' : 'bank';
+  if (typeof window.setAccountModalMode === 'function') {
+    window.setAccountModalMode(mode);
+  }
+
+  const accBankSelect = document.getElementById('accBank');
+  const accColorInput = document.getElementById('accColor');
+  const accNameInput = document.getElementById('accName');
+  const accBalanceInput = document.getElementById('accBalance');
+  const accLimitInput = document.getElementById('accLimit');
+  const accCardBrandInput = document.getElementById('accCardBrand');
+  const accReminderDaysInput = document.getElementById('accReminderDays');
+  const accIsDefaultInput = document.getElementById('accIsDefault');
+  const accTypeSelect = document.getElementById('accType');
+
+  if (isCard) {
+    if (accTypeSelect) accTypeSelect.value = 'credit';
+    if (accBankSelect) accBankSelect.value = 'nubank';
+    if (accColorInput) accColorInput.value = '#820ad1';
+    if (accNameInput) accNameInput.value = 'Cartão Nubank';
+    if (accBalanceInput) accBalanceInput.value = '0,00';
+    if (accLimitInput) accLimitInput.value = '1.000,00';
+    if (accCardBrandInput) accCardBrandInput.value = 'mastercard';
+    if (accReminderDaysInput) accReminderDaysInput.value = '3';
+    if (accIsDefaultInput) accIsDefaultInput.checked = false;
+  } else {
+    if (accTypeSelect) accTypeSelect.value = 'checking';
+    if (accBankSelect) accBankSelect.value = 'nubank';
+    if (accColorInput) accColorInput.value = '#820ad1';
+    if (accNameInput) accNameInput.value = 'Nubank';
+    if (accBalanceInput) accBalanceInput.value = '0,00';
+    if (accLimitInput) accLimitInput.value = '0,00';
+    if (accIsDefaultInput) accIsDefaultInput.checked = false;
+  }
+
+  if (window.selectAccountOwner) window.selectAccountOwner('p1');
+  const accBankPreview = document.getElementById('accBankBadgePreview');
+  if (accBankPreview && typeof getBankBadgeHtml === 'function') {
+    const bankId = accBankSelect ? accBankSelect.value : 'nubank';
+    const color = accColorInput ? accColorInput.value : '#820ad1';
+    accBankPreview.innerHTML = getBankBadgeHtml(bankId, 44, color);
+  }
+
+  accModal.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+};
+
 window.handleAccountsContextualAction = function() {
   if (currentAccountFilter === 'checking') {
-    handleOpenNewAccountModal(false);
+    window.handleOpenNewAccountModal(false);
   } else if (currentAccountFilter === 'credit') {
-    handleOpenNewAccountModal(true);
+    window.handleOpenNewAccountModal(true);
   } else if (currentAccountFilter === 'bills') {
     handleOpenNewBill();
   } else {
-    handleOpenNewAccountModal(false);
+    window.handleOpenNewAccountModal(false);
   }
 };
 
@@ -3084,7 +3146,16 @@ function renderAccountsView() {
 
   // ABA 3: Boletos & Contas Recorrentes
   if (currentAccountFilter === 'bills') {
-    closeAccountDetails();
+    isAccountStatementOpen = false;
+    isMobileAccountSheetOpen = false;
+    selectedAccountId = null;
+    const detailsCard = document.getElementById('accountDetailsCard');
+    if (detailsCard) {
+      detailsCard.classList.remove('mobile-sheet-open');
+      detailsCard.style.display = 'none';
+    }
+    syncMobileDetailsSheetBackdrop();
+
     const bills = finance.getBillsInsights();
     if (bills.length === 0) {
       container.innerHTML = `
@@ -3118,12 +3189,26 @@ function renderAccountsView() {
         ? (isUrgent ? 'rgba(239, 68, 68, 0.05)' : 'rgba(245, 158, 11, 0.05)')
         : 'var(--bg-secondary)';
 
+      let billBannerText = '';
+      if (isAlert) {
+        const dDue = b.daysUntilDue;
+        if (dDue < 0) {
+          billBannerText = `URGENTE • BOLETO VENCIDO HÁ ${Math.abs(dDue)} ${Math.abs(dDue) === 1 ? 'DIA' : 'DIAS'}`;
+        } else if (dDue === 0) {
+          billBannerText = `URGENTE • BOLETO VENCE HOJE`;
+        } else if (dDue === 1) {
+          billBannerText = `ATENÇÃO • BOLETO VENCE AMANHÃ`;
+        } else {
+          billBannerText = `ATENÇÃO • VENCE EM ${dDue} DIAS`;
+        }
+      }
+
       return `
         <div class="metric-card ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
           ${isAlert ? `
             <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
               <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
-              <span>${isUrgent ? 'URGENTE • BOLETO VENCIDO OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+              <span>${billBannerText}</span>
             </div>
           ` : ''}
 
@@ -3208,7 +3293,7 @@ function renderAccountsView() {
           ? 'Nenhum cartão de crédito cadastrado. Clique em "+ Novo Cartão" acima para adicionar.'
           : 'Nenhuma conta encontrada. Clique em "+ Nova Conta" para começar.');
     container.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2.5rem; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border-color);">${msg}</div>`;
-    closeAccountDetails();
+    closeAccountDetails(false);
     return;
   }
 
@@ -3253,12 +3338,24 @@ function renderAccountsView() {
       // Alerta inteligente de vencimento integrado no próprio card
       let isAlert = false;
       let isUrgent = false;
+      let alertBannerText = '';
       try {
         const cardInsights = finance.getCreditCardInsights() || [];
         const cInsight = cardInsights.find(ci => ci.id === acc.id);
         if (cInsight && cInsight.reminderActive) {
           isAlert = true;
           isUrgent = cInsight.reminderLevel === 'urgent';
+          const dDue = cInsight.daysUntilDue;
+          const dueDayNum = acc.dueDay || cInsight.dueDay || 5;
+          if (dDue < 0) {
+            alertBannerText = `URGENTE • FATURA VENCIDA HÁ ${Math.abs(dDue)} ${Math.abs(dDue) === 1 ? 'DIA' : 'DIAS'}`;
+          } else if (dDue === 0) {
+            alertBannerText = `URGENTE • FATURA VENCE HOJE (DIA ${dueDayNum})`;
+          } else if (dDue === 1) {
+            alertBannerText = `ATENÇÃO • FATURA VENCE AMANHÃ (DIA ${dueDayNum})`;
+          } else {
+            alertBannerText = `ATENÇÃO • VENCE EM ${dDue} DIAS (DIA ${dueDayNum})`;
+          }
         }
       } catch (_) {}
 
@@ -3277,7 +3374,7 @@ function renderAccountsView() {
           ${isAlert ? `
             <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
               <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
-              <span>${isUrgent ? 'URGENTE • FATURA VENCIDA OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+              <span>${alertBannerText}</span>
             </div>
           ` : ''}
 
@@ -3553,12 +3650,27 @@ function renderCreditCardsSmartMonitor() {
       ? (isUrgent ? 'var(--danger)' : '#f59e0b') 
       : (c.invoiceAmount > 0 ? 'var(--text-main)' : 'var(--success)');
 
+    let cardBannerText = '';
+    if (isAlert) {
+      const dDue = c.daysUntilDue;
+      const dueDayNum = c.dueDay || 5;
+      if (dDue < 0) {
+        cardBannerText = `URGENTE • FATURA VENCIDA HÁ ${Math.abs(dDue)} ${Math.abs(dDue) === 1 ? 'DIA' : 'DIAS'}`;
+      } else if (dDue === 0) {
+        cardBannerText = `URGENTE • FATURA VENCE HOJE (DIA ${dueDayNum})`;
+      } else if (dDue === 1) {
+        cardBannerText = `ATENÇÃO • FATURA VENCE AMANHÃ (DIA ${dueDayNum})`;
+      } else {
+        cardBannerText = `ATENÇÃO • VENCE EM ${dDue} DIAS (DIA ${dueDayNum})`;
+      }
+    }
+
     return `
       <div class="smart-monitor-item ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
         ${isAlert ? `
           <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
             <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
-            <span>${isUrgent ? 'URGENTE • FATURA VENCIDA OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+            <span>${cardBannerText}</span>
           </div>
         ` : ''}
 
@@ -3688,12 +3800,26 @@ function renderBillsSmartMonitor() {
       ? (isUrgent ? 'var(--danger)' : '#f59e0b') 
       : 'var(--text-main)';
 
+    let smartBillBannerText = '';
+    if (isAlert) {
+      const dDue = b.daysUntilDue;
+      if (dDue < 0) {
+        smartBillBannerText = `URGENTE • BOLETO VENCIDO HÁ ${Math.abs(dDue)} ${Math.abs(dDue) === 1 ? 'DIA' : 'DIAS'}`;
+      } else if (dDue === 0) {
+        smartBillBannerText = `URGENTE • BOLETO VENCE HOJE`;
+      } else if (dDue === 1) {
+        smartBillBannerText = `ATENÇÃO • BOLETO VENCE AMANHÃ`;
+      } else {
+        smartBillBannerText = `ATENÇÃO • VENCE EM ${dDue} DIAS`;
+      }
+    }
+
     return `
       <div class="smart-monitor-item ${isAlert ? 'smart-monitor-item-alert' : ''}" style="border: ${cardBorder}; box-shadow: ${cardGlow}; background: ${cardBg}; position: relative; overflow: hidden;">
         ${isAlert ? `
           <div class="smart-item-alert-banner ${isUrgent ? 'urgent' : ''}">
             <i data-lucide="${isUrgent ? 'alert-octagon' : 'bell-ring'}" style="width: 13px; height: 13px; flex-shrink: 0;"></i>
-            <span>${isUrgent ? 'URGENTE • BOLETO VENCIDO OU VENCE HOJE' : 'ATENÇÃO • VENCIMENTO EM POUCOS DIAS'}</span>
+            <span>${smartBillBannerText}</span>
           </div>
         ` : ''}
 
@@ -3790,7 +3916,7 @@ window.handleSelectCardInvoiceTab = function(invKey) {
   renderSelectedAccountDetails();
 };
 
-function closeAccountDetails() {
+function closeAccountDetails(shouldRerender = true) {
   isAccountStatementOpen = false;
   isMobileAccountSheetOpen = false;
   selectedAccountId = null; // Reseta seleção ativa para evitar estado preso no Desktop
@@ -3814,7 +3940,9 @@ function closeAccountDetails() {
     });
 
   // Re-renderiza a lista para garantir sincronia 100% dos botões e cards
-  renderAccountsView();
+  if (shouldRerender) {
+    renderAccountsView();
+  }
 }
 
 // Renderizar o Extrato e Histórico da Conta Selecionada
@@ -12603,8 +12731,10 @@ window.checkAppUpdates = async function(isManualClick = false) {
   const pillText = document.getElementById('sidebarVersionText');
   const pillDot = document.getElementById('sidebarVersionDot');
   const pillBadge = document.getElementById('sidebarVersionBadge');
+  const miniBadge = document.getElementById('sidebarMiniBadge');
 
   if (pillText) pillText.textContent = `Valore v${currentVer}`;
+  if (miniBadge) miniBadge.textContent = `v${currentVer}`;
 
   if (isManualClick && pillBadge) {
     pillBadge.textContent = 'Verificando...';

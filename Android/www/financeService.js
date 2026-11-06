@@ -331,7 +331,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.3.3';
+    return '1.3.4';
   }
 
   getAppBuildDate() {
@@ -2027,18 +2027,18 @@ class FinanceService {
       let reminderLevel = 'normal';
       let reminderMessage = `Vence em ${daysUntilDue} dias`;
 
-      if (daysUntilDue === 0) {
-        reminderActive = true;
-        reminderLevel = 'urgent';
-        reminderMessage = 'Vence HOJE!';
-      } else if (daysUntilDue < 0) {
+      if (daysUntilDue < 0) {
         reminderActive = true;
         reminderLevel = 'urgent';
         reminderMessage = `Vencido há ${Math.abs(daysUntilDue)} dias!`;
+      } else if (daysUntilDue === 0) {
+        reminderActive = true;
+        reminderLevel = 'urgent';
+        reminderMessage = 'Vence HOJE!';
       } else if (reminderDays >= 0 && daysUntilDue <= reminderDays) {
         reminderActive = true;
-        reminderLevel = daysUntilDue <= 2 ? 'urgent' : 'warning';
-        reminderMessage = `Vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}!`;
+        reminderLevel = 'warning';
+        reminderMessage = daysUntilDue === 1 ? 'Vence AMANHÃ!' : `Vence em ${daysUntilDue} dias`;
       }
 
       const daysUntilClosing = invData ? invData.daysUntilClosing : 0;
