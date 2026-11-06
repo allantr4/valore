@@ -120,6 +120,7 @@ function detectCategoryFromDescription(description, txType = 'expense') {
 let currentTab = 'dashboard';
 let currentTxType = 'expense';
 let selectedAccountId = null;
+let isAccountStatementOpen = false;
 let currentSelectedCardInvoiceKey = null;
 let monthlyChartInstance = null;
 let categoryChartInstance = null;
@@ -1200,7 +1201,7 @@ function renderRecentTxCardHtml(tx) {
             <span class="recent-tx-dot">•</span>
             <span class="recent-tx-account">${escapeHtml(accountLabel)}</span>
             <span class="recent-tx-dot">•</span>
-            <span class="recent-tx-date">${formatDate(tx.date)}</span>
+            <span class="recent-tx-date">${formatDateBR(tx.date)}</span>
           </div>
         </div>
       </div>
@@ -3211,16 +3212,20 @@ function renderAccountsView() {
     return;
   }
 
-  // Se não houver conta selecionada ou a selecionada não existir mais, seleciona a primeira da lista
-  if (!selectedAccountId || !accountsToShow.some(a => a.id === selectedAccountId)) {
-    selectedAccountId = accountsToShow[0].id;
+  // Sincroniza estado da seleção de extrato com a lista visível
+  if (isAccountStatementOpen && selectedAccountId) {
+    if (!accountsToShow.some(a => a.id === selectedAccountId)) {
+      isAccountStatementOpen = false;
+      selectedAccountId = null;
+    }
+  } else {
+    selectedAccountId = null;
+    isAccountStatementOpen = false;
   }
 
   function renderAccountCardHtml(acc) {
     const isCredit = acc.type === 'credit';
-    const isSelected = isMobileViewport()
-      ? (acc.id === selectedAccountId && isMobileAccountSheetOpen)
-      : (acc.id === selectedAccountId);
+    const isSelected = isAccountStatementOpen && (acc.id === selectedAccountId);
     const brandLabel = {
       mastercard: 'Mastercard',
       visa: 'Visa',
@@ -3467,7 +3472,16 @@ function renderAccountsView() {
 
     container.innerHTML = gridHtml;
   }
-  renderSelectedAccountDetails();
+  if (isAccountStatementOpen && selectedAccountId) {
+    renderSelectedAccountDetails();
+  } else {
+    const detailsCard = document.getElementById('accountDetailsCard');
+    if (detailsCard) {
+      detailsCard.classList.remove('mobile-sheet-open');
+      detailsCard.style.display = 'none';
+    }
+    syncMobileDetailsSheetBackdrop();
+  }
 
   if (window.lucide) lucide.createIcons();
 }
@@ -3744,7 +3758,7 @@ window.handleSelectAccount = function(accId) {
   const isDetailsVisible = detailsCard && detailsCard.style.display !== 'none';
 
   // Toggle inteligente: se a mesma conta já estiver com extrato aberto, fecha
-  if (selectedAccountId === accId && isDetailsVisible) {
+  if (selectedAccountId === accId && isAccountStatementOpen && isDetailsVisible) {
     closeAccountDetails();
     return;
   }
@@ -3753,6 +3767,7 @@ window.handleSelectAccount = function(accId) {
     currentSelectedCardInvoiceKey = null;
   }
   selectedAccountId = accId;
+  isAccountStatementOpen = true;
   isMobileAccountSheetOpen = true;
   renderAccountsView();
 
@@ -3776,6 +3791,7 @@ window.handleSelectCardInvoiceTab = function(invKey) {
 };
 
 function closeAccountDetails() {
+  isAccountStatementOpen = false;
   isMobileAccountSheetOpen = false;
   selectedAccountId = null; // Reseta seleção ativa para evitar estado preso no Desktop
   const detailsCard = document.getElementById('accountDetailsCard');
@@ -9186,7 +9202,10 @@ function setupWelcomeTouchGestures() {
   if (!container) return;
 
   welcomeTouchGesturesConfigured = true;
-  modal.addEventListener("click", (e) => { if (e.target === modal) window.finishWelcomeOnboarding("dismiss"); });
+  const modal = document.getElementById('welcomeModal');
+  if (modal) {
+    modal.addEventListener("click", (e) => { if (e.target === modal) window.finishWelcomeOnboarding("dismiss"); });
+  }
   let startX = 0;
   let startY = 0;
 
@@ -10253,6 +10272,10 @@ function setupCalculator() {
       }
     });
   }
+}
+
+function formatDate(dateStr) {
+  return formatDateBR(dateStr);
 }
 
 function formatDateBR(dateStr) {

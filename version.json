@@ -1,18 +1,18 @@
 {
-  "version": "1.3.2",
+  "version": "1.3.3",
   "releaseDate": "2026-11-05",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.2 - Correção do Extrato Desktop e Modernização da Visão Geral Mobile",
+  "title": "Valore v1.3.3 - Correção de Estabilidade E2E, Menus e Toggle do Extrato",
   "notes": [
-    "Correção no Extrato de Bancos e Cartões: resolução do botão 'Ver Extrato' / 'Extrato Aberto' no Desktop com alternância (toggle) inteligente e reset completo.",
-    "Nova Experiência de Transações Recentes na Visão Geral: tabela completa no Desktop e Cards de Movimentação modernos no Mobile sem cortes.",
-    "Toolbar de Período Compacta no Mobile: navegação entre meses fluida em formato de pílula integrada sem quebras visuais.",
-    "Otimização de Gráficos e Métricas no Smartphone: visualização consolidada da saúde financeira do mês na primeira dobra da tela.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.2 (132)."
+    "Resolução de Erro Fatal no Dashboard: correção da função de formatação de datas nos cards de transações recentes, eliminando travamentos de inicialização.",
+    "Correção de Exceção Assíncrona no Onboarding: declaração segura do modal de boas-vindas, garantindo estabilidade e zero erros de console.",
+    "Alternância (Toggle) Completa no Extrato: encerramento e abertura consistentes no Desktop e Mobile, restaurando os botões para 'Ver Extrato' / 'Ver Fatura'.",
+    "Bateria Automatizada de Testes End-to-End: validação nativa de todos os 12 menus e visualizações com execução em tempo real no Electron.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.3 (133)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_132.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_132.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_133.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_133.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 32,
-  "releaseNotes": "Correção do botão de extrato no desktop e modernização da visão geral com cards mobile v1.3.2."
+  "versionCode": 33,
+  "releaseNotes": "Correção de estabilidade E2E, menus responsivos e toggle de extrato v1.3.3."
 }
