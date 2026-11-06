@@ -1,18 +1,18 @@
 {
-  "version": "1.3.4",
-  "releaseDate": "2026-11-05",
+  "version": "1.3.5",
+  "releaseDate": "2026-11-06",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.4 - Correção dos Botões de Cadastro, Alertas Precisos de Faturas e Sincronização de Versão",
+  "title": "Valore v1.3.5 - Central de Notificações Premium, Correção de Temas Mobile e Isolamento de Extratos",
   "notes": [
-    "Resolução dos Botões de Cadastro: correção da abertura contextual dos modais de Nova Conta Bancária, Novo Cartão de Crédito e Novo Boleto.",
-    "Refinamento Inteligente de Alertas de Vencimento: tarjas dinâmicas precisas (Vence Hoje, Vence Amanhã, Vence em X Dias) evitando falsos alertas de faturas já vencidas em datas futuras.",
-    "Sincronização Visual de Versão: atualização em tempo real do badge de versão do menu Ajustes & Sistema na barra lateral.",
-    "Cobertura E2E Aprimorada: inclusão de testes automatizados para botões de criação rápida e validação de consistência de datas.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.4 (134)."
+    "Nova Central de Notificações Premium & Moderna: drawer lateral e gaveta mobile com filtros por abas (Todas, Boletos, Cartões, Leitor Bancário), ações rápidas em 1 toque e controle de leitura.",
+    "Correção Total dos Temas Claro e Escuro no Mobile: eliminação de backgrounds escuros forçados com !important no cabeçalho e sidebar, garantindo contraste perfeito e legibilidade em qualquer tema.",
+    "Reativação e Diagnóstico do Leitor Bancário Android: verificação contínua no onResume/visibilitychange, feedback de status de permissão em tempo real e guia para Android 13/14.",
+    "Isolamento Rigoroso de Extratos de Contas: correção de vazamento de fromAccountId/toAccountId em despesas de cartão e higienização automática do histórico contábil.",
+    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.5 (135)."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_134.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_134.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_135.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_135.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 34,
-  "releaseNotes": "Correção de botões contextuais de cadastro, alertas precisos de faturas e paridade v1.3.4."
+  "versionCode": 35,
+  "releaseNotes": "Central de Notificações Premium, Correção de Temas Mobile, Reativação do Leitor Bancário e Isolamento de Extratos v1.3.5."
 }

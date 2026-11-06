@@ -239,10 +239,24 @@ app.whenReady().then(async () => {
         testErrors.push('Erro no teste de Dashboard: ' + err.message);
       }
 
-      // 6. Teste de Abertura e Fechamento dos Modais Principais
+      // 6. Teste de Abertura e Fechamento dos Modais Principais e Central de Notificações
+      try {
+        if (typeof window.openNotificationCenter === 'function') {
+          window.openNotificationCenter();
+          await new Promise(r => setTimeout(r, 150));
+          const drawer = document.getElementById('notificationCenterDrawer');
+          assert(drawer && drawer.classList.contains('open'), 'Central de Notificações abre corretamente');
+          window.closeNotificationCenter();
+          await new Promise(r => setTimeout(r, 150));
+          assert(drawer && !drawer.classList.contains('open'), 'Central de Notificações fecha corretamente');
+          logs.push('✔ Central de Notificações abre e fecha com sucesso');
+        }
+      } catch (err) {
+        testErrors.push('Erro no teste da Central de Notificações: ' + err.message);
+      }
+
       const modalTests = [
-        { openBtn: 'btnNewTransactionFloating', modalId: 'txModal', closeBtn: 'btnCloseTxModal', name: 'Nova Transação' },
-        { openBtn: 'btnOpenNotificationSettings', modalId: 'notificationSettingsModal', closeBtn: 'btnCloseNotificationSettingsModal', name: 'Configurações de Notificação' }
+        { openBtn: 'btnNewTransactionFloating', modalId: 'txModal', closeBtn: 'btnCloseTxModal', name: 'Nova Transação' }
       ];
 
       for (const m of modalTests) {

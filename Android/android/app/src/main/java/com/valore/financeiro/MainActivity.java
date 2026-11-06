@@ -40,5 +40,19 @@ public class MainActivity extends BridgeActivity {
         if (apkUpdater != null) {
             apkUpdater.onResume();
         }
+        try {
+            final WebView webView = this.getBridge().getWebView();
+            if (webView != null) {
+                webView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        webView.evaluateJavascript(
+                            "if (typeof window.checkPendingBankNotifications === 'function') { window.checkPendingBankNotifications(); } if (typeof window.updateHeaderNotificationBadge === 'function') { window.updateHeaderNotificationBadge(); }",
+                            null
+                        );
+                    }
+                });
+            }
+        } catch (Exception ignored) {}
     }
 }

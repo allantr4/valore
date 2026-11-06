@@ -104,7 +104,7 @@
             <span class="toggle-label">Ajustes & Sistema</span>
           </div>
           <div class="sidebar-footer-toggle-right">
-            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.4</span>
+            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.5</span>
             <i data-lucide="chevron-up" class="sidebar-footer-chevron" id="sidebarFooterChevron"></i>
           </div>
         </button>
@@ -148,7 +148,7 @@
           <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
             <div style="display: flex; align-items: center; gap: 0.45rem;">
               <span class="version-dot" id="sidebarVersionDot">●</span>
-              <span class="version-number" id="sidebarVersionText">Valore v1.3.4</span>
+              <span class="version-number" id="sidebarVersionText">Valore v1.3.5</span>
             </div>
             <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
           </div>
@@ -173,8 +173,8 @@
 
           <!-- Pílula de Identidade do Aparelho (Mostra quem está lançando neste PC/Celular e permite trocar em 1 toque) -->
           <button type="button" id="btnOpenNotificationSettings"
-            onclick="window.openNotificationSettingsModal()"
-            title="Lembretes & Notificações de Vencimento"
+            onclick="window.openNotificationCenter()"
+            title="Central de Notificações"
             style="position: relative; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); border: 1px solid var(--border-color); color: var(--text-main); cursor: pointer; transition: all 0.2s ease; margin-right: 0.45rem; flex-shrink: 0;">
             <i data-lucide="bell" style="width: 16px; height: 16px;"></i>
             <span id="headerNotificationBadge" style="display: none; position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; background: #ef4444; color: #fff; font-size: 0.62rem; font-weight: 800; border-radius: 999px; align-items: center; justify-content: center; border: 2px solid var(--bg-card); line-height: 1;">0</span>
@@ -4726,7 +4726,7 @@
             <i data-lucide="bell"></i>
           </div>
           <div>
-            <h3 style="margin: 0; font-size: 1.15rem;">Central de Notificações & Lembretes</h3>
+            <h3 style="margin: 0; font-size: 1.15rem;">Ajustes de Lembretes & Alertas</h3>
             <span style="font-size: 0.78rem; color: var(--text-muted);">Personalize quando e como deseja ser avisado sobre suas contas</span>
           </div>
         </div>
@@ -4799,6 +4799,19 @@
             <p style="margin: 0; font-size: 0.75rem; color: var(--text-secondary); line-height: 1.4;">
               O Valore intercepta compras do <b>Nubank, Itaú, Inter, Bradesco, C6 e Santander</b> no Android para lançamentos em 1 toque.
             </p>
+            <div id="bankReaderStatusBox" style="margin-top: 0.6rem; padding: 0.6rem 0.8rem; border-radius: 8px; font-size: 0.74rem; background: var(--bg-surface); border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 0.35rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <span style="font-weight: 700; color: var(--text-main);">Status no Android:</span>
+                <span id="bankReaderStatusBadge" class="badge" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; font-weight: 800; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 4px;">Checando...</span>
+              </div>
+              <div id="bankReaderGuideText" style="color: var(--text-muted); line-height: 1.35; font-size: 0.72rem;">
+                No <b>Android 13 e 14</b>: Se a chave do Valore estiver cinza/bloqueada, acesse <i>Configurações do Android &gt; Apps &gt; Valore &gt; 3 pontinhos no topo &gt; Permitir configurações restritas</i>.
+              </div>
+              <button type="button" id="btnRequestBankNotifPermission" onclick="window.requestAndroidBankNotificationPermission()" class="btn btn-outline" style="align-self: flex-start; padding: 0.25rem 0.6rem; font-size: 0.72rem; margin-top: 0.25rem; border-color: rgba(59, 130, 246, 0.35); color: var(--primary);">
+                <i data-lucide="shield" style="width: 13px; height: 13px;"></i>
+                <span>Abrir Permissões do Android</span>
+              </button>
+            </div>
             <button type="button" id="btnRequestBankNotifPermission" onclick="if(typeof window.AndroidBankNotificationBridge !== 'undefined'){window.AndroidBankNotificationBridge.openPermissionSettings();}else{alert('O leitor nativo opera diretamente no smartphone Android.');}" class="btn btn-outline" style="font-size: 0.72rem; padding: 0.28rem 0.6rem; margin-top: 0.45rem; border-color: rgba(59,130,246,0.35); color: var(--primary); gap: 0.35rem; display: inline-flex; align-items: center;">
               <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i>
               <span>Autorizar Acesso a Notificações no Android</span>
@@ -4913,6 +4926,78 @@
   <script src="../core/storage.js"></script>
   <script src="../core/financeService.js"></script>
   <script src="app.js"></script>
+
+  <!-- Backdrop e Drawer da Central de Notificações Premium (v1.3.5) -->
+  <div class="notif-center-backdrop" id="notificationCenterBackdrop" onclick="window.closeNotificationCenter()"></div>
+  <aside class="notif-center-drawer" id="notificationCenterDrawer" aria-label="Central de Notificações" aria-hidden="true">
+    <div class="notif-center-header">
+      <div class="notif-header-title-box">
+        <div class="notif-header-icon-badge">
+          <i data-lucide="bell"></i>
+        </div>
+        <div>
+          <h3 class="notif-center-title">
+            <span>Notificações</span>
+            <span class="notif-count-badge" id="notifCenterCountBadge" style="display: none;">0</span>
+          </h3>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Lembretes, faturas e compras</span>
+        </div>
+      </div>
+      <div class="notif-header-actions">
+        <button type="button" class="notif-header-btn" id="btnMarkAllNotifsRead" onclick="window.markAllNotificationsAsRead()" title="Marcar todas como lidas">
+          <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
+          <span style="margin-left: 0.25rem;">Lidas</span>
+        </button>
+        <button type="button" class="notif-header-btn" onclick="window.openNotificationSettingsFromCenter()" title="Configurar Lembretes">
+          <i data-lucide="settings" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button" class="notif-header-btn close" onclick="window.closeNotificationCenter()" title="Fechar">
+          <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de Abas / Filtros -->
+    <div class="notif-tabs-bar" id="notifTabsBar">
+      <button type="button" class="notif-tab-pill active" data-notif-tab="all" onclick="window.filterNotificationCenter('all')">
+        <span>Todas</span>
+        <span class="badge" id="notifTabCountAll">0</span>
+      </button>
+      <button type="button" class="notif-tab-pill" data-notif-tab="bills" onclick="window.filterNotificationCenter('bills')">
+        <i data-lucide="receipt" style="width: 12px; height: 12px;"></i>
+        <span>Boletos & Contas</span>
+        <span class="badge" id="notifTabCountBills">0</span>
+      </button>
+      <button type="button" class="notif-tab-pill" data-notif-tab="cards" onclick="window.filterNotificationCenter('cards')">
+        <i data-lucide="credit-card" style="width: 12px; height: 12px;"></i>
+        <span>Cartões</span>
+        <span class="badge" id="notifTabCountCards">0</span>
+      </button>
+      <button type="button" class="notif-tab-pill" data-notif-tab="bank_reader" onclick="window.filterNotificationCenter('bank_reader')">
+        <i data-lucide="zap" style="width: 12px; height: 12px;"></i>
+        <span>Compras Detectadas</span>
+        <span class="badge" id="notifTabCountBank">0</span>
+      </button>
+    </div>
+
+    <!-- Lista de Notificações -->
+    <div class="notif-center-list" id="notifCenterList">
+      <!-- Renderizado dinamicamente via JS -->
+    </div>
+
+    <!-- Rodapé da Central -->
+    <div class="notif-center-footer">
+      <button type="button" class="notif-footer-link" onclick="window.openNotificationSettingsFromCenter()">
+        <i data-lucide="sliders-horizontal" style="width: 13px; height: 13px;"></i>
+        <span>Ajustar Horários e Antecedência</span>
+      </button>
+      <button type="button" class="notif-footer-link" onclick="window.testNotificationTrigger()" style="color: var(--primary);">
+        <i data-lucide="bell-ring" style="width: 13px; height: 13px;"></i>
+        <span>Testar Alerta</span>
+      </button>
+    </div>
+  </aside>
+
 </body>
 
 </html>

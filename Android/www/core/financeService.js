@@ -331,7 +331,7 @@ class FinanceService {
   }
 
   getAppVersion() {
-    return '1.3.4';
+    return '1.3.5';
   }
 
   getAppBuildDate() {
@@ -387,6 +387,19 @@ class FinanceService {
       this.state.accounts.forEach(a => {
         if (a.vaulted === undefined) a.vaulted = 0;
       });
+
+      // Sanitização automática: remove fromAccountId e toAccountId de despesas/receitas que não sejam transferências
+      let hasCleanedTxs = false;
+      this.state.transactions.forEach(t => {
+        if (t.type !== 'transfer' && (t.fromAccountId !== undefined || t.toAccountId !== undefined)) {
+          delete t.fromAccountId;
+          delete t.toAccountId;
+          hasCleanedTxs = true;
+        }
+      });
+      if (hasCleanedTxs) {
+        await this.save();
+      }
 
       // Se houver saldo em a.vaulted mas nenhum cofrinho em this.state.vaults, cria uma Reserva Padrão automática
       this.state.accounts.forEach(a => {
@@ -1011,8 +1024,8 @@ class FinanceService {
       type: data.type,
       categoryId: data.categoryId,
       accountId: data.accountId,
-      fromAccountId: data.fromAccountId,
-      toAccountId: data.toAccountId,
+      fromAccountId: data.type === 'transfer' ? data.fromAccountId : null,
+      toAccountId: data.type === 'transfer' ? data.toAccountId : null,
       date: data.date,
       recurring: data.recurring !== undefined ? data.recurring : (oldTx.recurring || 'none'),
       costCenterId: data.costCenterId !== undefined ? data.costCenterId : (oldTx.costCenterId || null),
@@ -2680,9 +2693,7 @@ class FinanceService {
     if (!this.state.accounts || !this.state.transactions) return;
     this.state.accounts.forEach(acc => {
       if (acc.type === 'credit') {
-        const cardTxs = this.state.transactions.filter(t => 
-          t.accountId === acc.id || t.fromAccountId === acc.id || t.toAccountId === acc.id
-        );
+        const cardTxs = this.state.transactions.filter(t => t.accountId === acc.id);
         let totalDebt = 0;
         cardTxs.forEach(t => {
           const amt = parseFloat(t.amount || 0);

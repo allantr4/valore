@@ -4141,9 +4141,12 @@ function renderSelectedAccountDetails() {
   const txTableBody = document.getElementById('accountTxTableBody');
   if (!txTableBody) return;
 
-  let accountTransactions = finance.state.transactions.filter(t => 
-    t.accountId === account.id || t.fromAccountId === account.id || t.toAccountId === account.id
-  );
+  let accountTransactions = finance.state.transactions.filter(t => {
+    if (t.type === 'transfer') {
+      return t.fromAccountId === account.id || t.toAccountId === account.id;
+    }
+    return t.accountId === account.id;
+  });
 
   // Se for cartão de crédito e houver uma fatura específica selecionada, filtra por essa fatura!
   if (isCredit && currentSelectedCardInvoiceKey && currentSelectedCardInvoiceKey !== 'all') {
@@ -5520,8 +5523,8 @@ function setupModals() {
       type: currentTxType,
       categoryId: document.getElementById('txCategory').value,
       accountId: singleAcc,
-      fromAccountId: fromAcc,
-      toAccountId: toAcc,
+      fromAccountId: currentTxType === 'transfer' ? fromAcc : null,
+      toAccountId: currentTxType === 'transfer' ? toAcc : null,
       installments: instVal,
       installmentValueType: lastEditedAmountField === 'total' ? 'total' : 'installment',
       recurring: document.getElementById('txRecurring') ? document.getElementById('txRecurring').value : 'none',
@@ -9662,6 +9665,7 @@ function renderVaultHub(accountId) {
   }
 
   modal.classList.add('open');
+  if (window.updateBankReaderPermissionStatus) window.updateBankReaderPermissionStatus();
   if (window.lucide) lucide.createIcons();
 }
 
@@ -12913,6 +12917,386 @@ window.renderDashboardDueAlertBanner = function() {
   if (window.lucide) lucide.createIcons();
 };
 
+
+// =========================================================================
+// --- CENTRAL DE NOTIFICAÇÕES PREMIUM & MODERNA (v1.3.5) ---
+// =========================================================================
+let currentNotificationCenterTab = 'all';
+
+function getReadNotificationIds() {
+  try {
+    const raw = localStorage.getItem('valore_read_notif_ids');
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (_) {
+    return new Set();
+  }
+}
+
+function saveReadNotificationIds(idSet) {
+  try {
+    const arr = Array.from(idSet).slice(-100); // Mantém últimos 100 IDs
+    localStorage.setItem('valore_read_notif_ids', JSON.stringify(arr));
+  } catch (_) {}
+}
+
+window.getAllActiveNotifications = function() {
+  const notifs = [];
+  const readSet = getReadNotificationIds();
+
+  // 1. Boletos e Contas Agendadas a Vencer / Vencidas
+  try {
+    if (typeof finance !== 'undefined' && finance.getPendingDueAlerts) {
+      const raw = finance.getPendingDueAlerts();
+      const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
+      items.forEach(item => {
+        const id = 'bill_' + (item.id || item.scheduleId || item.description) + '_' + (item.date || '');
+        const isOverdue = item.daysUntil !== undefined ? item.daysUntil < 0 : false;
+        const isToday = item.daysUntil === 0;
+        
+        let tagText = 'Vence em breve';
+        let severity = 'warning';
+        if (isOverdue) {
+          tagText = 'Vencido (' + Math.abs(item.daysUntil) + 'd atrás)';
+          severity = 'urgent';
+        } else if (isToday) {
+          tagText = 'Vence Hoje!';
+          severity = 'urgent';
+        } else if (item.daysUntil === 1) {
+          tagText = 'Vence Amanhã';
+          severity = 'warning';
+        } else if (item.daysUntil !== undefined) {
+          tagText = 'Vence em ' + item.daysUntil + ' dias';
+          severity = 'warning';
+        }
+
+        notifs.push({
+          id: id,
+          type: 'bills',
+          severity: severity,
+          tagText: tagText,
+          icon: isOverdue ? 'alert-triangle' : (isToday ? 'clock' : 'calendar'),
+          title: item.description || 'Conta Agendada',
+          desc: 'Data: ' + (formatDateBR ? formatDateBR(item.date) : item.date) + (item.accountName ? ' • ' + item.accountName : ''),
+          amount: parseFloat(item.amount || 0),
+          isRead: readSet.has(id),
+          actionType: 'pay_bill',
+          actionLabel: isOverdue ? 'Pagar Atrasado' : 'Pagar Agora',
+          rawItem: item
+        });
+      });
+    }
+  } catch (err) {
+    console.warn('Erro ao coletar alertas de boletos:', err);
+  }
+
+  // 2. Faturas de Cartão Fechadas / Vencendo em breve
+  try {
+    if (typeof finance !== 'undefined' && finance.getCreditCardInsights) {
+      const insights = finance.getCreditCardInsights() || [];
+      insights.forEach(card => {
+        if (!card || !card.currentInvoiceTotal || card.currentInvoiceTotal <= 0) return;
+        const id = 'card_' + card.cardId + '_' + (card.dueDateStr || 'due');
+        const days = card.daysUntilDue !== undefined ? card.daysUntilDue : 99;
+        const isOverdue = days < 0;
+        const isToday = days === 0;
+
+        let tagText = 'Fatura Aberta / Fechada';
+        let severity = 'card-invoice';
+        if (isOverdue) {
+          tagText = 'Fatura Vencida';
+          severity = 'urgent';
+        } else if (isToday) {
+          tagText = 'Fatura Vence Hoje!';
+          severity = 'urgent';
+        } else if (days <= 3) {
+          tagText = 'Vence em ' + days + ' dias';
+          severity = 'warning';
+        }
+
+        notifs.push({
+          id: id,
+          type: 'cards',
+          severity: severity,
+          tagText: tagText,
+          icon: 'credit-card',
+          title: 'Fatura ' + (card.cardName || 'Cartão de Crédito'),
+          desc: 'Vencimento: ' + (formatDateBR ? formatDateBR(card.dueDateStr) : card.dueDateStr) + ' • Limite Disp: ' + (currencyFormatter ? currencyFormatter.format(card.availableLimit) : 'R$ ' + card.availableLimit),
+          amount: parseFloat(card.currentInvoiceTotal || 0),
+          isRead: readSet.has(id),
+          actionType: 'view_card',
+          actionLabel: 'Ver Fatura',
+          rawItem: card
+        });
+      });
+    }
+  } catch (err) {
+    console.warn('Erro ao coletar insights de cartões:', err);
+  }
+
+  // 3. Compras Detectadas pelo Leitor Bancário Android
+  try {
+    if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.getPendingNotifications) {
+      const raw = window.AndroidBankNotificationBridge.getPendingNotifications();
+      if (raw && raw !== '[]') {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list)) {
+          list.forEach(item => {
+            const parsed = parseBankNotificationData ? parseBankNotificationData(item) : item;
+            if (!parsed) return;
+            const id = 'bank_' + (item.id || item.timestamp || Date.now());
+            notifs.push({
+              id: id,
+              type: 'bank_reader',
+              severity: 'bank-intercepted',
+              tagText: 'Leitor Bancário • ' + (parsed.bankName || 'Banco'),
+              icon: 'zap',
+              title: parsed.description || 'Compra Interceptada',
+              desc: (parsed.rawText || item.text || 'Compra detectada no smartphone'),
+              amount: parseFloat(parsed.amount || 0),
+              isRead: readSet.has(id),
+              actionType: 'launch_bank_tx',
+              actionLabel: 'Lançar em 1 Toque',
+              rawItem: parsed
+            });
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao coletar compras do leitor bancário:', err);
+  }
+
+  return notifs;
+};
+
+window.openNotificationCenter = function(defaultTab = 'all') {
+  currentNotificationCenterTab = defaultTab;
+  const drawer = document.getElementById('notificationCenterDrawer');
+  const backdrop = document.getElementById('notificationCenterBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.add('open');
+    backdrop.classList.add('open');
+    drawer.setAttribute('aria-hidden', 'false');
+    window.renderNotificationCenter();
+  }
+};
+
+window.closeNotificationCenter = function() {
+  const drawer = document.getElementById('notificationCenterDrawer');
+  const backdrop = document.getElementById('notificationCenterBackdrop');
+  if (drawer && backdrop) {
+    drawer.classList.remove('open');
+    backdrop.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+  }
+};
+
+window.openNotificationSettingsFromCenter = function() {
+  window.closeNotificationCenter();
+  setTimeout(() => {
+    window.openNotificationSettingsModal();
+  }, 200);
+};
+
+window.filterNotificationCenter = function(tab) {
+  currentNotificationCenterTab = tab;
+  document.querySelectorAll('.notif-tab-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.notifTab === tab);
+  });
+  window.renderNotificationCenter();
+};
+
+window.markAllNotificationsAsRead = function() {
+  const all = window.getAllActiveNotifications();
+  const readSet = getReadNotificationIds();
+  all.forEach(n => readSet.add(n.id));
+  saveReadNotificationIds(readSet);
+
+  if (typeof showToast === 'function') {
+    showToast('Todas as notificações foram marcadas como lidas!', 'success');
+  }
+
+  window.renderNotificationCenter();
+  window.updateHeaderNotificationBadge();
+};
+
+window.dismissNotificationItem = function(id) {
+  const readSet = getReadNotificationIds();
+  readSet.add(id);
+  saveReadNotificationIds(readSet);
+  window.renderNotificationCenter();
+  window.updateHeaderNotificationBadge();
+};
+
+window.actOnNotificationItem = function(actionType, rawJsonStr) {
+  try {
+    const raw = typeof rawJsonStr === 'string' ? JSON.parse(decodeURIComponent(rawJsonStr)) : rawJsonStr;
+    window.closeNotificationCenter();
+
+    if (actionType === 'pay_bill') {
+      if (typeof switchTab === 'function') {
+        switchTab('transactions');
+      }
+    } else if (actionType === 'view_card') {
+      if (raw && raw.cardId && typeof showAccountStatement === 'function') {
+        if (typeof switchTab === 'function') switchTab('accounts');
+        setTimeout(() => {
+          showAccountStatement(raw.cardId);
+        }, 300);
+      }
+    } else if (actionType === 'launch_bank_tx') {
+      if (raw && typeof window.openTxModalFromBankNotification === 'function') {
+        window.openTxModalFromBankNotification(raw);
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao executar ação da notificação:', err);
+  }
+};
+
+window.renderNotificationCenter = function() {
+  const listEl = document.getElementById('notifCenterList');
+  const countBadge = document.getElementById('notifCenterCountBadge');
+  if (!listEl) return;
+
+  const allNotifs = window.getAllActiveNotifications();
+  const unreadNotifs = allNotifs.filter(n => !n.isRead);
+
+  // Atualiza badge de contagem de não lidas no cabeçalho do Drawer
+  if (countBadge) {
+    if (unreadNotifs.length > 0) {
+      countBadge.textContent = unreadNotifs.length;
+      countBadge.style.display = 'inline-block';
+    } else {
+      countBadge.style.display = 'none';
+    }
+  }
+
+  // Atualiza contadores nas abas
+  const countBills = allNotifs.filter(n => n.type === 'bills' && !n.isRead).length;
+  const countCards = allNotifs.filter(n => n.type === 'cards' && !n.isRead).length;
+  const countBank = allNotifs.filter(n => n.type === 'bank_reader' && !n.isRead).length;
+
+  const elCountAll = document.getElementById('notifTabCountAll');
+  const elCountBills = document.getElementById('notifTabCountBills');
+  const elCountCards = document.getElementById('notifTabCountCards');
+  const elCountBank = document.getElementById('notifTabCountBank');
+
+  if (elCountAll) elCountAll.textContent = unreadNotifs.length;
+  if (elCountBills) elCountBills.textContent = countBills;
+  if (elCountCards) elCountCards.textContent = countCards;
+  if (elCountBank) elCountBank.textContent = countBank;
+
+  // Filtra itens para a aba ativa
+  let displayed = allNotifs;
+  if (currentNotificationCenterTab !== 'all') {
+    displayed = allNotifs.filter(n => n.type === currentNotificationCenterTab);
+  }
+
+  // Renderiza Empty State se não houver itens
+  if (displayed.length === 0) {
+    listEl.innerHTML = `
+      <div class="notif-empty-state">
+        <div class="notif-empty-icon">
+          <i data-lucide="check-check" style="width: 28px; height: 28px;"></i>
+        </div>
+        <div class="notif-empty-title">Você está em dia!</div>
+        <div class="notif-empty-desc">Nenhum alerta ou pendência encontrada para esta categoria.</div>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  let html = '';
+  displayed.forEach(n => {
+    const rawEncoded = encodeURIComponent(JSON.stringify(n.rawItem || {}));
+    const amtFormatted = (n.amount && typeof currencyFormatter !== 'undefined') 
+      ? currencyFormatter.format(n.amount) 
+      : ('R$ ' + (n.amount || 0));
+
+    html += `
+      <div class="notif-card ${n.severity} ${n.isRead ? 'read' : ''}" style="${n.isRead ? 'opacity: 0.65; filter: grayscale(0.2);' : ''}">
+        <div class="notif-card-header">
+          <span class="notif-card-tag">${n.tagText}</span>
+          <button type="button" class="btn-tx-action" onclick="window.dismissNotificationItem('${n.id}')" title="Marcar como lida" style="color: var(--text-muted);">
+            <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+          </button>
+        </div>
+        <div class="notif-card-main">
+          <div class="notif-card-icon">
+            <i data-lucide="${n.icon}" style="width: 17px; height: 17px;"></i>
+          </div>
+          <div class="notif-card-details">
+            <div class="notif-card-title">${n.title}</div>
+            <div class="notif-card-desc">${n.desc}</div>
+          </div>
+          ${n.amount > 0 ? `<div class="notif-card-value">${amtFormatted}</div>` : ''}
+        </div>
+        <div class="notif-card-actions">
+          <button type="button" class="notif-action-btn outline" onclick="window.dismissNotificationItem('${n.id}')">
+            <span>Dispensar</span>
+          </button>
+          ${n.actionType ? `
+            <button type="button" class="notif-action-btn ${n.severity === 'urgent' ? 'urgent' : 'primary'}" onclick="window.actOnNotificationItem('${n.actionType}', '${rawEncoded}')">
+              <span>${n.actionLabel}</span>
+              <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+            </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  });
+
+  listEl.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+};
+
+window.updateBankReaderPermissionStatus = function() {
+  const badge = document.getElementById('bankReaderStatusBadge');
+  const btnReq = document.getElementById('btnRequestBankNotifPermission');
+  const guide = document.getElementById('bankReaderGuideText');
+  if (!badge) return;
+
+  if (typeof window.AndroidBankNotificationBridge !== 'undefined') {
+    try {
+      const granted = window.AndroidBankNotificationBridge.isPermissionGranted();
+      if (granted) {
+        badge.textContent = '🟢 Ativo & Monitorando';
+        badge.style.background = 'rgba(16, 185, 129, 0.2)';
+        badge.style.color = '#10b981';
+        if (btnReq) btnReq.style.display = 'none';
+        if (guide) guide.style.display = 'none';
+      } else {
+        badge.textContent = '🟡 Permissão Pendente no Android';
+        badge.style.background = 'rgba(245, 158, 11, 0.2)';
+        badge.style.color = '#f59e0b';
+        if (btnReq) btnReq.style.display = 'inline-flex';
+        if (guide) guide.style.display = 'block';
+      }
+    } catch (_) {
+      badge.textContent = 'Indisponível';
+    }
+  } else {
+    // Ambiente Desktop / Navegador
+    badge.textContent = 'ℹ️ Simulação Desktop';
+    badge.style.background = 'rgba(59, 130, 246, 0.15)';
+    badge.style.color = 'var(--primary)';
+    if (btnReq) btnReq.style.display = 'none';
+    if (guide) guide.textContent = 'No Android, este módulo intercepta notificações bancárias de compras em tempo real.';
+  }
+};
+
+window.requestAndroidBankNotificationPermission = function() {
+  if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.openPermissionSettings) {
+    window.AndroidBankNotificationBridge.openPermissionSettings();
+  } else {
+    if (typeof showToast === 'function') {
+      showToast('Funcionalidade nativa exclusiva do smartphone Android!', 'info');
+    }
+  }
+};
+
 window.updateHeaderNotificationBadge = function() {
   const badgeHeader = document.getElementById('headerNotificationBadge');
   const badgeSidebar = document.getElementById('sidebarNotificationBadge');
@@ -12924,17 +13308,16 @@ window.updateHeaderNotificationBadge = function() {
     return;
   }
 
-  const raw = (typeof finance !== 'undefined' && finance.getPendingDueAlerts) ? finance.getPendingDueAlerts() : null;
-  const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
-  const count = items.length;
+  const all = window.getAllActiveNotifications ? window.getAllActiveNotifications() : [];
+  const unreadCount = all.filter(n => !n.isRead).length;
 
-  if (count > 0) {
+  if (unreadCount > 0) {
     if (badgeHeader) {
-      badgeHeader.textContent = count > 99 ? '99+' : count;
+      badgeHeader.textContent = unreadCount > 99 ? '99+' : unreadCount;
       badgeHeader.style.display = 'flex';
     }
     if (badgeSidebar) {
-      badgeSidebar.textContent = count > 99 ? '99+' : count;
+      badgeSidebar.textContent = unreadCount > 99 ? '99+' : unreadCount;
       badgeSidebar.style.display = 'inline-block';
     }
   } else {

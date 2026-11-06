@@ -20,6 +20,7 @@ public class BankNotificationService extends NotificationListenerService {
     static {
         KNOWN_BANKS.put("com.nu.production", "Nubank");
         KNOWN_BANKS.put("br.com.intermedium", "Banco Inter");
+        KNOWN_BANKS.put("com.bancointer", "Banco Inter");
         KNOWN_BANKS.put("com.itau", "Itaú");
         KNOWN_BANKS.put("com.itau.personnalite", "Itaú Personnalité");
         KNOWN_BANKS.put("com.itau.cartoes", "Itaú Cartões");
@@ -34,6 +35,12 @@ public class BankNotificationService extends NotificationListenerService {
         KNOWN_BANKS.put("br.com.original.bank", "Banco Original");
         KNOWN_BANKS.put("com.btg.pactual.banking", "BTG Pactual");
         KNOWN_BANKS.put("com.neon", "Neon");
+        KNOWN_BANKS.put("br.com.xp.investimentos", "XP");
+        KNOWN_BANKS.put("br.com.uol.ps", "PagBank");
+        KNOWN_BANKS.put("com.willbank.app", "Will Bank");
+        KNOWN_BANKS.put("br.com.sicredi.mobile", "Sicredi");
+        KNOWN_BANKS.put("br.com.sicoob.app", "Sicoob");
+        KNOWN_BANKS.put("com.nomadfinancial", "Nomad");
     }
 
     public static void saveNotification(Context context, String bankKey, String bankName, String title, String text, long timestamp) {
@@ -105,11 +112,16 @@ public class BankNotificationService extends NotificationListenerService {
         if (extras == null) return;
 
         CharSequence titleCs = extras.getCharSequence(Notification.EXTRA_TITLE);
+        CharSequence titleBigCs = extras.getCharSequence("android.title.big");
         CharSequence textCs = extras.getCharSequence(Notification.EXTRA_TEXT);
         CharSequence bigTextCs = extras.getCharSequence(Notification.EXTRA_BIG_TEXT);
+        CharSequence subTextCs = extras.getCharSequence(Notification.EXTRA_SUB_TEXT);
 
-        String title = titleCs != null ? titleCs.toString() : "";
+        String title = titleBigCs != null ? titleBigCs.toString() : (titleCs != null ? titleCs.toString() : "");
         String text = bigTextCs != null ? bigTextCs.toString() : (textCs != null ? textCs.toString() : "");
+        if (text.trim().isEmpty() && subTextCs != null) {
+            text = subTextCs.toString();
+        }
 
         if (text.trim().isEmpty() && title.trim().isEmpty()) return;
 
@@ -129,7 +141,12 @@ public class BankNotificationService extends NotificationListenerService {
                               combined.contains("credito") || 
                               combined.contains("enviado") || 
                               combined.contains("recebido") || 
-                              combined.contains("pago");
+                              combined.contains("pago") || 
+                              combined.contains("você gastou") || 
+                              combined.contains("voce gastou") || 
+                              combined.contains("fatura") || 
+                              combined.contains("ted") || 
+                              combined.contains("doc");
 
         if (isFinancial) {
             long postTime = sbn.getPostTime() > 0 ? sbn.getPostTime() : System.currentTimeMillis();
