@@ -77,7 +77,7 @@ namespace ValoreInstaller
         private Image appLogo = null;
         private bool isAutoUpdateMode = false;
         private string explicitDir = null;
-        private const string AppVersion = "1.3.6";
+        private const string AppVersion = "1.3.7";
 
         public InstallerForm(bool autoUpdate = false, string explicitInstallDir = null)
         {
@@ -135,7 +135,8 @@ namespace ValoreInstaller
                 this.Shown += (s, e) =>
                 {
                     KillRunningValoreProcesses();
-                    Thread.Sleep(500);
+                    WaitForFilesToBeUnlocked(txtPath.Text.Trim());
+                    Thread.Sleep(400);
                     StartInstallation();
                 };
             }
@@ -682,7 +683,29 @@ namespace ValoreInstaller
                         else
                         {
                             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-                            entry.ExtractToFile(destinationPath, true);
+                            
+                            // Blindagem anti-bloqueio: até 10 tentativas com delay para arquivos liberarem handles
+                            bool extracted = false;
+                            Exception lastEx = null;
+                            for (int retry = 0; retry < 10; retry++)
+                            {
+                                try
+                                {
+                                    entry.ExtractToFile(destinationPath, true);
+                                    extracted = true;
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    lastEx = ex;
+                                    Thread.Sleep(300);
+                                }
+                            }
+
+                            if (!extracted && lastEx != null)
+                            {
+                                throw new Exception("Falha ao sobrescrever o arquivo '" + entry.Name + "'. Ele está em uso por outro processo.\nDetalhes: " + lastEx.Message);
+                            }
                         }
 
                         count++;
@@ -854,23 +877,57 @@ namespace ValoreInstaller
             try
             {
                 Process current = Process.GetCurrentProcess();
-                for (int attempt = 0; attempt < 5; attempt++)
+                for (int attempt = 0; attempt < 8; attempt++)
                 {
-                    Process[] procs = Process.GetProcessesByName("Valore");
                     bool anyAlive = false;
-                    foreach (Process p in procs)
+                    foreach (string procName in new[] { "Valore" })
                     {
-                        if (p.Id != current.Id)
+                        Process[] procs = Process.GetProcessesByName(procName);
+                        foreach (Process p in procs)
                         {
-                            anyAlive = true;
-                            try { p.Kill(); } catch {}
+                            if (p.Id != current.Id)
+                            {
+                                anyAlive = true;
+                                try { p.Kill(); } catch {}
+                            }
                         }
                     }
                     if (!anyAlive) break;
-                    Thread.Sleep(250);
+                    Thread.Sleep(300);
                 }
             }
             catch {}
+        }
+
+        private void WaitForFilesToBeUnlocked(string installDir)
+        {
+            if (string.IsNullOrEmpty(installDir) || !Directory.Exists(installDir)) return;
+            string[] criticalFiles = new[]
+            {
+                Path.Combine(installDir, "Valore.exe"),
+                Path.Combine(installDir, "resources", "app.asar")
+            };
+
+            foreach (string filePath in criticalFiles)
+            {
+                if (!File.Exists(filePath)) continue;
+                for (int attempt = 0; attempt < 12; attempt++)
+                {
+                    try
+                    {
+                        using (FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                        {
+                            // Arquivo está totalmente livre
+                            break;
+                        }
+                    }
+                    catch
+                    {
+                        // Arquivo ainda bloqueado por processo em finalização, aguarda
+                        Thread.Sleep(350);
+                    }
+                }
+            }
         }
 
         private void DrawRoundedCard(Graphics g, Panel p, Color borderColor)

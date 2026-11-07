@@ -153,6 +153,17 @@ if (fs.existsSync(indexHtmlPath)) {
   }
 }
 
+const installerCsPath = path.join(rootDir, 'src/installer/Installer.cs');
+if (fs.existsSync(installerCsPath)) {
+  const installerCs = fs.readFileSync(installerCsPath, 'utf8');
+  const matchCs = installerCs.match(/AppVersion\s*=\s*["']([^"']+)["']/);
+  if (matchCs && matchCs[1] === versionJsonVer) {
+    logPass(`Installer.cs AppVersion: v${matchCs[1]} (Alinhado)`);
+  } else {
+    logFail(`Divergência de versão no Installer.cs: ${matchCs ? 'v' + matchCs[1] : 'não encontrada'} vs v${versionJsonVer}`);
+  }
+}
+
 // 4. Verificação de Enquadramento, Scrollbar & Responsividade (UI Layout Audit)
 console.log('\n[4/5] Validando enquadramento, visibilidade de scrollbars e respiros de UI...');
 const cssPath = path.join(rootDir, 'src/ui/styles.css');

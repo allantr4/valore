@@ -48,4 +48,22 @@ Antes de realizar qualquer `git commit`, criação de tag ou envio de release pa
 6. **Liberação Somente com Sucesso:**
    É estritamente proibido realizar commit, gerar instalador ou publicar release enquanto houver qualquer pendência ou erro não sanado.
 
+## Protocolo Anti-Looping de Atualizações (Desktop & Mobile)
+Para garantir que o aplicativo nunca entre em looping de atualização e sempre reconheça a nova versão sem falhas de cache ou de bloqueio de arquivos no Windows e Android, você DEVE OBRIGATORIAMENTE cumprir os seguintes requisitos em TODA atualização:
+1. **Sincronização Estrita dos 5 Pontos de Versão:**
+   A cada nova versão ou ajuste, atualizar simultaneamente:
+   - `version.json`: Atualizar `version`, `title`, URLs de download oficiais, `versionCode` e `notes`.
+   - `package.json`: Atualizar campo `version`.
+   - `src/core/financeService.js`: Atualizar o retorno do método `getAppVersion()`.
+   - `src/installer/Installer.cs`: Atualizar a constante `AppVersion = "<versao>"`.
+   - `Android/android/app/build.gradle`: Atualizar `versionName "<versao>"` e incrementar `versionCode`.
+2. **Requisitos de Chamada da API do GitHub (OTA):**
+   - Toda chamada `fetch` para a API do GitHub Releases (`api.github.com/repos/.../releases/latest`) DEVE OBRIGATORIAMENTE incluir o cabeçalho `'User-Agent': 'Valore-Finance-App/<versao>'`. Chamadas sem User-Agent sofrem bloqueio HTTP 403 Forbidden pelo GitHub.
+   - Timeout de rede mínimo de 6.5s e fallback imediato para `version.json` com cache-buster `?_t=${Date.now()}` e cabeçalhos `'Cache-Control': 'no-cache'`.
+3. **Mecanismo Anti-Travamento de Arquivos no Instalador Windows:**
+   - O instalador C# `Installer.cs` DEVE OBRIGATORIAMENTE manter a rotina de verificação de liberação de arquivos (`WaitForFilesToBeUnlocked`) e repetição com backoff (até 10 tentativas com intervalo de 300ms em `PerformExtraction`) para sobrescrever `Valore.exe` e `resources\app.asar` sem falhas causadas pelo fechamento assíncrono do Electron.
+4. **Nomenclatura e Paridade de Assets na Release do GitHub:**
+   - Toda release no GitHub deve conter tanto o asset nomeado com versão limpa (`Instalador_Valore_Financeiro_<cleanVer>.exe`) quanto o nome genérico (`Instalador.Valore.Financeiro.exe`), além de `Valore.apk`.
+   - O resolvedor de assets do app deve casar tanto por nome com versão quanto por extensão para jamais resultar em 404.
+
 

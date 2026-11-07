@@ -933,7 +933,7 @@ function setupSmartCategorySuggestions() {
 
 
 window.syncAllAppVersionBadges = function() {
-  const curVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.3.4';
+  const curVer = (typeof finance !== 'undefined' && finance.getAppVersion) ? finance.getAppVersion() : '1.3.7';
   const miniBadge = document.getElementById('sidebarMiniBadge');
   if (miniBadge) miniBadge.textContent = `v${curVer}`;
   const pillText = document.getElementById('sidebarVersionText');
@@ -13122,13 +13122,16 @@ window.checkAppUpdates = async function(isManualClick = false) {
   const timestamp = Date.now();
   let updateInfo = null;
 
-  // 1. Tenta a API oficial do GitHub Releases (em tempo real, zero cache)
+  // 1. Tenta a API oficial do GitHub Releases (em tempo real, zero cache, com User-Agent oficial)
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3800);
+    const timeoutId = setTimeout(() => controller.abort(), 6500);
     const res = await fetch(`https://api.github.com/repos/allantr4/valore/releases/latest?_t=${timestamp}`, {
       signal: controller.signal,
-      headers: { 'Accept': 'application/vnd.github.v3+json' },
+      headers: {
+        'Accept': 'application/vnd.github.v3+json',
+        'User-Agent': `Valore-Finance-App/${currentVer}`
+      },
       cache: 'no-store'
     });
     clearTimeout(timeoutId);
@@ -13141,11 +13144,12 @@ window.checkAppUpdates = async function(isManualClick = false) {
         let exeUrl = `https://github.com/allantr4/valore/releases/download/${release.tag_name}/Instalador_Valore_Financeiro_${cleanVer}.exe`;
 
         if (Array.isArray(release.assets)) {
-          // Prioriza instaladores versionados oficiais com underline
-          const apkAsset = release.assets.find(a => a.name && a.name.toLowerCase().startsWith('valore_') && a.name.endsWith('.apk')) ||
-                           release.assets.find(a => a.name && a.name.endsWith('.apk'));
-          const exeAsset = release.assets.find(a => a.name && a.name.toLowerCase().includes('instalador') && a.name.endsWith('.exe')) ||
-                           release.assets.find(a => a.name && a.name.endsWith('.exe'));
+          // Prioriza instaladores versionados oficiais de Windows e Android
+          const apkAsset = release.assets.find(a => a.name && a.name.toLowerCase().endsWith('.apk') && (a.name.toLowerCase().includes(cleanVer) || a.name.toLowerCase().includes(ver))) ||
+                           release.assets.find(a => a.name && a.name.toLowerCase().endsWith('.apk'));
+          const exeAsset = release.assets.find(a => a.name && a.name.toLowerCase().endsWith('.exe') && (a.name.toLowerCase().includes(cleanVer) || a.name.toLowerCase().includes(ver))) ||
+                           release.assets.find(a => a.name && a.name.toLowerCase().includes('instalador') && a.name.toLowerCase().endsWith('.exe')) ||
+                           release.assets.find(a => a.name && a.name.toLowerCase().endsWith('.exe'));
           if (apkAsset && apkAsset.browser_download_url) apkUrl = apkAsset.browser_download_url;
           if (exeAsset && exeAsset.browser_download_url) exeUrl = exeAsset.browser_download_url;
         }
@@ -13163,7 +13167,7 @@ window.checkAppUpdates = async function(isManualClick = false) {
     }
   } catch (_) {}
 
-  // 2. Fallback: version.json com cache-buster
+  // 2. Fallback: version.json com cache-buster agressivo
   if (!updateInfo) {
     const fallbackEndpoints = [
       `https://raw.githubusercontent.com/allantr4/valore/main/version.json?_t=${timestamp}`,
@@ -13173,8 +13177,12 @@ window.checkAppUpdates = async function(isManualClick = false) {
     for (const url of fallbackEndpoints) {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
-        const res = await fetch(url, { signal: controller.signal, cache: 'no-store' });
+        const timeoutId = setTimeout(() => controller.abort(), 4500);
+        const res = await fetch(url, {
+          signal: controller.signal,
+          headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' },
+          cache: 'no-store'
+        });
         clearTimeout(timeoutId);
         if (res.ok) {
           updateInfo = await res.json();

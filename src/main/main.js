@@ -559,10 +559,15 @@ ipcMain.handle('updater:download-and-install', async (event, downloadUrl) => {
     });
     child.unref();
 
-    // Fecha o Valore suavemente após 1 segundo para liberar arquivos
+    // Fecha a janela imediatamente para descarregar o renderer e liberar arquivos no disco
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try { mainWindow.destroy(); } catch (_) {}
+    }
+
+    // Encerra todos os subprocessos do Electron com saída limpa para liberar handles
     setTimeout(() => {
-      app.quit();
-    }, 1200);
+      app.exit(0);
+    }, 600);
 
     return { success: true };
   } catch (err) {
