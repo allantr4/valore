@@ -77,7 +77,7 @@ namespace ValoreInstaller
         private Image appLogo = null;
         private bool isAutoUpdateMode = false;
         private string explicitDir = null;
-        private const string AppVersion = "1.3.7";
+        private const string AppVersion = "1.3.8";
 
         public InstallerForm(bool autoUpdate = false, string explicitInstallDir = null)
         {
@@ -616,6 +616,7 @@ namespace ValoreInstaller
                     PerformExtraction();
                     CreateShortcuts();
                     RegisterUninstaller();
+                    ConfigureFirewallRules();
 
                     this.Invoke((MethodInvoker)delegate
                     {
@@ -782,6 +783,26 @@ namespace ValoreInstaller
                 sc.IconLocation = exePath + ",0";
                 sc.Description = "Valore - Gestão Financeira Inteligente";
                 sc.Save();
+            }
+            catch {}
+        }
+
+        private void ConfigureFirewallRules()
+        {
+            try
+            {
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = "netsh.exe",
+                    Arguments = "advfirewall firewall add rule name=\"Valore Sync Server\" dir=in action=allow protocol=TCP localport=45454-45460 profile=any",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WindowStyle = ProcessWindowStyle.Hidden
+                };
+                using (Process p = Process.Start(psi))
+                {
+                    if (p != null) p.WaitForExit(3000);
+                }
             }
             catch {}
         }

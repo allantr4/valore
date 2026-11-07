@@ -332,7 +332,7 @@ class FinanceService {
     };
   }
 
-  getAppVersion() { return "1.3.7";
+  getAppVersion() { return "1.3.8";
   }
 
   getAppBuildDate() {
@@ -343,11 +343,27 @@ class FinanceService {
     const saved = await this.storage.get();
     if (saved && saved.transactions) {
       this.state = saved;
-      if (!this.state.schedules) this.state.schedules = [];
-      if (!this.state.assets) this.state.assets = [];
-      if (!this.state.vaults) this.state.vaults = [];
-      if (!this.state.costCenters) this.state.costCenters = [];
-      if (!this.state.sideHustles) this.state.sideHustles = [];
+      if (!Array.isArray(this.state.categories)) {
+        this.state.categories = [
+          { id: 'cat-1', name: 'Salário & Pro-labore', type: 'income', icon: 'wallet', color: '#10b981' },
+          { id: 'cat-2', name: 'Investimentos & Dividendos', type: 'income', icon: 'trending-up', color: '#06b6d4' },
+          { id: 'cat-3', name: 'Alimentação & Mercado', type: 'expense', icon: 'shopping-cart', color: '#f59e0b' },
+          { id: 'cat-4', name: 'Moradia & Aluguel', type: 'expense', icon: 'home', color: '#ef4444' },
+          { id: 'cat-5', name: 'Transporte & Veículo', type: 'expense', icon: 'car', color: '#6366f1' },
+          { id: 'cat-6', name: 'Lazer & Viagens', type: 'expense', icon: 'coffee', color: '#ec4899' },
+          { id: 'cat-7', name: 'Saúde & Cuidados', type: 'expense', icon: 'activity', color: '#14b8a6' },
+          { id: 'cat-8', name: 'Transferência Interna', type: 'transfer', icon: 'repeat', color: '#8b5cf6' }
+        ];
+      }
+      if (!Array.isArray(this.state.accounts)) this.state.accounts = [];
+      if (!Array.isArray(this.state.transactions)) this.state.transactions = [];
+      if (!Array.isArray(this.state.schedules)) this.state.schedules = [];
+      if (!Array.isArray(this.state.assets)) this.state.assets = [];
+      if (!Array.isArray(this.state.budgets)) this.state.budgets = [];
+      if (!Array.isArray(this.state.goals)) this.state.goals = [];
+      if (!Array.isArray(this.state.vaults)) this.state.vaults = [];
+      if (!Array.isArray(this.state.costCenters)) this.state.costCenters = [];
+      if (!Array.isArray(this.state.sideHustles)) this.state.sideHustles = [];
       if (!this.state.couple) {
         this.state.couple = {
           enabled: true,

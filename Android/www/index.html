@@ -104,7 +104,7 @@
             <span class="toggle-label">Ajustes & Sistema</span>
           </div>
           <div class="sidebar-footer-toggle-right">
-            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.7</span>
+            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.8</span>
             <i data-lucide="chevron-up" class="sidebar-footer-chevron" id="sidebarFooterChevron"></i>
           </div>
         </button>
@@ -148,7 +148,7 @@
           <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
             <div style="display: flex; align-items: center; gap: 0.45rem;">
               <span class="version-dot" id="sidebarVersionDot">●</span>
-              <span class="version-number" id="sidebarVersionText">Valore v1.3.7</span>
+              <span class="version-number" id="sidebarVersionText">Valore v1.3.8</span>
             </div>
             <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
           </div>
@@ -3446,64 +3446,7 @@
             Escaneie o <b>QR Code</b> exibido na tela do Valore no seu PC para sincronizar automaticamente sem digitar, ou informe abaixo:
           </p>
 
-          <!-- Painel Leitor de Câmera de QR Code em Tela Cheia (Estilo App Bancário) -->
-          <div id="qrScannerContainer"
-            style="display: none; position: fixed; inset: 0; z-index: 99999; background: #04070d; flex-direction: column; justify-content: space-between; overflow: hidden;">
-            <!-- Barra Superior do Scanner -->
-            <div
-              style="display: flex; justify-content: space-between; align-items: center; padding: calc(env(safe-area-inset-top, 16px) + 14px) 1.15rem 0.9rem; background: linear-gradient(180deg, rgba(4, 7, 13, 0.95), rgba(4, 7, 13, 0.75)); border-bottom: 1px solid rgba(255, 255, 255, 0.1); z-index: 3;">
-              <div style="display: flex; align-items: center; gap: 0.65rem;">
-                <div
-                  style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
-                  <i data-lucide="qr-code" style="width: 20px; height: 20px;"></i>
-                </div>
-                <div style="text-align: left;">
-                  <div style="font-size: 0.98rem; font-weight: 800; color: #f8fafc;">Escanear QR Code do PC</div>
-                  <div style="font-size: 0.74rem; color: #94a3b8;">Enquadre o código exibido na tela do computador</div>
-                </div>
-              </div>
-              <button type="button" class="btn btn-outline" id="btnCloseQrScanner"
-                style="padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700; color: #f8fafc; background: rgba(239, 68, 68, 0.2); border-color: rgba(248, 113, 113, 0.5); border-radius: 10px;">
-                ✕ Fechar
-              </button>
-            </div>
-
-            <!-- Visor de Câmera Amplo em Tela Cheia -->
-            <div style="position: relative; flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden;">
-              <video id="qrScannerVideo" autoplay playsinline muted
-                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;"></video>
-
-              <!-- Moldura de Enquadramento Ampla com Cantoneiras Iluminadas -->
-              <div
-                style="position: relative; width: min(80vw, 340px); height: min(80vw, 340px); border-radius: 22px; box-shadow: 0 0 0 9999px rgba(4, 7, 13, 0.62); border: 2px solid rgba(255, 255, 255, 0.22); pointer-events: none; z-index: 2;">
-                <!-- Cantoneiras Neon Esmeralda -->
-                <div style="position: absolute; top: -2px; left: -2px; width: 38px; height: 38px; border-top: 5px solid #10b981; border-left: 5px solid #10b981; border-top-left-radius: 20px;"></div>
-                <div style="position: absolute; top: -2px; right: -2px; width: 38px; height: 38px; border-top: 5px solid #10b981; border-right: 5px solid #10b981; border-top-right-radius: 20px;"></div>
-                <div style="position: absolute; bottom: -2px; left: -2px; width: 38px; height: 38px; border-bottom: 5px solid #10b981; border-left: 5px solid #10b981; border-bottom-left-radius: 20px;"></div>
-                <div style="position: absolute; bottom: -2px; right: -2px; width: 38px; height: 38px; border-bottom: 5px solid #10b981; border-right: 5px solid #10b981; border-bottom-right-radius: 20px;"></div>
-                <!-- Linha Laser Central -->
-                <div style="position: absolute; left: 16px; right: 16px; top: 50%; height: 2px; background: linear-gradient(90deg, transparent, #10b981, #38bdf8, #10b981, transparent); box-shadow: 0 0 12px #10b981;"></div>
-              </div>
-            </div>
-
-            <canvas id="qrScannerCanvas" style="display: none;"></canvas>
-
-            <!-- Barra Inferior com Status e Opção de Captura de Foto -->
-            <div
-              style="padding: 1rem 1.25rem calc(env(safe-area-inset-bottom, 16px) + 14px); background: linear-gradient(0deg, rgba(4, 7, 13, 0.98), rgba(4, 7, 13, 0.85)); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; gap: 0.7rem; z-index: 3;">
-              <div
-                style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.4rem 0.95rem; border-radius: 999px;">
-                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
-                <span id="qrScannerStatusText" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0;">Procurando QR Code na tela do PC...</span>
-              </div>
-              <label class="btn btn-outline"
-                style="width: 100%; max-width: 340px; justify-content: center; padding: 0.58rem 1rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; margin: 0; color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.1); border-radius: 10px;">
-                <i data-lucide="camera" style="width: 15px; height: 15px;"></i>
-                <span>Ou Tirar Foto do QR Code</span>
-                <input type="file" id="qrScannerFileInput" accept="image/*" capture="environment" style="display: none;">
-              </label>
-            </div>
-          </div>
+          
 
           <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 0.65rem; margin-bottom: 0.85rem;">
             <div>
@@ -3709,6 +3652,65 @@
       </div>
     </div>
   </div>
+
+  <!-- Painel Leitor de Câmera de QR Code em Tela Cheia (Estilo App Bancário) -->
+          <div id="qrScannerContainer"
+            style="display: none; position: fixed; inset: 0; z-index: 1000050; position: fixed; inset: 0; width: 100vw; height: 100vh; height: 100dvh; background: #04070d; flex-direction: column; justify-content: space-between; overflow: hidden;">
+            <!-- Barra Superior do Scanner -->
+            <div
+              style="display: flex; justify-content: space-between; align-items: center; padding: calc(env(safe-area-inset-top, 16px) + 14px) 1.15rem 0.9rem; background: linear-gradient(180deg, rgba(4, 7, 13, 0.95), rgba(4, 7, 13, 0.75)); border-bottom: 1px solid rgba(255, 255, 255, 0.1); z-index: 3;">
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div
+                  style="width: 38px; height: 38px; border-radius: 10px; background: rgba(56, 189, 248, 0.18); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
+                  <i data-lucide="qr-code" style="width: 20px; height: 20px;"></i>
+                </div>
+                <div style="text-align: left;">
+                  <div style="font-size: 0.98rem; font-weight: 800; color: #f8fafc;">Escanear QR Code do PC</div>
+                  <div style="font-size: 0.74rem; color: #94a3b8;">Enquadre o código exibido na tela do computador</div>
+                </div>
+              </div>
+              <button type="button" class="btn btn-outline" id="btnCloseQrScanner"
+                style="padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700; color: #f8fafc; background: rgba(239, 68, 68, 0.2); border-color: rgba(248, 113, 113, 0.5); border-radius: 10px;">
+                ✕ Fechar
+              </button>
+            </div>
+
+            <!-- Visor de Câmera Amplo em Tela Cheia -->
+            <div style="position: relative; flex: 1; width: 100%; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden;">
+              <video id="qrScannerVideo" autoplay playsinline muted
+                style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block;"></video>
+
+              <!-- Moldura de Enquadramento Ampla com Cantoneiras Iluminadas -->
+              <div
+                style="position: relative; width: min(80vw, 340px); height: min(80vw, 340px); border-radius: 22px; box-shadow: 0 0 0 9999px rgba(4, 7, 13, 0.62); border: 2px solid rgba(255, 255, 255, 0.22); pointer-events: none; z-index: 2;">
+                <!-- Cantoneiras Neon Esmeralda -->
+                <div style="position: absolute; top: -2px; left: -2px; width: 38px; height: 38px; border-top: 5px solid #10b981; border-left: 5px solid #10b981; border-top-left-radius: 20px;"></div>
+                <div style="position: absolute; top: -2px; right: -2px; width: 38px; height: 38px; border-top: 5px solid #10b981; border-right: 5px solid #10b981; border-top-right-radius: 20px;"></div>
+                <div style="position: absolute; bottom: -2px; left: -2px; width: 38px; height: 38px; border-bottom: 5px solid #10b981; border-left: 5px solid #10b981; border-bottom-left-radius: 20px;"></div>
+                <div style="position: absolute; bottom: -2px; right: -2px; width: 38px; height: 38px; border-bottom: 5px solid #10b981; border-right: 5px solid #10b981; border-bottom-right-radius: 20px;"></div>
+                <!-- Linha Laser Central -->
+                <div style="position: absolute; left: 16px; right: 16px; top: 50%; height: 2px; background: linear-gradient(90deg, transparent, #10b981, #38bdf8, #10b981, transparent); box-shadow: 0 0 12px #10b981;"></div>
+              </div>
+            </div>
+
+            <canvas id="qrScannerCanvas" style="display: none;"></canvas>
+
+            <!-- Barra Inferior com Status e Opção de Captura de Foto -->
+            <div
+              style="padding: 1rem 1.25rem calc(env(safe-area-inset-bottom, 16px) + 14px); background: linear-gradient(0deg, rgba(4, 7, 13, 0.98), rgba(4, 7, 13, 0.85)); border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; align-items: center; gap: 0.7rem; z-index: 3;">
+              <div
+                style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.4rem 0.95rem; border-radius: 999px;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                <span id="qrScannerStatusText" style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0;">Procurando QR Code na tela do PC...</span>
+              </div>
+              <label class="btn btn-outline"
+                style="width: 100%; max-width: 340px; justify-content: center; padding: 0.58rem 1rem; font-size: 0.82rem; font-weight: 700; cursor: pointer; margin: 0; color: #38bdf8; border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.1); border-radius: 10px;">
+                <i data-lucide="camera" style="width: 15px; height: 15px;"></i>
+                <span>Ou Tirar Foto do QR Code</span>
+                <input type="file" id="qrScannerFileInput" accept="image/*" capture="environment" style="display: none;">
+              </label>
+            </div>
+          </div>
 
   <!-- Botão Flutuante da Calculadora (Canto Inferior Direito) -->
   <button id="btnFloatingCalc" class="floating-calc-btn" title="Abrir Calculadora Rápida">
@@ -4961,8 +4963,8 @@
   <script src="qrcode.js"></script>
   <script src="jsQR.js"></script>
   <script src="xlsx.full.min.js" defer></script>
-  <script src="../core/storage.js"></script>
-  <script src="../core/financeService.js"></script>
+  <script src="core/storage.js"></script>
+  <script src="core/financeService.js"></script>
   <script src="app.js"></script>
 
   <!-- Backdrop e Drawer da Central de Notificações Premium (v1.3.5) -->

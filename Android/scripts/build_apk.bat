@@ -11,7 +11,6 @@ echo [1/4] Sincronizando código atualizado do Desktop...
 node scripts/sync_from_desktop.js
 if %ERRORLEVEL% NEQ 0 (
     echo [ERRO] Falha ao sincronizar arquivos do Desktop.
-    pause
     exit /b %ERRORLEVEL%
 )
 
@@ -46,49 +45,35 @@ echo [AVISO] Compilador Java (JDK 17) não foi encontrado no sistema.
 echo Para instalar automaticamente pelo Windows, execute no terminal:
 echo winget install Microsoft.OpenJDK.17
 echo.
-pause
 exit /b 1
 
 :JAVA_FOUND
 echo ✔ Compilador Java detectado com sucesso: %JAVA_HOME%
 
-REM 2. Verifica se o Android SDK está configurado
-set "SDK_FOUND=0"
-if defined ANDROID_HOME if exist "%ANDROID_HOME%" set "SDK_FOUND=1"
-if exist "%LOCALAPPDATA%\Android\Sdk" (
-    set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
-    set "SDK_FOUND=1"
+REM 2. Verifica Android SDK
+if not defined ANDROID_HOME (
+    if exist "%LOCALAPPDATA%\Android\Sdk" (
+        set "ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk"
+    )
 )
-if exist "android\local.properties" set "SDK_FOUND=1"
-
-if "%SDK_FOUND%"=="0" (
-    echo.
-    echo ========================================================
-    echo   [AVISO] ANDROID SDK NÃO ENCONTRADO
-    echo ========================================================
-    echo Para gerar o arquivo .APK, o Windows precisa do Android SDK
-    echo instalado no computador.
-    echo.
-    echo Como resolver em 1 passo:
-    echo 1. Instale o Android Studio:
-    echo    Execute: winget install Google.AndroidStudio
-    echo    ou baixe em: https://developer.android.com/studio
-    echo.
-    echo 2. Abra o Android Studio uma vez para concluir a instalação do SDK.
-    echo 3. Em seguida, dê 2 cliques neste mesmo script para gerar o APK!
-    echo ========================================================
-    echo.
-    pause
-    exit /b 0
+if defined ANDROID_HOME (
+    echo ✔ Android SDK localizado em: %ANDROID_HOME%
 )
 
 echo.
 echo [5/5] Compilando arquivo .APK nativo do Valore...
 cd android
-call gradlew.bat assembleDebug
+
+if exist "gradlew.bat" (
+    call gradlew.bat assembleDebug
+) else (
+    echo [ERRO] gradlew.bat não encontrado no diretório android.
+    exit /b 1
+)
+
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERRO] Falha ao compilar com Gradle Wrapper.
-    pause
+    echo.
+    echo [ERRO] Falha na compilação do Gradle. Verifique as mensagens acima.
     exit /b %ERRORLEVEL%
 )
 
@@ -96,20 +81,19 @@ cd ..
 
 set "OUTPUT_APK=android\app\build\outputs\apk\debug\app-debug.apk"
 set "DEST_APK=Valore.apk"
-set "INSTALLER_APK=..\Instalador\Valore.apk"
 
 if exist "%OUTPUT_APK%" (
     echo.
-    echo -> Copiando APK para os diretórios oficiais de distribuição...
+    echo -> Copiando APK para o diretório oficial Android...
     copy /y "%OUTPUT_APK%" "%DEST_APK%" > nul
-    copy /y "%OUTPUT_APK%" "%INSTALLER_APK%" > nul
+    copy /y "%OUTPUT_APK%" "Valore_1.3.7.apk" > nul
     echo.
     echo ========================================================
     echo   ✔ APK OFICIAL GERADO COM SUCESSO!
     echo ========================================================
     echo Arquivos prontos para instalação direta no celular:
     echo 1. %CD%\%DEST_APK%
-    echo 2. %CD%\%INSTALLER_APK%
+    echo 2. %CD%\Valore_1.3.7.apk
     echo.
     echo Você pode enviar este arquivo via WhatsApp, Drive ou USB
     echo e instalar diretamente em qualquer smartphone Android!
@@ -118,4 +102,4 @@ if exist "%OUTPUT_APK%" (
 )
 
 echo.
-pause
+exit /b 0

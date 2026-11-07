@@ -946,10 +946,14 @@ async function initApp() {
   window.syncAllAppVersionBadges();
   setupThemeManager();
   setupAppAlertListeners();
-  await finance.init();
+  try {
+    await finance.init();
     if (typeof finance.processRecurringTransactions === 'function') {
       await finance.processRecurringTransactions();
     }
+  } catch (initErr) {
+    console.error('Aviso ao inicializar financeService:', initErr);
+  }
 
   setupNavigation();
   setupEntityFilter();
@@ -7806,6 +7810,12 @@ function setupBackupManager() {
           parsedPin = String(obj.pin);
         }
       } catch (_) {}
+    } else if (text.includes('|')) {
+      const parts = text.split('|');
+      if (parts.length >= 2) {
+        parsedIp = parts[0].trim();
+        parsedPin = parts[1].trim();
+      }
     }
 
     if (!parsedIp || !parsedPin) {
@@ -7839,22 +7849,37 @@ function setupBackupManager() {
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       if (qrScannerStatusText) {
-        qrScannerStatusText.textContent = 'Câmera direta indisponível. Toque em "Ou Tirar Foto do QR Code" abaixo.';
+        qrScannerStatusText.textContent = 'Câmera direta indisponível. Abrindo captura de foto...';
+      }
+      if (qrScannerFileInput) {
+        showToast('📷 Abrindo câmera para fotografar o QR Code...', 'info');
+        qrScannerFileInput.click();
       }
       return;
     }
 
     try {
-      if (qrScannerStatusText) qrScannerStatusText.textContent = 'Iniciando câmera traseira em alta definição...';
-      qrStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: 'environment' },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        },
-        audio: false
-      });
+      if (qrScannerStatusText) qrScannerStatusText.textContent = 'Iniciando câmera traseira...';
+      
+      let stream = null;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment' },
+          audio: false
+        });
+      } catch (err1) {
+        console.warn('Aviso: fallback para câmera básica:', err1);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+        } catch (err2) {
+          throw err2;
+        }
+      }
 
+      qrStream = stream;
       qrScannerVideo.srcObject = qrStream;
       await qrScannerVideo.play();
       if (qrScannerStatusText) qrScannerStatusText.textContent = 'Aponte para o QR Code na tela do PC...';
@@ -7896,7 +7921,11 @@ function setupBackupManager() {
     } catch (err) {
       console.warn('Aviso ao abrir câmera para QR Code:', err);
       if (qrScannerStatusText) {
-        qrScannerStatusText.textContent = 'Permissão de câmera pendente. Use "Capturar Foto do QR" ao lado.';
+        qrScannerStatusText.textContent = 'Câmera ao vivo bloqueada. Toque no botão abaixo para tirar uma foto do QR Code.';
+      }
+      showToast('Câmera ao vivo bloqueada no sistema. Abrindo câmera fotográfica...', 'info');
+      if (qrScannerFileInput) {
+        setTimeout(() => qrScannerFileInput.click(), 400);
       }
     }
   };

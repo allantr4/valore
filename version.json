@@ -1,20 +1,18 @@
 {
-  "version": "1.3.7",
-  "releaseDate": "2026-11-06",
+  "version": "1.3.8",
+  "releaseDate": "2026-11-07",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.7 - Cofrinho Mercado Pago, Extrato Bancário Mobile e Swipe Down",
+  "title": "Valore v1.3.8 - Sincronização Wi-Fi Blindada, Leitor QR Code em Tela Cheia e Firewall",
   "notes": [
-    "Cofrinho estilo Mercado Pago: atalhos rápidos de valores (+R$ 50, +R$ 100, +R$ 200, +R$ 500 e Saldo Total) com input hero fintech e rendimento a 105% do CDI.",
-    "Histórico de Transações Mobile em Formato Bancário: lista moderna com agrupamento cronológico (Hoje, Ontem, etc.), ícones arredondados e cores nítidas por tipo.",
-    "Menu Bancos & Cartões com Extrato Unificado: visualização mobile idêntica ao app bancário para movimentações de conta e faturas de cartão.",
-    "Gesto Swipe Down no Extrato Detalhado: opção de arrastar a gaveta móvel para baixo para fechar, além do clique externo e botão de fechar.",
-    "Correção de Enquadramento no Dashboard: seletor de Período (Mês e Ano) adaptativo no mobile, eliminando cortes de texto e melhorando ergonomia.",
-    "Importação Direcionada no Extrato Ativo: novo botão 'Importar Extrato' diretamente dentro da conta ou cartão selecionado.",
-    "Organização Multiusuário e Casal: novas abas de filtro por titular (Você, Parceiro, Conjuntas) e badges visuais em contas e extratos."
+    "Correção no sincronizador local: blindagem contra falha de inicialização em coleções vazias no motor financeiro.",
+    "Leitor de QR Code em Tela Cheia: reposicionamento para a raiz da aplicação com z-index de alta prioridade, eliminando cortes visuais no mobile.",
+    "Câmera Resiliente no Android: suporte a orientação vertical com fallback instantâneo para foto caso o navegador do aparelho limite vídeo ao vivo.",
+    "Regras de Firewall para Wi-Fi: adição de permissão automática da porta 45454 no instalador e script utilitário para redes públicas.",
+    "Manual Ilustrado em PDF: guia completo de sincronização para casais passo a passo com prints reais do PC e celular."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.7.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.7.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.8.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.8.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 37,
-  "releaseNotes": "Cofrinho estilo Mercado Pago, Extrato Bancário Mobile, Gesto Swipe Down, Filtros de Titular e Importador Contextual v1.3.7."
+  "versionCode": 38,
+  "releaseNotes": "Sincronização Wi-Fi Blindada, Leitor QR Code em Tela Cheia e Regras de Firewall v1.3.8."
 }
