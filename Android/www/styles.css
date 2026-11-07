@@ -5417,3 +5417,217 @@ html[data-performance="low"] .sidebar {
 
 
 
+
+
+/* ==========================================================================
+   ESTILOS DE EXTRATO BANCÁRIO MOBILE & HUB COFRINHO ESTILO MERCADO PAGO
+   ========================================================================== */
+
+/* Chips / Filtros Rápidos de Tipo no Mobile */
+.tx-pills-filter-scroller {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 4px 0;
+  margin-bottom: 0.5rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tx-pills-filter-scroller::-webkit-scrollbar {
+  display: none;
+}
+.btn-tx-type-pill {
+  padding: 0.35rem 0.8rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.btn-tx-type-pill.active {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+/* Filtros de Titular em Bancos & Cartões */
+.btn-acc-owner-filter {
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+.btn-acc-owner-filter.active {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+/* Lista Mobile de Extrato Estilo App Bancário */
+.bank-mobile-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.bank-mobile-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bank-mobile-date-header {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: 0.35rem 0.2rem 0.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bank-mobile-tx-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+.bank-mobile-tx-card:active {
+  transform: scale(0.985);
+  background: var(--bg-tertiary);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.bank-mobile-tx-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.bank-mobile-tx-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.bank-mobile-tx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.bank-mobile-tx-title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bank-mobile-tx-meta {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bank-mobile-tx-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.bank-mobile-tx-amount {
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.bank-mobile-tx-amount.amount-expense {
+  color: var(--danger, #ef4444);
+}
+.bank-mobile-tx-amount.amount-income {
+  color: var(--success, #10b981);
+}
+.bank-mobile-tx-amount.amount-vault {
+  color: #10b981;
+}
+
+/* Quick Amount Pills no Cofrinho estilo Mercado Pago */
+.vault-quick-amounts {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.85rem;
+  flex-wrap: wrap;
+}
+.btn-vault-quick-pill {
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  background: rgba(16, 185, 129, 0.08);
+  color: var(--success, #10b981);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-vault-quick-pill:hover, .btn-vault-quick-pill:active {
+  background: rgba(16, 185, 129, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Responsividade específica: Mobile vs Desktop */
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+  .bank-mobile-tx-list {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}

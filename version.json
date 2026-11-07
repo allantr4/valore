@@ -1,19 +1,20 @@
 {
-  "version": "1.3.6",
+  "version": "1.3.7",
   "releaseDate": "2026-11-06",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.6 - Unificação de Cards Métricos e Aprimoramento da Central de Notificações",
+  "title": "Valore v1.3.7 - Cofrinho Mercado Pago, Extrato Bancário Mobile e Swipe Down",
   "notes": [
-    "Unificação dos Cards Métricos com Seletores de Abas em Bancos & Cartões (Metric Tabs Fintech UX): economia de mais de 70px de altura de tela e eliminação de botões redundantes.",
-    "Aprimoramento da Central de Notificações: abertura exclusiva da gaveta lateral no sininho (sem abrir configurações junto) e datas de vencimento com prazos detalhados nos cards.",
-    "Ação Rápida 'Marcar como Lida': controle de leitura individual com feedback visual imediato em cada notificação de boleto e cartão.",
-    "Correção de Ícone Duplicado no Dashboard: remoção de emoji redundante no banner de salário e pagamento previsto.",
-    "Restauração e integridade de movimentações de Cofrinhos/Reservas no extrato da conta bancária correspondente.",
-    "Paridade e sincronização contínua Desktop Windows & Mobile Android com instaladores versionados v1.3.6 (136)."
+    "Cofrinho estilo Mercado Pago: atalhos rápidos de valores (+R$ 50, +R$ 100, +R$ 200, +R$ 500 e Saldo Total) com input hero fintech e rendimento a 105% do CDI.",
+    "Histórico de Transações Mobile em Formato Bancário: lista moderna com agrupamento cronológico (Hoje, Ontem, etc.), ícones arredondados e cores nítidas por tipo.",
+    "Menu Bancos & Cartões com Extrato Unificado: visualização mobile idêntica ao app bancário para movimentações de conta e faturas de cartão.",
+    "Gesto Swipe Down no Extrato Detalhado: opção de arrastar a gaveta móvel para baixo para fechar, além do clique externo e botão de fechar.",
+    "Correção de Enquadramento no Dashboard: seletor de Período (Mês e Ano) adaptativo no mobile, eliminando cortes de texto e melhorando ergonomia.",
+    "Importação Direcionada no Extrato Ativo: novo botão 'Importar Extrato' diretamente dentro da conta ou cartão selecionado.",
+    "Organização Multiusuário e Casal: novas abas de filtro por titular (Você, Parceiro, Conjuntas) e badges visuais em contas e extratos."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_136.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_136.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.7.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.7.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 36,
-  "releaseNotes": "Unificação dos Cards Métricos de Bancos e Cartões, Central de Notificações Aprimorada com Datas de Vencimento e Marcar como Lida v1.3.6."
+  "versionCode": 37,
+  "releaseNotes": "Cofrinho estilo Mercado Pago, Extrato Bancário Mobile, Gesto Swipe Down, Filtros de Titular e Importador Contextual v1.3.7."
 }

@@ -305,7 +305,9 @@ class FinanceService {
         description: s.description,
         amount: s.amount,
         dueDate: s.dueDate,
+        date: s.dueDate,
         diffDays,
+        daysUntil: diffDays,
         accountName: acc.name,
         categoryName: cat.name
       };
@@ -330,8 +332,7 @@ class FinanceService {
     };
   }
 
-  getAppVersion() {
-    return '1.3.4';
+  getAppVersion() { return "1.3.7";
   }
 
   getAppBuildDate() {
@@ -387,6 +388,25 @@ class FinanceService {
       this.state.accounts.forEach(a => {
         if (a.vaulted === undefined) a.vaulted = 0;
       });
+
+      // Sanitização automática: remove fromAccountId e toAccountId de despesas/receitas que não sejam transferências
+      let hasCleanedTxs = false;
+      this.state.transactions.forEach(t => {
+        if (t.isVaultAllocation || (t.description && t.description.startsWith('[Cofrinho'))) {
+          // Garante accountId em movimentações internas de cofrinho
+          if (!t.accountId && (t.fromAccountId || t.toAccountId)) {
+            t.accountId = t.fromAccountId || t.toAccountId;
+            hasCleanedTxs = true;
+          }
+        } else if (t.type !== 'transfer' && (t.fromAccountId !== undefined || t.toAccountId !== undefined)) {
+          delete t.fromAccountId;
+          delete t.toAccountId;
+          hasCleanedTxs = true;
+        }
+      });
+      if (hasCleanedTxs) {
+        await this.save();
+      }
 
       // Se houver saldo em a.vaulted mas nenhum cofrinho em this.state.vaults, cria uma Reserva Padrão automática
       this.state.accounts.forEach(a => {
@@ -1011,8 +1031,8 @@ class FinanceService {
       type: data.type,
       categoryId: data.categoryId,
       accountId: data.accountId,
-      fromAccountId: data.fromAccountId,
-      toAccountId: data.toAccountId,
+      fromAccountId: data.type === 'transfer' ? data.fromAccountId : null,
+      toAccountId: data.type === 'transfer' ? data.toAccountId : null,
       date: data.date,
       recurring: data.recurring !== undefined ? data.recurring : (oldTx.recurring || 'none'),
       costCenterId: data.costCenterId !== undefined ? data.costCenterId : (oldTx.costCenterId || null),
@@ -2680,9 +2700,7 @@ class FinanceService {
     if (!this.state.accounts || !this.state.transactions) return;
     this.state.accounts.forEach(acc => {
       if (acc.type === 'credit') {
-        const cardTxs = this.state.transactions.filter(t => 
-          t.accountId === acc.id || t.fromAccountId === acc.id || t.toAccountId === acc.id
-        );
+        const cardTxs = this.state.transactions.filter(t => t.accountId === acc.id);
         let totalDebt = 0;
         cardTxs.forEach(t => {
           const amt = parseFloat(t.amount || 0);
@@ -3170,14 +3188,15 @@ class FinanceService {
 
       let alertTitle = '';
       let alertMessage = '';
+      const iconEmoji = isToday ? '💰' : (isPast ? '⚠️' : '🗓️');
       if (isToday) {
-        alertTitle = '💰 Pagamento Previsto para Hoje!';
+        alertTitle = 'Pagamento Previsto para Hoje!';
         alertMessage = `Seu recebimento de ${inc.description} (${ruleDesc}) está agendado para HOJE (${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}). O valor já foi creditado na sua conta?`;
       } else if (isPast) {
-        alertTitle = '⚠️ Recebimento Pendente de Baixa';
+        alertTitle = 'Recebimento Pendente de Baixa';
         alertMessage = `A data prevista do seu ${inc.description} foi em ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')} (${Math.abs(daysUntilDue)} dias atrás). Deseja confirmar o recebimento?`;
       } else if (isSoon) {
-        alertTitle = '🗓️ Recebimento Próximo';
+        alertTitle = 'Recebimento Próximo';
         alertMessage = `Seu ${inc.description} está previsto para daqui a ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'} (${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}).`;
       }
 
@@ -3190,6 +3209,7 @@ class FinanceService {
         isPast,
         isSoon,
         ruleDesc,
+        iconEmoji,
         alertTitle,
         alertMessage,
         dueDateFormatted: `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`,

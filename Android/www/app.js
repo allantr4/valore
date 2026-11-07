@@ -1301,6 +1301,261 @@ window.setTxAuthorFilter = function(author) {
   renderTransactionsView();
 };
 
+
+let currentTxTypeFilter = 'all';
+let currentAccountsOwnerFilter = 'all';
+
+window.setTxTypeFilter = function(filter) {
+  currentTxTypeFilter = filter || 'all';
+  currentTxDisplayLimit = 50;
+  document.querySelectorAll('.btn-tx-type-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-filter') === currentTxTypeFilter);
+  });
+  renderTransactionsView();
+};
+
+window.setAccountsOwnerFilter = function(ownerRole) {
+  currentAccountsOwnerFilter = ownerRole || 'all';
+  document.querySelectorAll('.btn-acc-owner-filter').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-owner') === currentAccountsOwnerFilter);
+  });
+  renderAccountsView();
+};
+
+window.setVaultQuickAmount = function(amount) {
+  const amountInput = document.getElementById('vaultActionAmount');
+  if (!amountInput) return;
+  const currentVal = parseCurrencyInput(amountInput.value) || 0;
+  const newVal = currentVal + amount;
+  amountInput.value = (newVal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+window.setVaultQuickMax = function() {
+  const amountInput = document.getElementById('vaultActionAmount');
+  const actionType = document.getElementById('vaultSelectedType') ? document.getElementById('vaultSelectedType').value : 'deposit';
+  const vaultId = document.getElementById('vaultSelectedId') ? document.getElementById('vaultSelectedId').value : null;
+  if (!amountInput) return;
+
+  if (actionType === 'deposit') {
+    const account = finance.state.accounts.find(a => a.id === currentVaultAccountId);
+    const freeBal = Math.max(0, account ? (account.balance || 0) : 0);
+    amountInput.value = (freeBal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  } else {
+    const vault = (finance.state.vaults || []).find(v => v.id === vaultId);
+    const vaultBal = Math.max(0, vault ? (vault.balance || 0) : 0);
+    amountInput.value = (vaultBal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+};
+
+window.openImportModalForAccount = function(accountId) {
+  const btnOpen = document.getElementById('btnOpenImportModal');
+  if (btnOpen) btnOpen.click();
+  setTimeout(() => {
+    const select = document.getElementById('importAccountSelect');
+    if (select && accountId) {
+      select.value = accountId;
+    }
+  }, 100);
+};
+
+// Implementação do Swipe Down no Bottom Sheet do Extrato
+function setupAccountDetailsSheetTouch() {
+  const sheet = document.getElementById('accountDetailsCard');
+  if (!sheet) return;
+
+  let startY = 0;
+  let currentY = 0;
+  let isDragging = false;
+
+  const topBar = sheet.querySelector('.mobile-sheet-top-bar') || sheet;
+
+  topBar.addEventListener('touchstart', (e) => {
+    if (sheet.scrollTop > 10) return; // Só ativa arraste se o scroll estiver no topo
+    startY = e.touches[0].clientY;
+    isDragging = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+
+  topBar.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    currentY = e.touches[0].clientY;
+    const diff = currentY - startY;
+    if (diff > 0) {
+      sheet.style.transform = `translateY(${diff}px)`;
+    }
+  }, { passive: true });
+
+  topBar.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    sheet.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
+    const diff = currentY - startY;
+    if (diff > 90) {
+      // Swipe down concluído com sucesso: fecha o extrato
+      sheet.style.transform = 'translateY(100%)';
+      setTimeout(() => {
+        sheet.style.transform = '';
+        sheet.style.transition = '';
+        if (typeof closeAccountDetails === 'function') closeAccountDetails();
+      }, 200);
+    } else {
+      // Volta para a posição normal
+      sheet.style.transform = 'translateY(0)';
+      setTimeout(() => {
+        sheet.style.transform = '';
+        sheet.style.transition = '';
+      }, 250);
+    }
+  }, { passive: true });
+}
+
+// Helper global para formatar cabeçalhos de data estilo extrato bancário
+function getBankDateGroupHeader(dateStr) {
+  if (!dateStr) return 'Outros Lançamentos';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  
+  const txDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  
+  const txDayTime = txDate.getTime();
+  if (txDayTime === today.getTime()) {
+    return 'Hoje';
+  } else if (txDayTime === yesterday.getTime()) {
+    return 'Ontem';
+  } else {
+    const day = parts[2];
+    const mIndex = Number(parts[1]) - 1;
+    const mNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const monthName = mNames[mIndex] || parts[1];
+    const year = parts[0];
+    const currentYear = String(today.getFullYear());
+    return year === currentYear ? `${day} de ${monthName}` : `${day} de ${monthName} de ${year}`;
+  }
+}
+
+// Renderiza um item individual no formato cartão de extrato de banco mobile
+function renderBankMobileTxCard(tx) {
+  const isVaultTx = tx.isVaultAllocation || (tx.description && tx.description.startsWith('[Cofrinho'));
+  const isTransfer = tx.type === 'transfer' && !isVaultTx;
+  const isIncome = tx.type === 'income';
+
+  let accountLabel = '';
+  let acc = null;
+  if (isVaultTx) {
+    acc = (typeof finance !== 'undefined' && finance.state && finance.state.accounts) ? finance.state.accounts.find(a => a.id === (tx.accountId || tx.fromAccountId || tx.toAccountId)) : null;
+    accountLabel = acc ? `${acc.name} (Reserva)` : 'Cofrinho';
+  } else if (isTransfer) {
+    const from = finance.state.accounts.find(a => a.id === tx.fromAccountId) || { name: 'Conta' };
+    const to = finance.state.accounts.find(a => a.id === tx.toAccountId) || { name: 'Conta' };
+    accountLabel = `${from.name} ➔ ${to.name}`;
+  } else {
+    acc = finance.state.accounts.find(a => a.id === tx.accountId) || { name: 'Principal' };
+    accountLabel = acc.name;
+  }
+
+  const cat = finance.state.categories.find(c => c.id === tx.categoryId) || { name: isTransfer ? 'Transferência' : 'Geral', color: '#8b5cf6' };
+  const cleanDescription = (tx.installmentTotal > 1) 
+    ? (tx.description || '').replace(/\s*\(\d+\/\d+\)\s*$/, '') 
+    : tx.description;
+
+  const authorInfo = finance.getEntityAuthorInfo ? finance.getEntityAuthorInfo(tx) : { name: 'Você', role: 'p1', deviceLabel: 'PC' };
+
+  let formattedVal = currencyFormatter.format(Number(tx.amount || 0));
+  let amountClass = 'amount-expense';
+  let prefix = '- ';
+  let iconName = 'arrow-up-right';
+  let iconBg = 'rgba(239, 68, 68, 0.12)';
+  let iconColor = 'var(--danger)';
+
+  if (isVaultTx) {
+    amountClass = 'amount-vault';
+    prefix = '🔒 ';
+    iconName = 'piggy-bank';
+    iconBg = 'rgba(16, 185, 129, 0.15)';
+    iconColor = 'var(--success)';
+  } else if (isTransfer) {
+    amountClass = 'amount-transfer';
+    prefix = '';
+    iconName = 'arrow-right-left';
+    iconBg = 'rgba(99, 102, 241, 0.15)';
+    iconColor = 'var(--primary)';
+  } else if (isIncome) {
+    amountClass = 'amount-income';
+    prefix = '+ ';
+    iconName = 'arrow-down-left';
+    iconBg = 'rgba(16, 185, 129, 0.15)';
+    iconColor = 'var(--success)';
+  }
+
+  return `
+    <div class="bank-mobile-tx-card" onclick="handleEditTx('${tx.id}')">
+      <div class="bank-mobile-tx-left">
+        <div class="bank-mobile-tx-icon" style="background: ${iconBg}; color: ${iconColor};">
+          <i data-lucide="${iconName}" style="width: 20px; height: 20px;"></i>
+        </div>
+        <div class="bank-mobile-tx-info">
+          <div class="bank-mobile-tx-title">
+            <span>${escapeHtml(cleanDescription)}</span>
+            ${tx.installmentTotal > 1 ? `<span class="badge" style="background: rgba(168,85,247,0.15); color: #a855f7; font-size: 0.65rem; padding: 0.08rem 0.35rem; border-radius: 4px;">${tx.installmentIndex}/${tx.installmentTotal}</span>` : ''}
+          </div>
+          <div class="bank-mobile-tx-meta">
+            <span style="color: ${cat.color || 'var(--text-muted)'}; font-weight: 600;">${cat.name}</span>
+            <span>•</span>
+            <span>${escapeHtml(accountLabel)}</span>
+            ${authorInfo && authorInfo.name ? `<span>•</span><span class="${authorInfo.role === 'p2' ? 'author-p2' : 'author-p1'}" style="font-size: 0.68rem; font-weight: 700;">${escapeHtml(authorInfo.name)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+      <div class="bank-mobile-tx-right">
+        <span class="bank-mobile-tx-amount ${amountClass}">${prefix}${formattedVal}</span>
+        ${tx.reconciled ? `<span style="font-size: 0.68rem; color: var(--success); font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"><i data-lucide="check" style="width: 10px; height: 10px;"></i> Conciliada</span>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// Agrupa transações por data e renderiza a lista mobile
+function renderBankMobileTxGroupedList(transactions) {
+  if (!transactions || transactions.length === 0) return '';
+  
+  // Agrupa em mapa de data
+  const groups = {};
+  transactions.forEach(t => {
+    const d = t.date || 'Sem data';
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(t);
+  });
+
+  const sortedDates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  return sortedDates.map(dateKey => {
+    const list = groups[dateKey];
+    const headerLabel = getBankDateGroupHeader(dateKey);
+    const dayTotal = list.reduce((sum, item) => {
+      if (item.type === 'expense') return sum - Number(item.amount || 0);
+      if (item.type === 'income') return sum + Number(item.amount || 0);
+      return sum;
+    }, 0);
+
+    const formattedDayTotal = dayTotal !== 0 ? (dayTotal > 0 ? `+ ${currencyFormatter.format(dayTotal)}` : currencyFormatter.format(dayTotal)) : '';
+
+    return `
+      <div class="bank-mobile-date-group">
+        <div class="bank-mobile-date-header">
+          <span>${headerLabel}</span>
+          ${formattedDayTotal ? `<span style="font-size: 0.72rem; color: ${dayTotal > 0 ? 'var(--success)' : 'var(--text-muted)'}; font-weight: 600;">${formattedDayTotal}</span>` : ''}
+        </div>
+        ${list.map(t => renderBankMobileTxCard(t)).join('')}
+      </div>
+    `;
+  }).join('');
+}
+
 function renderTransactionsView() {
   const tbody = document.getElementById('allTxTableBody');
   const searchInput = document.getElementById('txSearchInput');
@@ -1347,6 +1602,9 @@ function renderTransactionsView() {
       const author = finance.getEntityAuthorInfo(t);
       if (author.role !== currentTxAuthorFilter) return false;
     }
+    if (typeof currentTxTypeFilter !== 'undefined' && currentTxTypeFilter !== 'all') {
+      if (t.type !== currentTxTypeFilter) return false;
+    }
     return t.description.toLowerCase().includes(search) || (t.notes && t.notes.toLowerCase().includes(search));
   });
 
@@ -1381,7 +1639,14 @@ function renderTransactionsView() {
   }
 
   tbody.innerHTML = rowsHtml;
-  if (window.lucide) lucide.createIcons({ root: tbody });
+  const mobileList = document.getElementById('txBankMobileListContainer');
+  if (mobileList) {
+    mobileList.innerHTML = renderBankMobileTxGroupedList(visibleList);
+  }
+  if (window.lucide) {
+    lucide.createIcons({ root: tbody });
+    if (mobileList) lucide.createIcons({ root: mobileList });
+  }
 }
 
 window.loadMoreTransactions = function() {
@@ -3289,6 +3554,27 @@ function renderAccountsView() {
   }
 
   let accountsToShow = finance.state.accounts;
+
+  // Barra de filtro por titular para Contas & Cartões
+  const ownerFilterBar = document.getElementById('accountsOwnerFilterBar');
+  const isCoupleActive = (typeof finance !== 'undefined' && finance.isCoupleEnabled) ? finance.isCoupleEnabled() : false;
+  if (ownerFilterBar) {
+    ownerFilterBar.style.display = (isCoupleActive && currentAccountFilter !== 'bills') ? 'flex' : 'none';
+    const coupleSettings = finance.getCoupleSettings ? finance.getCoupleSettings() : null;
+    const p1Btn = document.getElementById('btnAccFilterP1');
+    const p2Btn = document.getElementById('btnAccFilterP2');
+    if (p1Btn && coupleSettings && coupleSettings.partner1) {
+      p1Btn.textContent = `👤 ${coupleSettings.partner1.name || 'Você'}`;
+    }
+    if (p2Btn && coupleSettings && coupleSettings.partner2) {
+      p2Btn.textContent = `❤️ ${coupleSettings.partner2.name || 'Parceiro(a)'}`;
+    }
+  }
+
+  if (isCoupleActive && currentAccountsOwnerFilter !== 'all') {
+    accountsToShow = accountsToShow.filter(a => (a.ownerRole || 'p1') === currentAccountsOwnerFilter);
+  }
+
   if (currentAccountFilter === 'checking') {
     accountsToShow = accountsToShow.filter(a => a.type !== 'credit');
   } else if (currentAccountFilter === 'credit') {
@@ -3404,6 +3690,7 @@ function renderAccountsView() {
               <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
                 <span class="metric-title" style="display: block; font-weight: 700;">${acc.name}</span>
                 <span class="badge" style="background: rgba(168, 85, 247, 0.15); color: #c084fc; font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">💳 Cartão • ${brandLabel}</span>
+                ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
                 ${acc.isDefault ? `<span class="account-default-tag" title="Cartão padrão para lançamentos">★ Padrão</span>` : ''}
               </div>
               <span style="font-size: 0.72rem; color: var(--text-muted);">
@@ -3495,6 +3782,7 @@ function renderAccountsView() {
               <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: var(--primary); font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;">
                 🏦 ${acc.type === 'investment' ? 'Investimento' : (acc.type === 'cash' ? 'Dinheiro' : 'Conta Corrente')}
               </span>
+              ${getAccountOwnerBadgeHtml(acc.ownerRole || 'p1')}
               ${acc.isDefault ? `<span class="account-default-tag" title="Conta padrão para lançamentos">★ Padrão</span>` : ''}
             </div>
             <span style="font-size: 0.72rem; color: var(--text-muted);">
@@ -4191,6 +4479,12 @@ function renderSelectedAccountDetails() {
     `;
     if (window.lucide) lucide.createIcons();
     return;
+  }
+
+  const accMobileList = document.getElementById('accBankMobileListContainer');
+  if (accMobileList) {
+    accMobileList.innerHTML = renderBankMobileTxGroupedList(accountTransactions);
+    if (window.lucide) lucide.createIcons({ root: accMobileList });
   }
 
   txTableBody.innerHTML = accountTransactions.map(tx => {
@@ -7356,6 +7650,8 @@ function renderSyncServerQrCode(primaryIp, port, pin) {
   }
 }
 
+let currentServerStatusCache = null;
+
 async function refreshDesktopSyncServerCard() {
   const desktopCard = document.getElementById('syncDesktopServerCard');
   const clientTitle = document.getElementById('syncClientCardTitle');
@@ -7364,17 +7660,50 @@ async function refreshDesktopSyncServerCard() {
     if (clientTitle) clientTitle.textContent = 'Conectar a Outro PC na Rede (Opcional)';
     try {
       const status = await window.electronAPI.getSyncServerStatus();
-      const ipEl = document.getElementById('syncServerIpDisplay');
+      currentServerStatusCache = status;
+      const ipSelector = document.getElementById('syncServerIpSelector');
       const allIpsEl = document.getElementById('syncServerAllIpsDisplay');
       const pinEl = document.getElementById('syncServerPinDisplay');
-      if (ipEl) ipEl.textContent = `${status.primaryIp}:${status.port}`;
+      const btnCopyIp = document.getElementById('btnCopySyncIp');
+
+      if (pinEl) pinEl.textContent = status.pin;
+
+      if (ipSelector && Array.isArray(status.ips)) {
+        ipSelector.innerHTML = '';
+        status.ips.forEach((ip, idx) => {
+          const opt = document.createElement('option');
+          opt.value = ip;
+          opt.textContent = `${ip}:${status.port}${idx === 0 ? ' (Wi-Fi Recomendado)' : ''}`;
+          if (ip === status.primaryIp) opt.selected = true;
+          ipSelector.appendChild(opt);
+        });
+
+        ipSelector.onchange = () => {
+          const chosenIp = ipSelector.value;
+          renderSyncServerQrCode(chosenIp, status.port, status.pin);
+          if (allIpsEl) {
+            allIpsEl.textContent = `IP Ativo para o QR Code: ${chosenIp}:${status.port}`;
+          }
+        };
+      }
+
+      if (btnCopyIp) {
+        btnCopyIp.onclick = () => {
+          const activeIp = ipSelector ? ipSelector.value : status.primaryIp;
+          navigator.clipboard.writeText(`${activeIp}:${status.port}`).then(() => {
+            showToast('Endereço IP copiado para a área de transferência!', 'success');
+          }).catch(() => {});
+        };
+      }
+
       if (allIpsEl) {
         allIpsEl.textContent = status.ips && status.ips.length > 1
-          ? `Outras interfaces: ${status.ips.slice(1).join(', ')} (Porta ${status.port})`
+          ? `Rede Wi-Fi detectada (${status.ips.length} interfaces encontradas no PC)`
           : `Computador: ${status.hostname || 'PC'} • Porta ${status.port}`;
       }
-      if (pinEl) pinEl.textContent = status.pin;
-      renderSyncServerQrCode(status.primaryIp, status.port, status.pin);
+
+      const selectedIp = (ipSelector && ipSelector.value) ? ipSelector.value : status.primaryIp;
+      renderSyncServerQrCode(selectedIp, status.port, status.pin);
     } catch (err) {
       console.warn('Erro ao consultar servidor LAN Sync:', err);
     }
@@ -7740,14 +8069,24 @@ function setupBackupManager() {
         const pin = String(remotePinInput ? remotePinInput.value : '').trim();
         showWifiSyncFeedback('⏳ Testando comunicação com o PC na rede Wi-Fi...', 'info');
 
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 5000);
-        const res = await fetch(`${baseUrl}/valore-sync/ping`, {
-          method: 'GET',
-          headers: { 'X-Valore-Pin': pin },
-          signal: controller.signal
-        });
-        clearTimeout(timer);
+        let res;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 8000);
+            res = await fetch(`${baseUrl}/valore-sync/ping`, {
+              method: 'GET',
+              headers: { 'X-Valore-Pin': pin },
+              signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (res.ok) break;
+          } catch (fetchErr) {
+            if (attempt === 2) throw fetchErr;
+            // Pequeno delay de 300ms antes da 2a tentativa
+            await new Promise(r => setTimeout(r, 300));
+          }
+        }
 
         const data = await res.json();
         if (!res.ok || !data.ok) {
@@ -7790,23 +8129,32 @@ function setupBackupManager() {
             : '🔄 Sincronizando e unindo lançamentos entre Celular e PC (Smart Merge)...';
         showWifiSyncFeedback(modeDesc, 'info');
 
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 12000);
-        const res = await fetch(`${baseUrl}/valore-sync/sync`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Valore-Pin': pin
-          },
-          body: JSON.stringify({
-            deviceName: getSyncDeviceLabel(),
-            syncMode,
-            exportedAt: new Date().toISOString(),
-            state: finance.state
-          }),
-          signal: controller.signal
-        });
-        clearTimeout(timer);
+        let res;
+        for (let attempt = 1; attempt <= 2; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 20000);
+            res = await fetch(`${baseUrl}/valore-sync/sync`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Valore-Pin': pin
+              },
+              body: JSON.stringify({
+                deviceName: getSyncDeviceLabel(),
+                syncMode,
+                exportedAt: new Date().toISOString(),
+                state: finance.state
+              }),
+              signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (res.ok) break;
+          } catch (syncErr) {
+            if (attempt === 2) throw syncErr;
+            await new Promise(r => setTimeout(r, 500));
+          }
+        }
 
         const data = await res.json();
         if (!res.ok || !data.ok || !data.mergedState) {
