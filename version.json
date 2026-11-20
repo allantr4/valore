@@ -1,17 +1,17 @@
 {
-  "version": "1.3.12",
+  "version": "1.3.13",
   "releaseDate": "2026-11-20",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.12 - Sincronização em Tempo Real da Central de Notificações",
+  "title": "Valore v1.3.13 - Otimização de Enquadramento do Seletor de Período Mobile",
   "notes": [
-    "Sincronização em Tempo Real de Badges: eliminação total de contadores fantasmas no sininho do cabeçalho ao esvaziar ou resetar pendências.",
-    "Reatividade Bidirecional: recálculo instantâneo de alertas ao abrir/fechar o drawer, quitar contas e sincronizar.",
-    "Limpeza Profunda no Reset Total: eliminação de caches locais de leitura de notificações.",
-    "Central de Configurações Unificada: gerenciamento integrado de perfis, backups, tema, notificações e banco de dados."
+    "Otimização Ergonômica Mobile: seletor de mês expandido e perfeitamente legível sem cortes em todas as resoluções de smartphone.",
+    "Botão Mês Atual Compacto: layout inteligente com ícone dedicado no mobile para liberar espaço aos nomes longos dos meses.",
+    "Ano com Largura Otimizada: controle de 4 dígitos enxuto e harmonioso.",
+    "Paridade Completa: sincronização e compilação nativa para Windows e Android."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.12.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.12.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.13.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.13.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 42,
-  "releaseNotes": "Valore v1.3.12 - Sincronização em Tempo Real da Central de Notificações."
+  "versionCode": 43,
+  "releaseNotes": "Valore v1.3.13 - Otimização de Enquadramento do Seletor de Período Mobile."
 }

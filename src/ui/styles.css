@@ -4772,11 +4772,52 @@ html[data-performance="low"] .sidebar {
     justify-content: space-between !important;
   }
 
+  /* Oculta texto 'Mês Atual' no smartphone mantendo ícone quadrado compacto para liberar espaço */
+  .dashboard-period-controls .hide-mobile-btn-text {
+    display: none !important;
+  }
+
+  .dashboard-period-controls #btnDashPrevMonth,
+  .dashboard-period-controls #btnDashNextMonth {
+    flex: 0 0 auto !important;
+    padding: 0.35rem 0.45rem !important;
+    min-width: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .dashboard-period-controls #btnDashCurrentMonth {
+    flex: 0 0 auto !important;
+    padding: 0.35rem 0.55rem !important;
+    min-width: 34px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Ano com largura fixa enxuta e confortável (4 dígitos) */
+  .dashboard-period-controls #dashSelectYear {
+    flex: 0 0 68px !important;
+    width: 68px !important;
+    min-width: 68px !important;
+    max-width: 68px !important;
+    padding: 0.35rem 0.25rem !important;
+    font-size: 0.8rem !important;
+    text-align: center !important;
+  }
+
+  /* Mês com expansão máxima para acomodar até os meses mais longos (Novembro, Fevereiro, etc.) */
+  .dashboard-period-controls #dashSelectMonth {
+    flex: 1 1 auto !important;
+    min-width: 115px !important;
+    font-size: 0.82rem !important;
+    padding: 0.35rem 0.4rem !important;
+  }
+
   .dashboard-period-controls .form-control {
-    flex: 1 !important;
     font-size: 0.8rem !important;
     padding: 0.35rem 0.4rem !important;
-    min-width: 0 !important;
   }
 }
 
