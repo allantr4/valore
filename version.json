@@ -1,18 +1,18 @@
 {
-  "version": "1.3.8",
-  "releaseDate": "2026-11-07",
+  "version": "1.3.11",
+  "releaseDate": "2026-11-20",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.8 - Sincronização Wi-Fi Blindada, Leitor QR Code em Tela Cheia e Firewall",
+  "title": "Valore v1.3.11 - Central Unificada de Configurações e Reset Total Seguro",
   "notes": [
-    "Correção no sincronizador local: blindagem contra falha de inicialização em coleções vazias no motor financeiro.",
-    "Leitor de QR Code em Tela Cheia: reposicionamento para a raiz da aplicação com z-index de alta prioridade, eliminando cortes visuais no mobile.",
-    "Câmera Resiliente no Android: suporte a orientação vertical com fallback instantâneo para foto caso o navegador do aparelho limite vídeo ao vivo.",
-    "Regras de Firewall para Wi-Fi: adição de permissão automática da porta 45454 no instalador e script utilitário para redes públicas.",
-    "Manual Ilustrado em PDF: guia completo de sincronização para casais passo a passo com prints reais do PC e celular."
+    "Central de Configurações Unificada: nova tela dedicada reunindo perfis de usuários, parâmetros, sincronização Wi-Fi, backups e preferências visuais.",
+    "Módulo de Perfis & Finanças a Dois: chave de ativação rápida, seleção de dispositivo e divisão de despesas centralizadas.",
+    "Zona de Perigo com Reset Total: recurso para zerar e apagar todos os dados com trava de segurança dupla (exige digitar RESETAR e gera backup preventivo automático).",
+    "Atalhos Rápidos de Exportação: exportação em 1 clique para JSON e planilhas Excel (.xlsx) na tela de configurações.",
+    "Aprimoramentos de Navegação: acesso direto pelo menu lateral desktop e pela gaveta mobile."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.8.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.8.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.11.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.11.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 38,
-  "releaseNotes": "Sincronização Wi-Fi Blindada, Leitor QR Code em Tela Cheia e Regras de Firewall v1.3.8."
+  "versionCode": 41,
+  "releaseNotes": "Valore v1.3.11 - Central Unificada de Configurações e Reset Total Seguro."
 }

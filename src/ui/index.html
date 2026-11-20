@@ -94,6 +94,11 @@
           <i data-lucide="tags"></i>
           <span>Categorias</span>
         </li>
+        <li class="nav-section-title">Sistema & Parâmetros</li>
+        <li class="nav-item" data-tab="settings" id="navItemSettings">
+          <i data-lucide="settings"></i>
+          <span>Configurações</span>
+        </li>
       </ul>
 
       <!-- Rodapé Retrátil da Barra Lateral (Otimização Máxima de Espaço Vertical) -->
@@ -104,7 +109,7 @@
             <span class="toggle-label">Ajustes & Sistema</span>
           </div>
           <div class="sidebar-footer-toggle-right">
-            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.8</span>
+            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.11</span>
             <i data-lucide="chevron-up" class="sidebar-footer-chevron" id="sidebarFooterChevron"></i>
           </div>
         </button>
@@ -132,11 +137,19 @@
             <span>Dicas & Boas-Vindas</span>
           </button>
           <button type="button" id="btnSidebarNotifications" class="btn-lite-mode-toggle"
-            title="Configurar Lembretes de Vencimento e Notificações"
-            onclick="window.openNotificationSettingsModal()"
-            style="margin-top: 0.35rem; border-color: rgba(245, 158, 11, 0.35); color: #f59e0b;">
+            title="Central de Notificações, Lembretes e Compras Detectadas"
+            onclick="window.openNotificationCenter()"
+            style="margin-top: 0.35rem; border-color: rgba(245, 158, 11, 0.35); color: #f59e0b; position: relative;">
             <i data-lucide="bell" style="width: 14px; height: 14px;"></i>
             <span>Lembretes & Alertas</span>
+            <span id="sidebarNotificationBadge" style="display: none; margin-left: auto; min-width: 17px; height: 17px; padding: 0 4px; background: #ef4444; color: #fff; font-size: 0.62rem; font-weight: 800; border-radius: 999px; align-items: center; justify-content: center; line-height: 17px; text-align: center;">0</span>
+          </button>
+          <button type="button" id="btnSidebarSettingsDirect" class="btn-lite-mode-toggle"
+            title="Abrir Central de Configurações e Parâmetros"
+            onclick="window.switchTab('settings')"
+            style="margin-top: 0.35rem; border-color: rgba(59, 130, 246, 0.35); color: var(--primary);">
+            <i data-lucide="settings" style="width: 14px; height: 14px;"></i>
+            <span>Painel de Ajustes</span>
           </button>
           <button type="button" id="btnToggleLiteMode" class="btn-lite-mode-toggle"
             title="Ativar Modo Leve para computadores fracos (Desativa blur e sombras para economizar CPU e RAM)"
@@ -148,7 +161,7 @@
           <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
             <div style="display: flex; align-items: center; gap: 0.45rem;">
               <span class="version-dot" id="sidebarVersionDot">●</span>
-              <span class="version-number" id="sidebarVersionText">Valore v1.3.8</span>
+              <span class="version-number" id="sidebarVersionText">Valore v1.3.11</span>
             </div>
             <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
           </div>
@@ -1832,6 +1845,203 @@
 
       </div>
 
+      <!-- View: Configurações & Parâmetros do Sistema -->
+      <div id="view-settings" class="view-container" style="display: none; flex-direction: column; gap: 1.25rem;">
+        
+        <!-- Cabeçalho Informativo -->
+        <div class="card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(99, 102, 241, 0.05)); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 12px; padding: 1.15rem 1.25rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+              <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #3b82f6, #6366f1); display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                <i data-lucide="sliders-horizontal" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div>
+                <h3 style="margin: 0; font-size: 1.12rem; font-weight: 800; color: var(--text-main);">Central de Parâmetros & Ajustes</h3>
+                <p style="margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+                  Controle unificado de perfis, sincronização, tema, notificações e banco de dados.
+                </p>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; font-size: 0.76rem; padding: 0.25rem 0.65rem;">
+                Valore v1.3.11
+              </span>
+              <button type="button" class="btn btn-outline" onclick="window.checkAppUpdates(true)" style="font-size: 0.78rem; padding: 0.4rem 0.75rem;">
+                <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+                <span>Verificar Atualizações</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grade de Módulos de Configuração -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.15rem;">
+          
+          <!-- MÓDULO 1: USUÁRIOS & FINANÇAS A DOIS -->
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-title-row" style="margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i data-lucide="users" style="width: 18px; height: 18px; color: var(--primary);"></i>
+                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Perfis & Finanças a Dois</h4>
+                </div>
+                <span id="settingsCoupleBadge" class="badge" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; font-size: 0.7rem; font-weight: 800;">Modo Casal</span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.85rem; line-height: 1.4;">
+                Defina os nomes, papéis e a forma como as despesas compartilhadas são divididas no dia a dia.
+              </p>
+              
+              <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.85rem;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.4rem;">DISPOSITIVO ATUAL VINCULADO A:</div>
+                <div style="display: flex; gap: 0.5rem;">
+                  <button type="button" id="btnSettingsOwnerP1" onclick="window.handleSelectDeviceOwner('p1')" class="btn btn-outline" style="flex: 1; justify-content: center; font-size: 0.78rem; font-weight: 700; padding: 0.45rem;">
+                    <span>👤 Parceiro 1</span>
+                  </button>
+                  <button type="button" id="btnSettingsOwnerP2" onclick="window.handleSelectDeviceOwner('p2')" class="btn btn-outline" style="flex: 1; justify-content: center; font-size: 0.78rem; font-weight: 700; padding: 0.45rem;">
+                    <span>❤️ Parceiro 2</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline" onclick="window.openCoupleSettingsModalDirect()" style="width: 100%; justify-content: center; font-size: 0.82rem; font-weight: 700; color: #ec4899; border-color: rgba(236, 72, 153, 0.35);">
+              <i data-lucide="sliders" style="width: 15px; height: 15px;"></i>
+              <span>Gerenciar Finanças a Dois</span>
+            </button>
+          </div>
+
+          <!-- MÓDULO 2: BACKUP, SINCRONIZAÇÃO & WI-FI -->
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-title-row" style="margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i data-lucide="refresh-cw" style="width: 18px; height: 18px; color: #10b981;"></i>
+                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Sincronização & Backup</h4>
+                </div>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.7rem; font-weight: 800;">AES-256 E2EE</span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.85rem; line-height: 1.4;">
+                Transfira dados entre PC e Celular via Wi-Fi local ou exporte backups completos em JSON e planilhas Excel.
+              </p>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 0.85rem;">
+                <button type="button" class="btn btn-outline" id="btnSettingsDownloadJson" style="justify-content: center; font-size: 0.76rem; font-weight: 700; padding: 0.45rem;">
+                  <i data-lucide="file-json" style="width: 14px; height: 14px; color: var(--primary);"></i>
+                  <span>Exportar JSON</span>
+                </button>
+                <button type="button" class="btn btn-outline" id="btnSettingsExportXlsx" style="justify-content: center; font-size: 0.76rem; font-weight: 700; padding: 0.45rem;">
+                  <i data-lucide="file-spreadsheet" style="width: 14px; height: 14px; color: #10b981;"></i>
+                  <span>Exportar Excel</span>
+                </button>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="btnSettingsOpenSyncHub" style="width: 100%; justify-content: center; font-size: 0.82rem; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none;">
+              <i data-lucide="wifi" style="width: 15px; height: 15px;"></i>
+              <span>Abrir Central de Sincronização & Wi-Fi</span>
+            </button>
+          </div>
+
+          <!-- MÓDULO 3: PREFERÊNCIAS VISUAIS & DESEMPENHO -->
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-title-row" style="margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i data-lucide="palette" style="width: 18px; height: 18px; color: #8b5cf6;"></i>
+                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Aparência & Desempenho</h4>
+                </div>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.85rem; line-height: 1.4;">
+                Personalize o visual e ative o Modo Leve para reduzir consumo de bateria e memória RAM.
+              </p>
+
+              <div style="margin-bottom: 0.85rem;">
+                <div style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.35rem;">TEMA DA INTERFACE:</div>
+                <div class="theme-selector" style="margin-bottom: 0.65rem;">
+                  <button class="theme-btn" data-theme-val="light" onclick="window.setTheme && window.setTheme('light')" style="flex: 1;">
+                    <i data-lucide="sun"></i><span>Claro</span>
+                  </button>
+                  <button class="theme-btn" data-theme-val="dark" onclick="window.setTheme && window.setTheme('dark')" style="flex: 1;">
+                    <i data-lucide="moon"></i><span>Escuro</span>
+                  </button>
+                  <button class="theme-btn" data-theme-val="auto" onclick="window.setTheme && window.setTheme('auto')" style="flex: 1;">
+                    <i data-lucide="monitor"></i><span>Auto</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline" onclick="window.togglePerformanceMode()" style="width: 100%; justify-content: center; font-size: 0.82rem; font-weight: 700;">
+              <i data-lucide="zap" style="width: 15px; height: 15px;"></i>
+              <span id="settingsLiteModeLabel">Alternar Modo Leve / Padrão</span>
+            </button>
+          </div>
+
+          <!-- MÓDULO 4: LEMBRETES & NOTIFICAÇÕES -->
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div class="card-title-row" style="margin-bottom: 0.85rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <i data-lucide="bell" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+                  <h4 style="margin: 0; font-size: 0.95rem; font-weight: 800;">Lembretes & Leitor Bancário</h4>
+                </div>
+                <span id="settingsNotifBadge" class="badge" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-size: 0.7rem; font-weight: 800;">Ativo</span>
+              </div>
+              <p style="font-size: 0.78rem; color: var(--text-secondary); margin: 0 0 0.85rem; line-height: 1.4;">
+                Configure alertas de vencimento de contas, cartões e interceptação inteligente de compras bancárias.
+              </p>
+
+              <div style="background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.85rem; font-size: 0.78rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                  <span style="color: var(--text-muted);">Horário do Alerta:</span>
+                  <span id="settingsNotifTimeLabel" style="font-weight: 700;">09:00</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                  <span style="color: var(--text-muted);">Antecedência:</span>
+                  <span id="settingsNotifDaysLabel" style="font-weight: 700;">3 dias</span>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-outline" onclick="window.openNotificationCenter()" style="width: 100%; justify-content: center; font-size: 0.82rem; font-weight: 700; color: #f59e0b; border-color: rgba(245, 158, 11, 0.35);">
+              <i data-lucide="bell" style="width: 15px; height: 15px;"></i>
+              <span>Abrir Central de Notificações</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- MÓDULO 5: ZONA DE PERIGO / RESET TOTAL DA APLICAÇÃO -->
+        <div class="card" style="border: 1.5px solid rgba(239, 68, 68, 0.35); background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02)); border-radius: 12px; padding: 1.25rem;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: flex-start; gap: 0.85rem; max-width: 650px;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; color: #ef4444; flex-shrink: 0;">
+                <i data-lucide="shield-alert" style="width: 22px; height: 22px;"></i>
+              </div>
+              <div>
+                <h4 style="margin: 0; font-size: 1rem; font-weight: 800; color: #ef4444;">Zona de Perigo: Redefinição e Reset Total do Aplicativo</h4>
+                <p style="margin: 0.35rem 0 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45;">
+                  Apaga permanentemente todas as contas bancárias, cartões, despesas, receitas, metas, cofrinhos e agendamentos deste dispositivo.
+                  Ideal para recomeçar sua vida financeira do zero ou transferir o computador/smartphone para outro usuário.
+                </p>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.65rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline" id="btnDangerZoneBackup" style="font-size: 0.82rem; font-weight: 700; padding: 0.55rem 0.9rem;">
+                <i data-lucide="download" style="width: 15px; height: 15px;"></i>
+                <span>Baixar Backup Preventivo</span>
+              </button>
+              <button type="button" class="btn btn-danger" id="btnOpenResetAppModal" style="font-size: 0.84rem; font-weight: 800; padding: 0.55rem 1.1rem; background: #ef4444; border-color: #ef4444;">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                <span>Resetar Aplicação (Apagar Tudo)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </main>
   </div>
 
@@ -3470,9 +3680,9 @@
               style="font-size: 0.74rem; font-weight: 700; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Direção
               / Modo de Sincronização</label>
             <select id="syncWifiModeSelect" class="form-control" style="font-size: 0.82rem; font-weight: 700;">
-              <option value="pc_to_mobile">💻 ➔ 📱 Enviar Base do PC para o Celular (PC substitui Celular)</option>
               <option value="smart_merge" selected>🔄 Unir Ambos (Smart Merge Inteligente — PC ⇄ Celular)</option>
               <option value="mobile_to_pc">📱 ➔ 💻 Enviar Base do Celular para o PC (Celular substitui PC)</option>
+              <option value="pc_to_mobile">💻 ➔ 📱 Enviar Base do PC para o Celular (PC substitui Celular)</option>
             </select>
           </div>
 
@@ -3491,6 +3701,27 @@
 
           <div id="syncWifiFeedbackBanner"
             style="display: none; margin-top: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 8px; font-size: 0.78rem; font-weight: 600;">
+          </div>
+
+          <!-- Card de Restauração de Segurança Pré-Sync (Anti-Perda de Dados) -->
+          <div id="preSyncSafetyContainer"
+            style="display: none; margin-top: 0.75rem; padding: 0.75rem; border-radius: 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35);">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 0.35rem;">
+                  <i data-lucide="shield-alert" style="width: 15px; height: 15px;"></i>
+                  <span>Snapshot de Segurança Pré-Sincronização</span>
+                </div>
+                <p id="preSyncSafetyTimestamp" style="font-size: 0.72rem; color: var(--text-secondary); margin: 0.15rem 0 0;">
+                  Cópia salva antes da última sincronização disponível.
+                </p>
+              </div>
+              <button type="button" class="btn btn-outline" id="btnRestorePreSyncSafetyBackup"
+                style="font-size: 0.75rem; font-weight: 700; color: #f59e0b; border-color: rgba(245, 158, 11, 0.5); padding: 0.4rem 0.75rem;">
+                <i data-lucide="rotate-ccw"></i>
+                <span>Desfazer / Reverter Sync</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -4852,7 +5083,7 @@
                 <span>Abrir Permissões do Android</span>
               </button>
             </div>
-            <button type="button" id="btnRequestBankNotifPermission" onclick="if(typeof window.AndroidBankNotificationBridge !== 'undefined'){window.AndroidBankNotificationBridge.openPermissionSettings();}else{alert('O leitor nativo opera diretamente no smartphone Android.');}" class="btn btn-outline" style="font-size: 0.72rem; padding: 0.28rem 0.6rem; margin-top: 0.45rem; border-color: rgba(59,130,246,0.35); color: var(--primary); gap: 0.35rem; display: inline-flex; align-items: center;">
+            <button type="button" id="btnRequestBankNotifPermissionAlt" onclick="if(typeof window.AndroidBankNotificationBridge !== 'undefined'){window.AndroidBankNotificationBridge.openPermissionSettings();}else{alert('O leitor nativo opera diretamente no smartphone Android.');}" class="btn btn-outline" style="font-size: 0.72rem; padding: 0.28rem 0.6rem; margin-top: 0.45rem; border-color: rgba(59,130,246,0.35); color: var(--primary); gap: 0.35rem; display: inline-flex; align-items: center;">
               <i data-lucide="shield-check" style="width: 13px; height: 13px;"></i>
               <span>Autorizar Acesso a Notificações no Android</span>
             </button>
@@ -4988,6 +5219,9 @@
           <i data-lucide="check-check" style="width: 14px; height: 14px;"></i>
           <span style="margin-left: 0.25rem;">Lidas</span>
         </button>
+        <button type="button" class="notif-header-btn" id="btnClearNotifsHistory" onclick="window.clearNotificationsHistoryConfirm()" title="Limpar histórico de notificações">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+        </button>
         <button type="button" class="notif-header-btn" onclick="window.openNotificationSettingsFromCenter()" title="Configurar Lembretes">
           <i data-lucide="settings" style="width: 14px; height: 14px;"></i>
         </button>
@@ -5037,6 +5271,58 @@
       </button>
     </div>
   </aside>
+
+
+  <!-- MODAL DE RESET TOTAL DO APLICATIVO (TRAVA DUPLA ANTI-ACIDENTE) -->
+  <div class="modal-overlay" id="resetAppModal">
+    <div class="modal-card" style="max-width: 520px; width: 95vw; border-top: 4px solid #ef4444;">
+      <div style="display: flex; align-items: flex-start; gap: 0.85rem; margin-bottom: 1rem;">
+        <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; color: #ef4444; flex-shrink: 0;">
+          <i data-lucide="alert-triangle" style="width: 24px; height: 24px;"></i>
+        </div>
+        <div>
+          <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #ef4444;">Reset Total do Aplicativo</h3>
+          <p style="margin: 0.2rem 0 0; font-size: 0.8rem; color: var(--text-secondary);">Esta ação é definitiva e apagará todos os dados locais.</p>
+        </div>
+      </div>
+
+      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 0.85rem; margin-bottom: 1rem;">
+        <p style="font-size: 0.82rem; color: var(--text-main); margin: 0 0 0.5rem; line-height: 1.45; font-weight: 600;">
+          ⚠️ Todos os seguintes registros serão <b>permanentemente excluídos</b> deste dispositivo:
+        </p>
+        <ul style="font-size: 0.78rem; color: var(--text-secondary); margin: 0; padding-left: 1.2rem; line-height: 1.5;">
+          <li><b id="resetStatsTxs">0</b> Lançamentos (despesas, receitas e transferências)</li>
+          <li><b id="resetStatsAccs">0</b> Contas bancárias e cartões de crédito</li>
+          <li><b id="resetStatsSchs">0</b> Contas a pagar e agendamentos</li>
+          <li>Metas, cofrinhos, orçamentos e histórico de liquidações</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <button type="button" class="btn btn-outline" id="btnDownloadBackupInResetModal" style="width: 100%; justify-content: center; font-size: 0.8rem; font-weight: 700;">
+          <i data-lucide="download" style="width: 15px; height: 15px; color: var(--primary);"></i>
+          <span>Baixar Backup de Segurança (.json) Antes de Apagar</span>
+        </button>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 0.35rem;">
+          Para confirmar, digite exatamente a palavra <span style="color: #ef4444; font-family: monospace; font-size: 0.95rem;">RESETAR</span> abaixo:
+        </label>
+        <input type="text" id="inputConfirmResetWord" class="form-control" placeholder="Digite RESETAR para desbloquear" style="font-weight: 700; text-align: center; letter-spacing: 1.5px; border-color: rgba(239, 68, 68, 0.4);" autocomplete="off">
+      </div>
+
+      <div style="display: flex; gap: 0.65rem; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" id="btnCancelResetApp" style="font-size: 0.84rem; padding: 0.55rem 1rem;">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger" id="btnConfirmResetAppAction" disabled style="font-size: 0.84rem; font-weight: 800; padding: 0.55rem 1.15rem; background: #ef4444; border-color: #ef4444; opacity: 0.5; cursor: not-allowed;">
+          <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+          <span>Sim, Apagar Tudo</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
 </body>
 

@@ -86,7 +86,8 @@ class FinanceService {
           notifyCreditCardClosing: true,
           bankNotificationReader: false
         }
-      }
+      },
+      notificationsHistory: []
     };
   }
 
@@ -243,6 +244,22 @@ class FinanceService {
     return entity;
   }
 
+  touch() {
+    if (!this.state.syncMeta) {
+      this.state.syncMeta = { deviceId: genId('dev'), lastSyncAt: null, lastModifiedAt: Date.now(), deletedIds: {} };
+    }
+    this.state.syncMeta.lastModifiedAt = Date.now();
+  }
+
+  async _persistState() {
+    this.touch();
+    if (this.storage && typeof this.storage.set === 'function') {
+      await this.storage.set(this.state);
+    } else if (typeof this.save === 'function') {
+      await this.save({ preserveModifiedTimestamp: true });
+    }
+  }
+
   _recordDeletion(id) {
     if (!id) return;
     if (!this.state.syncMeta) {
@@ -332,7 +349,97 @@ class FinanceService {
     };
   }
 
-  getAppVersion() { return "1.3.7";
+  getNotificationsHistory() {
+    if (!Array.isArray(this.state.notificationsHistory)) {
+      this.state.notificationsHistory = [];
+    }
+    return [...this.state.notificationsHistory].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }
+
+  async addNotificationToHistory(notif) {
+    if (!notif || !notif.id) return null;
+    if (!Array.isArray(this.state.notificationsHistory)) {
+      this.state.notificationsHistory = [];
+    }
+    // Evita duplicatas pelo ID
+    const idx = this.state.notificationsHistory.findIndex(n => n.id === notif.id);
+    if (idx !== -1) {
+      Object.assign(this.state.notificationsHistory[idx], notif);
+      await this._persistState();
+      return this.state.notificationsHistory[idx];
+    }
+    const item = {
+      id: String(notif.id),
+      type: notif.type || 'bank_reader',
+      severity: notif.severity || 'info',
+      tagText: notif.tagText || 'Notificação',
+      icon: notif.icon || 'bell',
+      title: notif.title || 'Alerta Financeiro',
+      desc: notif.desc || '',
+      amount: parseFloat(notif.amount || 0),
+      isRead: !!notif.isRead,
+      actionType: notif.actionType || '',
+      actionLabel: notif.actionLabel || '',
+      rawItem: notif.rawItem || null,
+      timestamp: notif.timestamp || Date.now(),
+      converted: !!notif.converted
+    };
+    this.state.notificationsHistory.unshift(item);
+    if (this.state.notificationsHistory.length > 150) {
+      this.state.notificationsHistory = this.state.notificationsHistory.slice(0, 150);
+    }
+    await this._persistState();
+    return item;
+  }
+
+  async markNotificationAsRead(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const item = this.state.notificationsHistory.find(n => n.id === id);
+    if (item && !item.isRead) {
+      item.isRead = true;
+      await this._persistState();
+    }
+  }
+
+  async markAllNotificationsAsRead() {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    let changed = false;
+    this.state.notificationsHistory.forEach(n => {
+      if (!n.isRead) {
+        n.isRead = true;
+        changed = true;
+      }
+    });
+    if (changed) {
+      await this._persistState();
+    }
+  }
+
+  async clearNotificationsHistory() {
+    this.state.notificationsHistory = [];
+    await this._persistState();
+  }
+
+  async removeNotificationFromHistory(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const lenBefore = this.state.notificationsHistory.length;
+    this.state.notificationsHistory = this.state.notificationsHistory.filter(n => n.id !== id);
+    if (this.state.notificationsHistory.length !== lenBefore) {
+      await this._persistState();
+    }
+  }
+
+  async markNotificationAsConverted(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const item = this.state.notificationsHistory.find(n => n.id === id);
+    if (item) {
+      item.converted = true;
+      item.isRead = true;
+      await this._persistState();
+    }
+  }
+
+  getAppVersion() { return "1.3.9";
   }
 
   getAppBuildDate() {
@@ -343,11 +450,27 @@ class FinanceService {
     const saved = await this.storage.get();
     if (saved && saved.transactions) {
       this.state = saved;
-      if (!this.state.schedules) this.state.schedules = [];
-      if (!this.state.assets) this.state.assets = [];
-      if (!this.state.vaults) this.state.vaults = [];
-      if (!this.state.costCenters) this.state.costCenters = [];
-      if (!this.state.sideHustles) this.state.sideHustles = [];
+      if (!Array.isArray(this.state.categories)) {
+        this.state.categories = [
+          { id: 'cat-1', name: 'Salário & Pro-labore', type: 'income', icon: 'wallet', color: '#10b981' },
+          { id: 'cat-2', name: 'Investimentos & Dividendos', type: 'income', icon: 'trending-up', color: '#06b6d4' },
+          { id: 'cat-3', name: 'Alimentação & Mercado', type: 'expense', icon: 'shopping-cart', color: '#f59e0b' },
+          { id: 'cat-4', name: 'Moradia & Aluguel', type: 'expense', icon: 'home', color: '#ef4444' },
+          { id: 'cat-5', name: 'Transporte & Veículo', type: 'expense', icon: 'car', color: '#6366f1' },
+          { id: 'cat-6', name: 'Lazer & Viagens', type: 'expense', icon: 'coffee', color: '#ec4899' },
+          { id: 'cat-7', name: 'Saúde & Cuidados', type: 'expense', icon: 'activity', color: '#14b8a6' },
+          { id: 'cat-8', name: 'Transferência Interna', type: 'transfer', icon: 'repeat', color: '#8b5cf6' }
+        ];
+      }
+      if (!Array.isArray(this.state.accounts)) this.state.accounts = [];
+      if (!Array.isArray(this.state.transactions)) this.state.transactions = [];
+      if (!Array.isArray(this.state.schedules)) this.state.schedules = [];
+      if (!Array.isArray(this.state.assets)) this.state.assets = [];
+      if (!Array.isArray(this.state.budgets)) this.state.budgets = [];
+      if (!Array.isArray(this.state.goals)) this.state.goals = [];
+      if (!Array.isArray(this.state.vaults)) this.state.vaults = [];
+      if (!Array.isArray(this.state.costCenters)) this.state.costCenters = [];
+      if (!Array.isArray(this.state.sideHustles)) this.state.sideHustles = [];
       if (!this.state.couple) {
         this.state.couple = {
           enabled: true,
@@ -361,6 +484,9 @@ class FinanceService {
       }
       if (!this.state.coupleSettlements) {
         this.state.coupleSettlements = [];
+      }
+      if (!Array.isArray(this.state.notificationsHistory)) {
+        this.state.notificationsHistory = [];
       }
       if (!this.state.syncMeta) {
         this.state.syncMeta = {

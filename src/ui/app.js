@@ -961,6 +961,7 @@ async function initApp() {
   setupSmartCategorySuggestions();
   setupOFXImporter();
   setupBackupManager();
+  setupSettingsViewControls();
   setupCostCentersAndSideHustlesModals();
   setupCoupleModule();
   if (window.syncDeviceIdentityUI) window.syncDeviceIdentityUI();
@@ -1032,7 +1033,8 @@ function setupNavigation() {
     accounts: { title: 'Bancos & Cartões', sub: 'Gerenciamento de contas correntes, investimentos e faturas' },
     'cost-centers': { title: 'Projetos, Viagens & Eventos', sub: 'Centros de custo dedicados para não misturar com o orçamento fixo' },
     'side-hustles': { title: 'Renda Extra & Projetos Paralelos', sub: 'DRE simplificado para freelas, e-commerce e pequenos negócios' },
-    couple: { title: 'Finanças a Dois', sub: 'Gestão de despesas compartilhadas, divisão proporcional e harmonia do lar' }
+    couple: { title: 'Finanças a Dois', sub: 'Gestão de despesas compartilhadas, divisão proporcional e harmonia do lar' },
+    settings: { title: 'Configurações do Sistema', sub: 'Gerenciamento de usuários, backups, preferências e dados' }
   };
 
   function switchTab(tab) {
@@ -1073,6 +1075,7 @@ function setupNavigation() {
     if (tab === 'cost-centers') renderCostCentersView();
     if (tab === 'side-hustles') renderSideHustlesView();
     if (tab === 'couple') renderCoupleView();
+    if (tab === 'settings') renderSettingsView();
 
     if (window.lucide) lucide.createIcons();
     // Scroll para o topo suavemente ao trocar de tela no mobile
@@ -8053,6 +8056,7 @@ function setupBackupManager() {
       if (window.syncDeviceIdentityUI) window.syncDeviceIdentityUI();
       updateSyncStatusUI();
       refreshDesktopSyncServerCard();
+      updatePreSyncSafetyUI();
       backupModal.classList.add('open');
       if (window.lucide) lucide.createIcons();
     });
@@ -8069,6 +8073,88 @@ function setupBackupManager() {
         showToast(`✅ Base original do PC restaurada com sucesso (${finance.state.accounts.length} contas e ${finance.state.transactions.length} lançamentos)!`, 'success');
       } else {
         showToast(res && res.error ? res.error : 'Não foi possível restaurar o backup.', 'danger');
+      }
+    });
+  }
+
+  // --- SNAPSHOT DE SEGURANÇA PRÉ-SYNC (ANTI-PERDA DE DADOS MOBILE & PC) ---
+  const savePreSyncSafetyBackup = async () => {
+    try {
+      if (!finance || !finance.state) return;
+      const snapshot = {
+        timestamp: Date.now(),
+        savedAt: new Date().toISOString(),
+        txCount: (finance.state.transactions || []).length,
+        accCount: (finance.state.accounts || []).length,
+        state: JSON.parse(JSON.stringify(finance.state))
+      };
+      const snapStr = JSON.stringify(snapshot);
+      if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
+        await window.Capacitor.Plugins.Preferences.set({ key: 'valore_pre_sync_safety_backup', value: snapStr });
+      }
+      localStorage.setItem('valore_pre_sync_safety_backup', snapStr);
+      await updatePreSyncSafetyUI();
+    } catch (e) {
+      console.warn('Falha ao salvar snapshot pré-sync:', e);
+    }
+  };
+
+  const getPreSyncSafetyBackup = async () => {
+    try {
+      if (typeof window !== 'undefined' && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
+        const { value } = await window.Capacitor.Plugins.Preferences.get({ key: 'valore_pre_sync_safety_backup' });
+        if (value) return JSON.parse(value);
+      }
+      const raw = localStorage.getItem('valore_pre_sync_safety_backup');
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const updatePreSyncSafetyUI = async () => {
+    const container = document.getElementById('preSyncSafetyContainer');
+    const timeEl = document.getElementById('preSyncSafetyTimestamp');
+    if (!container) return;
+    try {
+      const snap = await getPreSyncSafetyBackup();
+      if (snap && snap.state && snap.timestamp) {
+        container.style.display = 'block';
+        if (timeEl) {
+          const d = new Date(snap.timestamp);
+          const dateStr = d.toLocaleDateString() + ' às ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          timeEl.textContent = `Snapshot salvo em ${dateStr} (${snap.txCount || 0} lançamentos, ${snap.accCount || 0} contas).`;
+        }
+      } else {
+        container.style.display = 'none';
+      }
+    } catch (_) {
+      container.style.display = 'none';
+    }
+  };
+
+  const btnRestorePreSync = document.getElementById('btnRestorePreSyncSafetyBackup');
+  if (btnRestorePreSync) {
+    btnRestorePreSync.addEventListener('click', async () => {
+      try {
+        const snap = await getPreSyncSafetyBackup();
+        if (!snap || !snap.state) {
+          showToast('Nenhum snapshot de segurança pré-sincronização encontrado.', 'info');
+          return;
+        }
+        const timeStr = snap.savedAt ? new Date(snap.savedAt).toLocaleString() : 'recente';
+        const countTx = snap.txCount || (snap.state.transactions ? snap.state.transactions.length : 0);
+        const countAcc = snap.accCount || (snap.state.accounts ? snap.state.accounts.length : 0);
+        const ok = confirm(`🛡️ Deseja reverter para a base anterior à última sincronização (salva em ${timeStr})?\n\nEsta base contém ${countTx} lançamentos e ${countAcc} contas.`);
+        if (!ok) return;
+
+        await finance.restoreBackup(snap.state, { skipAutoSync: true });
+        updateSyncStatusUI();
+        refreshAllViewsAfterSync();
+        showToast('Base anterior à sincronização restaurada com sucesso!', 'success');
+        showWifiSyncFeedback(`🛡️ Base pré-sincronização restaurada (${countTx} lançamentos).`, 'success');
+      } catch (err) {
+        showToast('Erro ao reverter base: ' + err.message, 'danger');
       }
     });
   }
@@ -8150,6 +8236,18 @@ function setupBackupManager() {
         const modeSelect = document.getElementById('syncWifiModeSelect');
         const syncMode = modeSelect ? modeSelect.value : 'smart_merge';
 
+        if (syncMode === 'pc_to_mobile') {
+          const userConfirm = confirm(
+            '⚠️ ATENÇÃO: Você selecionou o modo "Enviar Base do PC para o Celular".\n\n' +
+            'Este modo irá SUBSTITUIR TODOS OS DADOS do seu celular pelos dados do PC. Se você cadastrou despesas ou receitas recentes no celular que não estão no PC, elas serão substituídas.\n\n' +
+            'Deseja realmente continuar? (Recomendamos usar "Unir Ambos (Smart Merge)" para preservar tudo).'
+          );
+          if (!userConfirm) {
+            btnExecWifi.disabled = false;
+            return;
+          }
+        }
+
         btnExecWifi.disabled = true;
         const modeDesc = syncMode === 'pc_to_mobile'
           ? '💻 ➔ 📱 Copiando base oficial do PC para o Celular...'
@@ -8189,6 +8287,9 @@ function setupBackupManager() {
         if (!res.ok || !data.ok || !data.mergedState) {
           throw new Error(data.error || 'Erro ao sincronizar dados com o PC.');
         }
+
+        // Salva snapshot de segurança pré-sincronização no Celular antes de qualquer alteração
+        await savePreSyncSafetyBackup();
 
         // Adota integralmente o estado oficial retornado pelo servidor do PC (garante 100% de paridade e exclusão de dados de fábrica)
         await finance.restoreBackup(data.mergedState, { skipAutoSync: true, preserveModifiedTimestamp: true });
@@ -8277,6 +8378,9 @@ function setupBackupManager() {
 
       const hadPending = localStorage.getItem('valore_sync_pending_changes') === 'true';
       localStorage.removeItem('valore_sync_pending_changes');
+
+      // Salva snapshot de segurança pré-sync antes de aplicar a base mesclada
+      await savePreSyncSafetyBackup();
 
       await finance.restoreBackup(data.mergedState, { skipAutoSync: true, preserveModifiedTimestamp: true });
       if (data.mergedState.syncMeta && data.mergedState.syncMeta.lastModifiedAt) {
@@ -13345,6 +13449,7 @@ function saveReadNotificationIds(idSet) {
 window.getAllActiveNotifications = function() {
   const notifs = [];
   const readSet = getReadNotificationIds();
+  const seenIds = new Set();
 
   // 1. Boletos e Contas Agendadas a Vencer / Vencidas
   try {
@@ -13353,7 +13458,11 @@ window.getAllActiveNotifications = function() {
       const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : []);
       items.forEach(item => {
         const dueDateVal = item.dueDate || item.date;
-        const id = 'bill_' + (item.id || item.scheduleId || item.description) + '_' + (dueDateVal || '');
+        const safeItemId = String(item.id || item.scheduleId || item.description || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const id = 'bill_' + safeItemId + '_' + (dueDateVal || '');
+        if (seenIds.has(id)) return;
+        seenIds.add(id);
+
         const diffDays = item.diffDays !== undefined ? item.diffDays : (item.daysUntil !== undefined ? item.daysUntil : 0);
         const isOverdue = diffDays < 0;
         const isToday = diffDays === 0;
@@ -13386,7 +13495,8 @@ window.getAllActiveNotifications = function() {
           isRead: readSet.has(id),
           actionType: 'pay_bill',
           actionLabel: isOverdue ? 'Pagar Atrasado' : 'Pagar Agora',
-          rawItem: item
+          rawItem: item,
+          timestamp: dueDateVal ? new Date(dueDateVal + 'T09:00:00').getTime() : Date.now()
         });
       });
     }
@@ -13400,7 +13510,11 @@ window.getAllActiveNotifications = function() {
       const insights = finance.getCreditCardInsights() || [];
       insights.forEach(card => {
         if (!card || !card.currentInvoiceTotal || card.currentInvoiceTotal <= 0) return;
-        const id = 'card_' + card.cardId + '_' + (card.dueDateStr || 'due');
+        const safeCardId = String(card.cardId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const id = 'card_' + safeCardId + '_' + (card.dueDateStr || 'due');
+        if (seenIds.has(id)) return;
+        seenIds.add(id);
+
         const days = card.daysUntilDue !== undefined ? card.daysUntilDue : 99;
         const isOverdue = days < 0;
         const isToday = days === 0;
@@ -13430,7 +13544,8 @@ window.getAllActiveNotifications = function() {
           isRead: readSet.has(id),
           actionType: 'view_card',
           actionLabel: 'Ver Fatura',
-          rawItem: card
+          rawItem: card,
+          timestamp: Date.now()
         });
       });
     }
@@ -13438,7 +13553,38 @@ window.getAllActiveNotifications = function() {
     console.warn('Erro ao coletar insights de cartões:', err);
   }
 
-  // 3. Compras Detectadas pelo Leitor Bancário Android
+  // 3. Histórico Persistente do Valore (Compras Bancárias Detectadas, Lembretes & Alertas)
+  try {
+    if (typeof finance !== 'undefined' && finance.getNotificationsHistory) {
+      const history = finance.getNotificationsHistory() || [];
+      history.forEach(item => {
+        if (!item || !item.id) return;
+        if (seenIds.has(item.id)) return;
+        seenIds.add(item.id);
+
+        notifs.push({
+          id: item.id,
+          type: item.type || 'bank_reader',
+          severity: item.severity || 'bank-intercepted',
+          tagText: item.tagText || 'Leitor Bancário',
+          icon: item.icon || (item.type === 'bank_reader' ? 'zap' : 'bell'),
+          title: item.title || 'Compra Interceptada',
+          desc: item.desc || '',
+          amount: parseFloat(item.amount || 0),
+          isRead: item.isRead || readSet.has(item.id),
+          actionType: item.actionType || (item.type === 'bank_reader' ? 'launch_bank_tx' : ''),
+          actionLabel: item.actionLabel || (item.type === 'bank_reader' ? 'Lançar em 1 Toque' : ''),
+          rawItem: item.rawItem || item,
+          timestamp: item.timestamp || Date.now(),
+          converted: !!item.converted
+        });
+      });
+    }
+  } catch (err) {
+    console.warn('Erro ao coletar histórico de notificações:', err);
+  }
+
+  // 4. Fallback imediato para pendências do Leitor Bancário Android ainda não migradas
   try {
     if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.getPendingNotifications) {
       const raw = window.AndroidBankNotificationBridge.getPendingNotifications();
@@ -13447,8 +13593,11 @@ window.getAllActiveNotifications = function() {
         if (Array.isArray(list)) {
           list.forEach(item => {
             const parsed = parseBankNotificationData ? parseBankNotificationData(item) : item;
-            if (!parsed) return;
+            if (!parsed || parsed.amount <= 0) return;
             const id = 'bank_' + (item.id || item.timestamp || Date.now());
+            if (seenIds.has(id)) return;
+            seenIds.add(id);
+
             notifs.push({
               id: id,
               type: 'bank_reader',
@@ -13461,17 +13610,19 @@ window.getAllActiveNotifications = function() {
               isRead: readSet.has(id),
               actionType: 'launch_bank_tx',
               actionLabel: 'Lançar em 1 Toque',
-              rawItem: parsed
+              rawItem: parsed,
+              timestamp: parsed.timestamp || Date.now()
             });
           });
         }
       }
     }
   } catch (err) {
-    console.warn('Erro ao coletar compras do leitor bancário:', err);
+    console.warn('Erro ao coletar pendências do leitor bancário:', err);
   }
 
-  return notifs;
+  // Ordena cronologicamente decrescente (mais recentes primeiro)
+  return notifs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 };
 
 window.openNotificationCenter = function(defaultTab = 'all') {
@@ -13511,11 +13662,15 @@ window.filterNotificationCenter = function(tab) {
   window.renderNotificationCenter();
 };
 
-window.markAllNotificationsAsRead = function() {
+window.markAllNotificationsAsRead = async function() {
   const all = window.getAllActiveNotifications();
   const readSet = getReadNotificationIds();
   all.forEach(n => readSet.add(n.id));
   saveReadNotificationIds(readSet);
+
+  if (typeof finance !== 'undefined' && finance.markAllNotificationsAsRead) {
+    await finance.markAllNotificationsAsRead();
+  }
 
   if (typeof showToast === 'function') {
     showToast('Todas as notificações foram marcadas como lidas!', 'success');
@@ -13525,12 +13680,47 @@ window.markAllNotificationsAsRead = function() {
   window.updateHeaderNotificationBadge();
 };
 
-window.dismissNotificationItem = function(id) {
+window.dismissNotificationItem = async function(id) {
   const readSet = getReadNotificationIds();
   readSet.add(id);
   saveReadNotificationIds(readSet);
+
+  if (typeof finance !== 'undefined' && finance.markNotificationAsRead) {
+    await finance.markNotificationAsRead(id);
+  }
+
   window.renderNotificationCenter();
   window.updateHeaderNotificationBadge();
+};
+
+window.removeNotificationItem = async function(id) {
+  const readSet = getReadNotificationIds();
+  readSet.delete(id);
+  saveReadNotificationIds(readSet);
+
+  if (typeof finance !== 'undefined' && finance.removeNotificationFromHistory) {
+    await finance.removeNotificationFromHistory(id);
+  }
+
+  window.renderNotificationCenter();
+  window.updateHeaderNotificationBadge();
+};
+
+window.clearNotificationsHistoryConfirm = async function() {
+  if (confirm('Deseja realmente limpar todo o histórico de notificações?')) {
+    if (typeof finance !== 'undefined' && finance.clearNotificationsHistory) {
+      await finance.clearNotificationsHistory();
+    }
+    const readSet = getReadNotificationIds();
+    readSet.clear();
+    saveReadNotificationIds(readSet);
+
+    if (typeof showToast === 'function') {
+      showToast('Histórico de notificações limpo com sucesso!', 'info');
+    }
+    window.renderNotificationCenter();
+    window.updateHeaderNotificationBadge();
+  }
 };
 
 window.actOnNotificationItem = function(actionType, rawJsonStr) {
@@ -13620,12 +13810,18 @@ window.renderNotificationCenter = function() {
       ? currencyFormatter.format(n.amount) 
       : ('R$ ' + (n.amount || 0));
 
+    const safeId = String(n.id).replace(/['"]/g, '');
+    const isConverted = !!n.converted;
+
     html += `
-      <div class="notif-card ${n.severity} ${n.isRead ? 'read' : ''}" style="${n.isRead ? 'opacity: 0.65; filter: grayscale(0.2);' : ''}">
+      <div class="notif-card ${n.severity} ${n.isRead ? 'read' : ''}" style="${n.isRead ? 'opacity: 0.7; filter: grayscale(0.15);' : ''}">
         <div class="notif-card-header">
-          <span class="notif-card-tag">${n.tagText}</span>
-          <button type="button" class="btn-tx-action" onclick="window.dismissNotificationItem('${n.id}')" title="Marcar como lida" style="color: var(--text-muted);">
-            <i data-lucide="x" style="width: 13px; height: 13px;"></i>
+          <div style="display: flex; align-items: center; gap: 0.4rem; min-width: 0;">
+            <span class="notif-card-tag">${n.tagText}</span>
+            ${isConverted ? '<span style="font-size: 0.65rem; font-weight: 700; color: #10b981; background: rgba(16,185,129,0.15); padding: 0.1rem 0.4rem; border-radius: 4px;">✓ Lançado</span>' : ''}
+          </div>
+          <button type="button" class="btn-tx-action" onclick="window.removeNotificationItem('${safeId}')" title="Excluir notificação do histórico" style="color: var(--text-muted);">
+            <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
           </button>
         </div>
         <div class="notif-card-main">
@@ -13639,11 +13835,11 @@ window.renderNotificationCenter = function() {
           ${n.amount > 0 ? `<div class="notif-card-value">${amtFormatted}</div>` : ''}
         </div>
         <div class="notif-card-actions">
-          <button type="button" class="notif-action-btn outline" onclick="window.dismissNotificationItem('${n.id}')" title="${n.isRead ? 'Notificação lida' : 'Marcar esta notificação como lida'}">
+          <button type="button" class="notif-action-btn outline" onclick="window.dismissNotificationItem('${safeId}')" title="${n.isRead ? 'Notificação lida' : 'Marcar esta notificação como lida'}">
             <i data-lucide="${n.isRead ? 'check-check' : 'check'}" style="width: 13px; height: 13px;"></i>
             <span>${n.isRead ? '✓ Lida' : 'Marcar como Lida'}</span>
           </button>
-          ${n.actionType ? `
+          ${(!isConverted && n.actionType) ? `
             <button type="button" class="notif-action-btn ${n.severity === 'urgent' ? 'urgent' : 'primary'}" onclick="window.actOnNotificationItem('${n.actionType}', '${rawEncoded}')">
               <span>${n.actionLabel}</span>
               <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
@@ -13718,13 +13914,14 @@ window.updateHeaderNotificationBadge = function() {
   const unreadCount = all.filter(n => !n.isRead).length;
 
   if (unreadCount > 0) {
+    const textVal = unreadCount > 99 ? '99+' : String(unreadCount);
     if (badgeHeader) {
-      badgeHeader.textContent = unreadCount > 99 ? '99+' : unreadCount;
+      badgeHeader.textContent = textVal;
       badgeHeader.style.display = 'flex';
     }
     if (badgeSidebar) {
-      badgeSidebar.textContent = unreadCount > 99 ? '99+' : unreadCount;
-      badgeSidebar.style.display = 'inline-block';
+      badgeSidebar.textContent = textVal;
+      badgeSidebar.style.display = 'inline-flex';
     }
   } else {
     if (badgeHeader) badgeHeader.style.display = 'none';
@@ -13839,7 +14036,7 @@ window.saveNotificationSettingsFromModal = async function() {
   }
 };
 
-window.testNotificationTrigger = function() {
+window.testNotificationTrigger = async function() {
   const masterEl = document.getElementById('notifMasterEnabled');
   if (masterEl && !masterEl.checked) {
     if (typeof showToast === 'function') {
@@ -13865,25 +14062,48 @@ window.testNotificationTrigger = function() {
     setTimeout(() => { if (feedbackBox) feedbackBox.style.display = 'none'; }, 5000);
   }
 
-  // 3. Simulação no Android do Leitor Bancário Nativo
+  // 3. Amostra de Teste Válida com Valor Monetário e Estabelecimento
+  const testSample = {
+    id: 'test_sample_' + Date.now(),
+    bankName: 'Nubank',
+    title: 'Nubank',
+    text: 'Compra de R$ 45,90 aprovada em Padaria Bella Vista',
+    timestamp: Date.now()
+  };
+
+  const parsed = parseBankNotificationData(testSample);
+  if (parsed && typeof finance !== 'undefined' && finance.addNotificationToHistory) {
+    await finance.addNotificationToHistory({
+      id: parsed.id,
+      type: 'bank_reader',
+      severity: 'bank-intercepted',
+      tagText: 'Leitor Bancário • Nubank (Teste)',
+      icon: 'zap',
+      title: parsed.description,
+      desc: parsed.rawText,
+      amount: parsed.amount,
+      isRead: false,
+      actionType: 'launch_bank_tx',
+      actionLabel: 'Lançar em 1 Toque',
+      rawItem: parsed,
+      timestamp: parsed.timestamp
+    });
+    window.updateHeaderNotificationBadge();
+    const drawer = document.getElementById('notificationCenterDrawer');
+    if (drawer && drawer.classList.contains('open')) {
+      window.renderNotificationCenter();
+    }
+    window.showBankTransactionSuggestion(parsed);
+  }
+
+  // 4. Se estiver no Android nativo, também aciona a ponte nativa
   if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.simulateTestNotification) {
     try {
       window.AndroidBankNotificationBridge.simulateTestNotification('Nubank', 'Compra de R$ 45,90 aprovada em Padaria Bella Vista');
     } catch (_) {}
-  } else {
-    // Simulação visual direta no navegador/desktop
-    setTimeout(() => {
-      window.handleNativeBankNotificationReceived({
-        id: 'test_sample_' + Date.now(),
-        bankName: 'Nubank',
-        title: 'Nubank',
-        text: 'Compra de R$ 45,90 aprovada em Padaria Bella Vista',
-        timestamp: Date.now()
-      });
-    }, 600);
   }
 
-  // 4. Web Notification se disponível no ambiente
+  // 5. Web Notification se disponível no ambiente
   const title = 'Lembrete Valore Financeiro';
   const body = 'Você tem um alerta de teste: lembretes de contas configurados com sucesso!';
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
@@ -13894,46 +14114,72 @@ window.testNotificationTrigger = function() {
     }
   }
 
-  // 5. Toast Supremo visível no topo da tela acima de qualquer modal
+  // 6. Toast Supremo visível no topo da tela acima de qualquer modal
   if (typeof showToast === 'function') {
     showToast('🔔 Lembrete de Teste: Suas contas e compras bancárias serão avisadas com sucesso!', 'success', 4500);
   }
 };
 
 // ========================================================
-// LEITOR INTELIGENTE DE NOTIFICAÇÕES BANCÁRIAS (ANDROID)
+// LEITOR INTELIGENTE DE NOTIFICAÇÕES BANCÁRIAS (ANDROID & DESKTOP)
 // ========================================================
 function parseBankNotificationData(notif) {
   if (!notif) return null;
   const rawText = ((notif.title || '') + ' ' + (notif.text || '')).trim();
   if (!rawText) return null;
 
-  // 1. Extração do valor em Reais (R$ 1.234,56 ou R$ 45,90 ou 45,90)
+  const rawLower = rawText.toLowerCase();
+
+  // 1. Blacklist Estrita de Ruído: descarta mensagens institucionais, 2FA, segurança, marketing
+  if (rawLower.includes('código') || rawLower.includes('codigo') ||
+      rawLower.includes('token') || rawLower.includes('segurança') ||
+      rawLower.includes('seguranca') || rawLower.includes('pré-aprovado') ||
+      rawLower.includes('pre-aprovado') || rawLower.includes('limite disponível') ||
+      rawLower.includes('informe de rendimentos') || rawLower.includes('convite') ||
+      rawLower.includes('acesse sua conta') || rawLower.includes('atualize seu') ||
+      rawLower.includes('promoção') || rawLower.includes('promocao') ||
+      rawLower.includes('cashback disponível') || rawLower.includes('empréstimo disponível') ||
+      rawLower.includes('dica:') || rawLower.includes('guarde seu dinheiro')) {
+    return null;
+  }
+
+  // 2. Extração Rigorosa do Valor Monetário (R$ 1.234,56 ou R$ 45,90)
   let amount = 0;
   let formattedAmount = '0,00';
-  const valMatch = rawText.match(/(?:R\$\s*|valor\s*(?:de)?\s*R?\$?\s*)([\d\.,]+)/i) || rawText.match(/([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})/);
+  const valMatch = rawText.match(/(?:R\$\s*|valor\s*(?:de)?\s*R?\$?\s*)([\d\.,]+)/i) ||
+                   rawText.match(/(?:por|de)\s*R?\$?\s*([\d]{1,3}(?:\.[\d]{3})*,[\d]{2})/i);
   if (valMatch && valMatch[1]) {
     const cleanNum = valMatch[1].replace(/\./g, '').replace(',', '.');
     amount = parseFloat(cleanNum) || 0;
     formattedAmount = valMatch[1];
   }
 
-  // 2. Extração do Estabelecimento / Destino
+  // Se não encontrar valor monetário positivo válido, descarta para não gerar notificações aleatórias
+  if (amount <= 0) return null;
+
+  // 3. Extração do Estabelecimento / Destino / Pagador
   let description = '';
-  const descMatch = rawText.match(/(?:em|no|na|para|loja)\s+([A-Za-z0-9\s\.\-_&]{3,35})(?:[\.,;]|$)/i);
+  const descMatch = rawText.match(/(?:em|no|na|para|loja|de)\s+([A-Za-z0-9\s\.\-_&]{3,35})(?:[\.,;]|$)/i);
   if (descMatch && descMatch[1]) {
     description = descMatch[1].trim();
   } else {
-    description = notif.title || `Compra ${notif.bankName || 'Cartão'}`;
+    description = notif.title || `Movimentação ${notif.bankName || 'Banco'}`;
   }
 
-  // 3. Detecção da Conta ou Cartão correspondente no Valore
+  // 4. Tipo de Movimentação (Receita vs Despesa)
+  let txType = 'expense';
+  if (rawLower.includes('pix recebido') || rawLower.includes('recebeu um pix') ||
+      rawLower.includes('transferência recebida') || rawLower.includes('transferencia recebida') ||
+      rawLower.includes('depósito recebido') || rawLower.includes('salário creditado')) {
+    txType = 'income';
+  }
+
+  // 5. Detecção da Conta ou Cartão correspondente no Valore
   let matchedAccountId = '';
   try {
     if (typeof finance !== 'undefined' && finance.getAccounts) {
       const accounts = finance.getAccounts() || [];
       const bankLower = (notif.bankName || '').toLowerCase();
-      const rawLower = rawText.toLowerCase();
 
       // Procura primeiro por banco correspondente
       const found = accounts.find(a => {
@@ -13948,12 +14194,13 @@ function parseBankNotificationData(notif) {
   } catch (_) {}
 
   return {
-    id: notif.id || ('bn_' + Date.now()),
+    id: notif.id || ('bn_' + (notif.timestamp || Date.now()) + '_' + Math.floor(Math.random() * 1000)),
     bankName: notif.bankName || 'Banco',
     amount: amount,
     formattedAmount: formattedAmount,
     description: description,
     accountId: matchedAccountId,
+    txType: txType,
     rawText: rawText,
     timestamp: notif.timestamp || Date.now()
   };
@@ -13966,6 +14213,7 @@ window.showBankTransactionSuggestion = function(parsed) {
   const existing = document.getElementById('bankNotifSuggestionBanner');
   if (existing) existing.remove();
 
+  const isIncome = parsed.txType === 'income';
   const banner = document.createElement('div');
   banner.id = 'bankNotifSuggestionBanner';
   banner.className = 'glass-card';
@@ -13977,8 +14225,8 @@ window.showBankTransactionSuggestion = function(parsed) {
     width: min(92vw, 440px);
     z-index: 1000100;
     background: linear-gradient(135deg, rgba(17, 24, 39, 0.96) 0%, rgba(30, 41, 59, 0.98) 100%);
-    border: 1.5px solid #f59e0b;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.25);
+    border: 1.5px solid ${isIncome ? '#10b981' : '#f59e0b'};
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px ${isIncome ? 'rgba(16, 185, 129, 0.25)' : 'rgba(245, 158, 11, 0.25)'};
     border-radius: 14px;
     padding: 0.85rem 1rem;
     color: #fff;
@@ -13991,21 +14239,23 @@ window.showBankTransactionSuggestion = function(parsed) {
   banner.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
       <div style="display: flex; align-items: center; gap: 0.5rem; min-width: 0;">
-        <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-radius: 8px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
-          <i data-lucide="zap" style="width: 16px; height: 16px;"></i>
+        <span style="background: ${isIncome ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}; color: ${isIncome ? '#10b981' : '#fbbf24'}; border-radius: 8px; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">
+          <i data-lucide="${isIncome ? 'arrow-down-left' : 'zap'}" style="width: 16px; height: 16px;"></i>
         </span>
         <div style="min-width: 0;">
-          <div style="font-weight: 700; font-size: 0.82rem; color: #fbbf24; line-height: 1.2;">Compra Detectada • ${parsed.bankName}</div>
+          <div style="font-weight: 700; font-size: 0.82rem; color: ${isIncome ? '#10b981' : '#fbbf24'}; line-height: 1.2;">
+            ${isIncome ? 'Pix/Depósito Recebido' : 'Compra Detectada'} • ${parsed.bankName}
+          </div>
           <div style="font-size: 0.72rem; color: var(--text-muted); line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${parsed.description}</div>
         </div>
       </div>
-      <b style="font-size: 1.05rem; font-weight: 800; color: #f87171; white-space: nowrap;">R$ ${parsed.formattedAmount}</b>
+      <b style="font-size: 1.05rem; font-weight: 800; color: ${isIncome ? '#34d399' : '#f87171'}; white-space: nowrap;">R$ ${parsed.formattedAmount}</b>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; margin-top: 0.2rem;">
       <button id="btnDismissBankNotif" class="btn btn-outline" style="padding: 0.35rem 0.7rem; font-size: 0.75rem; min-height: 32px; border-color: rgba(255,255,255,0.2); color: var(--text-secondary);">
         Ignorar
       </button>
-      <button id="btnLaunchBankNotifTx" class="btn btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; min-height: 32px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: 700;">
+      <button id="btnLaunchBankNotifTx" class="btn btn-primary" style="padding: 0.35rem 0.85rem; font-size: 0.75rem; min-height: 32px; background: linear-gradient(135deg, ${isIncome ? '#10b981, #059669' : '#f59e0b, #d97706'}); color: ${isIncome ? '#fff' : '#000'}; font-weight: 700;">
         <i data-lucide="check" style="width: 14px; height: 14px;"></i>
         Lançar em 1 Toque
       </button>
@@ -14031,22 +14281,28 @@ window.showBankTransactionSuggestion = function(parsed) {
 };
 
 window.openTxModalFromBankNotification = function(parsed) {
+  if (!parsed) return;
   const btnOpenTx = document.getElementById('btnOpenNewTxModal');
   if (btnOpenTx) btnOpenTx.click();
 
   setTimeout(() => {
-    const toggleExp = document.getElementById('toggleExpense');
-    if (toggleExp) toggleExp.click();
+    if (parsed.txType === 'income') {
+      const toggleInc = document.getElementById('toggleIncome');
+      if (toggleInc) toggleInc.click();
+    } else {
+      const toggleExp = document.getElementById('toggleExpense');
+      if (toggleExp) toggleExp.click();
+    }
 
     const amountInput = document.getElementById('txAmount');
     if (amountInput) {
-      amountInput.value = parsed.formattedAmount;
+      amountInput.value = parsed.formattedAmount || (parsed.amount ? parsed.amount.toFixed(2).replace('.', ',') : '');
       amountInput.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     const descInput = document.getElementById('txDesc');
     if (descInput) {
-      descInput.value = parsed.description;
+      descInput.value = parsed.description || '';
     }
 
     if (parsed.accountId) {
@@ -14054,17 +14310,46 @@ window.openTxModalFromBankNotification = function(parsed) {
       if (accSelect) accSelect.value = parsed.accountId;
     }
 
+    // Marca como convertida e lida no histórico do Valore
+    if (parsed.id && typeof finance !== 'undefined' && finance.markNotificationAsConverted) {
+      finance.markNotificationAsConverted(parsed.id);
+      window.dismissNotificationItem(parsed.id);
+    }
+
     if (typeof showToast === 'function') {
-      showToast('Dados da compra preenchidos! Confirme a categoria para salvar.', 'success', 4000);
+      showToast('Dados da movimentação preenchidos! Confirme a categoria para salvar.', 'success', 4000);
     }
   }, 350);
 };
 
-window.handleNativeBankNotificationReceived = function(jsonStr) {
+window.handleNativeBankNotificationReceived = async function(jsonStr) {
   try {
     const notif = typeof jsonStr === 'string' ? JSON.parse(jsonStr) : jsonStr;
     const parsed = parseBankNotificationData(notif);
     if (parsed) {
+      // Salva de forma persistente no histórico do Valore
+      if (typeof finance !== 'undefined' && finance.addNotificationToHistory) {
+        await finance.addNotificationToHistory({
+          id: parsed.id,
+          type: 'bank_reader',
+          severity: 'bank-intercepted',
+          tagText: 'Leitor Bancário • ' + (parsed.bankName || 'Banco'),
+          icon: parsed.txType === 'income' ? 'arrow-down-left' : 'zap',
+          title: parsed.description || (parsed.txType === 'income' ? 'Pix Recebido' : 'Compra Interceptada'),
+          desc: parsed.rawText,
+          amount: parsed.amount,
+          isRead: false,
+          actionType: 'launch_bank_tx',
+          actionLabel: 'Lançar em 1 Toque',
+          rawItem: parsed,
+          timestamp: parsed.timestamp || Date.now()
+        });
+        window.updateHeaderNotificationBadge();
+        const drawer = document.getElementById('notificationCenterDrawer');
+        if (drawer && drawer.classList.contains('open')) {
+          window.renderNotificationCenter();
+        }
+      }
       window.showBankTransactionSuggestion(parsed);
     }
   } catch (err) {
@@ -14072,19 +14357,52 @@ window.handleNativeBankNotificationReceived = function(jsonStr) {
   }
 };
 
-window.checkPendingBankNotifications = function() {
+window.checkPendingBankNotifications = async function() {
   if (typeof window.AndroidBankNotificationBridge !== 'undefined' && window.AndroidBankNotificationBridge.getPendingNotifications) {
     try {
       const raw = window.AndroidBankNotificationBridge.getPendingNotifications();
       if (!raw || raw === '[]') return;
       const list = JSON.parse(raw);
       if (Array.isArray(list) && list.length > 0) {
-        const latest = list[list.length - 1];
-        const parsed = parseBankNotificationData(latest);
-        if (parsed) {
-          window.showBankTransactionSuggestion(parsed);
+        let hasNew = false;
+        let latestValid = null;
+
+        for (const item of list) {
+          const parsed = parseBankNotificationData(item);
+          if (parsed && typeof finance !== 'undefined' && finance.addNotificationToHistory) {
+            await finance.addNotificationToHistory({
+              id: parsed.id,
+              type: 'bank_reader',
+              severity: 'bank-intercepted',
+              tagText: 'Leitor Bancário • ' + (parsed.bankName || 'Banco'),
+              icon: parsed.txType === 'income' ? 'arrow-down-left' : 'zap',
+              title: parsed.description || (parsed.txType === 'income' ? 'Pix Recebido' : 'Compra Interceptada'),
+              desc: parsed.rawText,
+              amount: parsed.amount,
+              isRead: false,
+              actionType: 'launch_bank_tx',
+              actionLabel: 'Lançar em 1 Toque',
+              rawItem: parsed,
+              timestamp: parsed.timestamp || Date.now()
+            });
+            hasNew = true;
+            latestValid = parsed;
+          }
         }
+
+        // Limpa a fila nativa no Android somente após salvar no histórico persistente do Valore
         window.AndroidBankNotificationBridge.clearPendingNotifications();
+
+        if (hasNew) {
+          window.updateHeaderNotificationBadge();
+          const drawer = document.getElementById('notificationCenterDrawer');
+          if (drawer && drawer.classList.contains('open')) {
+            window.renderNotificationCenter();
+          }
+          if (latestValid) {
+            window.showBankTransactionSuggestion(latestValid);
+          }
+        }
       }
     } catch (_) {}
   }
@@ -14568,3 +14886,178 @@ document.addEventListener('DOMContentLoaded', () => {
     window.checkAppUpdates(false);
   }, 3000);
 });
+
+
+// =========================================================================
+// --- CENTRAL DE CONFIGURAÇÕES & RESET SEGURO DO APP ---
+// =========================================================================
+function renderSettingsView() {
+  const st = finance.state;
+  if (!st) return;
+
+  // Atualiza indicadores de usuário
+  if (typeof window.syncDeviceIdentityUI === 'function') {
+    window.syncDeviceIdentityUI();
+  }
+
+  // Atualiza crachá de modo casal
+  const coupleBadge = document.getElementById('settingsCoupleBadge');
+  if (coupleBadge) {
+    const isCouple = !!(st.couple && st.couple.enabled);
+    coupleBadge.textContent = isCouple ? 'Modo Casal Ativo' : 'Modo Individual';
+    coupleBadge.style.background = isCouple ? 'rgba(236, 72, 153, 0.15)' : 'rgba(59, 130, 246, 0.15)';
+    coupleBadge.style.color = isCouple ? '#ec4899' : '#3b82f6';
+  }
+
+  // Atualiza status de notificações
+  const notifBadge = document.getElementById('settingsNotifBadge');
+  const notifTimeEl = document.getElementById('settingsNotifTimeLabel');
+  const notifDaysEl = document.getElementById('settingsNotifDaysLabel');
+  const notifCfg = (st.settings && st.settings.notifications) || {};
+  if (notifBadge) {
+    notifBadge.textContent = notifCfg.enabled ? 'Ativo' : 'Pausado';
+    notifBadge.style.background = notifCfg.enabled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)';
+    notifBadge.style.color = notifCfg.enabled ? '#10b981' : 'var(--text-muted)';
+  }
+  if (notifTimeEl) notifTimeEl.textContent = notifCfg.dueTime || '09:00';
+  if (notifDaysEl) notifDaysEl.textContent = (notifCfg.daysBefore || 3) + ' dias';
+
+  // Atualiza label do modo leve
+  const liteLabel = document.getElementById('settingsLiteModeLabel');
+  if (liteLabel) {
+    const isLite = document.body.classList.contains('lite-mode');
+    liteLabel.textContent = isLite ? 'Desativar Modo Leve (Modo Padrão)' : 'Ativar Modo Leve (Alta Performance)';
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+window.renderSettingsView = renderSettingsView;
+
+function setupSettingsViewControls() {
+  // Atalhos de exportação no módulo de configurações
+  const btnJson = document.getElementById('btnSettingsDownloadJson');
+  if (btnJson) {
+    btnJson.addEventListener('click', () => {
+      const btnMaster = document.getElementById('btnDownloadJsonBackup');
+      if (btnMaster) btnMaster.click();
+    });
+  }
+
+  const btnXlsx = document.getElementById('btnSettingsExportXlsx');
+  if (btnXlsx) {
+    btnXlsx.addEventListener('click', () => {
+      const btnMaster = document.getElementById('btnExportAllTransactionsXLSX');
+      if (btnMaster) btnMaster.click();
+    });
+  }
+
+  const btnSync = document.getElementById('btnSettingsOpenSyncHub');
+  if (btnSync) {
+    btnSync.addEventListener('click', () => {
+      const btnExport = document.getElementById('btnExportData');
+      if (btnExport) btnExport.click();
+    });
+  }
+
+  const btnDangerBackup = document.getElementById('btnDangerZoneBackup');
+  if (btnDangerBackup) {
+    btnDangerBackup.addEventListener('click', () => {
+      const btnMaster = document.getElementById('btnDownloadJsonBackup');
+      if (btnMaster) btnMaster.click();
+    });
+  }
+
+  // --- CONTROLES DO MODAL DE RESET TOTAL (#resetAppModal) ---
+  const modal = document.getElementById('resetAppModal');
+  const btnOpen = document.getElementById('btnOpenResetAppModal');
+  const btnCancel = document.getElementById('btnCancelResetApp');
+  const btnBackupInModal = document.getElementById('btnDownloadBackupInResetModal');
+  const inputConfirm = document.getElementById('inputConfirmResetWord');
+  const btnConfirmAction = document.getElementById('btnConfirmResetAppAction');
+
+  const statsTxs = document.getElementById('resetStatsTxs');
+  const statsAccs = document.getElementById('resetStatsAccs');
+  const statsSchs = document.getElementById('resetStatsSchs');
+
+  const closeResetModal = () => {
+    if (modal) modal.classList.remove('open');
+    if (inputConfirm) inputConfirm.value = '';
+    if (btnConfirmAction) {
+      btnConfirmAction.disabled = true;
+      btnConfirmAction.style.opacity = '0.5';
+      btnConfirmAction.style.cursor = 'not-allowed';
+    }
+  };
+
+  if (btnOpen && modal) {
+    btnOpen.addEventListener('click', () => {
+      if (statsTxs) statsTxs.textContent = (finance.state.transactions || []).length;
+      if (statsAccs) statsAccs.textContent = (finance.state.accounts || []).length;
+      if (statsSchs) statsSchs.textContent = (finance.state.schedules || []).length;
+      if (inputConfirm) inputConfirm.value = '';
+      if (btnConfirmAction) {
+        btnConfirmAction.disabled = true;
+        btnConfirmAction.style.opacity = '0.5';
+        btnConfirmAction.style.cursor = 'not-allowed';
+      }
+      modal.classList.add('open');
+      if (window.lucide) lucide.createIcons();
+    });
+  }
+
+  if (btnCancel) {
+    btnCancel.addEventListener('click', closeResetModal);
+  }
+
+  if (btnBackupInModal) {
+    btnBackupInModal.addEventListener('click', () => {
+      const btnMaster = document.getElementById('btnDownloadJsonBackup');
+      if (btnMaster) btnMaster.click();
+    });
+  }
+
+  if (inputConfirm && btnConfirmAction) {
+    inputConfirm.addEventListener('input', (e) => {
+      const val = (e.target.value || '').trim().toUpperCase();
+      if (val === 'RESETAR') {
+        btnConfirmAction.disabled = false;
+        btnConfirmAction.style.opacity = '1';
+        btnConfirmAction.style.cursor = 'pointer';
+      } else {
+        btnConfirmAction.disabled = true;
+        btnConfirmAction.style.opacity = '0.5';
+        btnConfirmAction.style.cursor = 'not-allowed';
+      }
+    });
+  }
+
+  if (btnConfirmAction) {
+    btnConfirmAction.addEventListener('click', async () => {
+      try {
+        btnConfirmAction.disabled = true;
+        btnConfirmAction.innerHTML = '<i data-lucide="loader" class="spin"></i><span>Apagando dados...</span>';
+        if (window.lucide) lucide.createIcons();
+
+        // 1. Zera a base através do Core Financeiro
+        await finance.resetAllData();
+
+        closeResetModal();
+        showToast('⚠️ Aplicativo resetado com sucesso! A base está totalmente limpa.', 'warning', 6000);
+
+        // 2. Atualiza todas as views e retorna para o Dashboard
+        if (typeof refreshAllViewsAfterSync === 'function') {
+          refreshAllViewsAfterSync();
+        }
+        if (typeof switchTab === 'function') {
+          switchTab('dashboard');
+        }
+      } catch (err) {
+        alert('Erro ao resetar aplicativo: ' + err.message);
+      } finally {
+        btnConfirmAction.innerHTML = '<i data-lucide="trash-2"></i><span>Sim, Apagar Tudo</span>';
+        btnConfirmAction.disabled = false;
+        if (window.lucide) lucide.createIcons();
+      }
+    });
+  }
+}

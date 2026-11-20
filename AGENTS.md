@@ -3,6 +3,9 @@
 ## Regra Obrigatória: Plano Detalhado de Implementação
 Em toda e qualquer solicitação do usuário, você DEVE OBRIGATORIAMENTE gerar primeiro um plano detalhado de implementação para aprovação do usuário antes de executar quaisquer alterações definitivas no código.
 
+## Regra Obrigatória: Incremento Obrigatório de Versão a Cada Atualização Aprovada
+Em todo e qualquer plano de atualização, correção de bug, ajuste visual ou nova funcionalidade aprovado pelo usuário, você DEVE OBRIGATORIAMENTE incrementar a versão da aplicação (SemVer, ex: 1.3.8 -> 1.3.9), aplicando rigorosamente o Protocolo Anti-Looping de Atualizações em todos os 5 pontos de versão antes de finalizar a entrega e compilar o instalador oficial.
+
 ## Regra Obrigatória: Atualização Automática do Instalador
 Sempre que qualquer alteração de código, correção de bug, ajuste visual ou nova funcionalidade for finalizada no projeto do Valore, você DEVE OBRIGATORIAMENTE atualizar o Instalador oficial do aplicativo localizado em:
 `E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe`

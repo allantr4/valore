@@ -127,28 +127,53 @@ public class BankNotificationService extends NotificationListenerService {
 
         String combined = (title + " " + text).toLowerCase();
 
-        // Filtro financeiro: apenas notificações que representem movimentação monetária ou compras
-        boolean isFinancial = combined.contains("r$") || 
-                              combined.contains("compra") || 
-                              combined.contains("aprovada") || 
-                              combined.contains("pix") || 
-                              combined.contains("pagamento") || 
-                              combined.contains("transferência") || 
-                              combined.contains("transferencia") || 
-                              combined.contains("débito") || 
-                              combined.contains("debito") || 
-                              combined.contains("crédito") || 
-                              combined.contains("credito") || 
-                              combined.contains("enviado") || 
-                              combined.contains("recebido") || 
-                              combined.contains("pago") || 
-                              combined.contains("você gastou") || 
-                              combined.contains("voce gastou") || 
-                              combined.contains("fatura") || 
-                              combined.contains("ted") || 
-                              combined.contains("doc");
+        // 1. Blacklist Estrita: descarta notificações de marketing, segurança, 2FA, informativos e convites
+        if (combined.contains("código") || combined.contains("codigo") ||
+            combined.contains("token") || combined.contains("segurança") ||
+            combined.contains("seguranca") || combined.contains("pré-aprovado") ||
+            combined.contains("pre-aprovado") || combined.contains("limite disponível") ||
+            combined.contains("informe de rendimentos") || combined.contains("convite") ||
+            combined.contains("acesse sua conta") || combined.contains("atualize seu") ||
+            combined.contains("promoção") || combined.contains("promocao") ||
+            combined.contains("cashback disponível") || combined.contains("empréstimo disponível") ||
+            combined.contains("guarde seu dinheiro") || combined.contains("dica:") ||
+            combined.contains("dica de")) {
+            return;
+        }
 
-        if (isFinancial) {
+        // 2. Critério de Ação Financeira Real: exige verbos/ações de transação executada
+        boolean hasAction = combined.contains("compra") ||
+                            combined.contains("aprovada") ||
+                            combined.contains("pix enviado") ||
+                            combined.contains("pix recebido") ||
+                            combined.contains("você enviou") ||
+                            combined.contains("voce enviou") ||
+                            combined.contains("você recebeu") ||
+                            combined.contains("voce recebeu") ||
+                            combined.contains("transferência enviada") ||
+                            combined.contains("transferencia enviada") ||
+                            combined.contains("transferência recebida") ||
+                            combined.contains("transferencia recebida") ||
+                            combined.contains("pagamento de") ||
+                            combined.contains("pagamento realizado") ||
+                            combined.contains("pagamento aprovado") ||
+                            combined.contains("débito de") ||
+                            combined.contains("debito de") ||
+                            combined.contains("você gastou") ||
+                            combined.contains("voce gastou") ||
+                            combined.contains("saque realizado") ||
+                            combined.contains("ted enviada") ||
+                            combined.contains("ted recebida") ||
+                            combined.contains("doc enviado") ||
+                            combined.contains("doc recebido") ||
+                            (combined.contains("fatura") && (combined.contains("fechada") || combined.contains("vence")));
+
+        // 3. Critério Monetário Rigoroso: exige quantia explícita em reais com números
+        boolean hasCurrencyValue = combined.matches(".*r\\$\\s*\\d+.*") || 
+                                   combined.matches(".*r\\s\\$\\s*\\d+.*") || 
+                                   combined.matches(".*(?:valor|quantia)(?:\\s+de)?\\s*\\d+.*");
+
+        if (hasAction && hasCurrencyValue) {
             long postTime = sbn.getPostTime() > 0 ? sbn.getPostTime() : System.currentTimeMillis();
             saveNotification(getApplicationContext(), pkg, bankName, title, text, postTime);
         }

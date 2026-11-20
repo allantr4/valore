@@ -309,10 +309,21 @@ function ensureSyncServerStarted() {
           const mobilePayload = JSON.parse(rawBody);
           const syncMode = mobilePayload.syncMode || 'smart_merge';
 
+          const userDataDir = app.getPath('userData');
+
+          // Salva backup de segurança do estado bruto recebido do celular no PC para segurança máxima
+          try {
+            const incomingMobileBakPath = path.join(userDataDir, 'financial_data.incoming-mobile.bak');
+            const mobileStateToSave = mobilePayload.state || mobilePayload;
+            if (mobileStateToSave && Array.isArray(mobileStateToSave.accounts)) {
+              fs.writeFileSync(incomingMobileBakPath, JSON.stringify(mobileStateToSave, null, 2), 'utf-8');
+            }
+          } catch (_) {}
+
           const diskState = loadRawStateFromDisk();
           if (diskState) {
             try {
-              const preSyncBakPath = path.join(app.getPath('userData'), 'financial_data.pre-sync.bak');
+              const preSyncBakPath = path.join(userDataDir, 'financial_data.pre-sync.bak');
               fs.writeFileSync(preSyncBakPath, JSON.stringify(diskState, null, 2), 'utf-8');
             } catch (_) {}
           }
@@ -446,6 +457,7 @@ ipcMain.handle('storage:restore-backup', () => {
   try {
     const userDataDir = app.getPath('userData');
     const candidates = [
+      path.join(userDataDir, 'financial_data.incoming-mobile.bak'),
       path.join(userDataDir, 'financial_data.backup-manual-recuperado.json'),
       path.join(userDataDir, 'financial_data.pre-sync.bak'),
       path.join(userDataDir, 'financial_data.json.bak')

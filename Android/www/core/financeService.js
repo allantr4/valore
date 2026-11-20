@@ -86,7 +86,8 @@ class FinanceService {
           notifyCreditCardClosing: true,
           bankNotificationReader: false
         }
-      }
+      },
+      notificationsHistory: []
     };
   }
 
@@ -243,6 +244,22 @@ class FinanceService {
     return entity;
   }
 
+  touch() {
+    if (!this.state.syncMeta) {
+      this.state.syncMeta = { deviceId: genId('dev'), lastSyncAt: null, lastModifiedAt: Date.now(), deletedIds: {} };
+    }
+    this.state.syncMeta.lastModifiedAt = Date.now();
+  }
+
+  async _persistState() {
+    this.touch();
+    if (this.storage && typeof this.storage.set === 'function') {
+      await this.storage.set(this.state);
+    } else if (typeof this.save === 'function') {
+      await this.save({ preserveModifiedTimestamp: true });
+    }
+  }
+
   _recordDeletion(id) {
     if (!id) return;
     if (!this.state.syncMeta) {
@@ -332,11 +349,179 @@ class FinanceService {
     };
   }
 
-  getAppVersion() { return "1.3.8";
+  getNotificationsHistory() {
+    if (!Array.isArray(this.state.notificationsHistory)) {
+      this.state.notificationsHistory = [];
+    }
+    return [...this.state.notificationsHistory].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }
+
+  async addNotificationToHistory(notif) {
+    if (!notif || !notif.id) return null;
+    if (!Array.isArray(this.state.notificationsHistory)) {
+      this.state.notificationsHistory = [];
+    }
+    // Evita duplicatas pelo ID
+    const idx = this.state.notificationsHistory.findIndex(n => n.id === notif.id);
+    if (idx !== -1) {
+      Object.assign(this.state.notificationsHistory[idx], notif);
+      await this._persistState();
+      return this.state.notificationsHistory[idx];
+    }
+    const item = {
+      id: String(notif.id),
+      type: notif.type || 'bank_reader',
+      severity: notif.severity || 'info',
+      tagText: notif.tagText || 'Notificação',
+      icon: notif.icon || 'bell',
+      title: notif.title || 'Alerta Financeiro',
+      desc: notif.desc || '',
+      amount: parseFloat(notif.amount || 0),
+      isRead: !!notif.isRead,
+      actionType: notif.actionType || '',
+      actionLabel: notif.actionLabel || '',
+      rawItem: notif.rawItem || null,
+      timestamp: notif.timestamp || Date.now(),
+      converted: !!notif.converted
+    };
+    this.state.notificationsHistory.unshift(item);
+    if (this.state.notificationsHistory.length > 150) {
+      this.state.notificationsHistory = this.state.notificationsHistory.slice(0, 150);
+    }
+    await this._persistState();
+    return item;
+  }
+
+  async markNotificationAsRead(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const item = this.state.notificationsHistory.find(n => n.id === id);
+    if (item && !item.isRead) {
+      item.isRead = true;
+      await this._persistState();
+    }
+  }
+
+  async markAllNotificationsAsRead() {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    let changed = false;
+    this.state.notificationsHistory.forEach(n => {
+      if (!n.isRead) {
+        n.isRead = true;
+        changed = true;
+      }
+    });
+    if (changed) {
+      await this._persistState();
+    }
+  }
+
+  async clearNotificationsHistory() {
+    this.state.notificationsHistory = [];
+    await this._persistState();
+  }
+
+  async removeNotificationFromHistory(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const lenBefore = this.state.notificationsHistory.length;
+    this.state.notificationsHistory = this.state.notificationsHistory.filter(n => n.id !== id);
+    if (this.state.notificationsHistory.length !== lenBefore) {
+      await this._persistState();
+    }
+  }
+
+  async markNotificationAsConverted(id) {
+    if (!Array.isArray(this.state.notificationsHistory)) return;
+    const item = this.state.notificationsHistory.find(n => n.id === id);
+    if (item) {
+      item.converted = true;
+      item.isRead = true;
+      await this._persistState();
+    }
+  }
+
+  getAppVersion() { return "1.3.11";
   }
 
   getAppBuildDate() {
     return 'Novembro/2026';
+  }
+
+  async resetAllData(options = {}) {
+    // 1. Gera snapshot de segurança pré-reset para emergências
+    try {
+      const preResetBackup = this.exportBackup();
+      if (typeof window !== 'undefined') {
+        const snapStr = JSON.stringify(preResetBackup);
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences) {
+          await window.Capacitor.Plugins.Preferences.set({ key: 'valore_pre_reset_safety_backup', value: snapStr });
+        }
+        localStorage.setItem('valore_pre_reset_safety_backup', snapStr);
+      }
+    } catch (_) {}
+
+    // 2. Cria estado inicial totalmente limpo e zerado
+    this.state = {
+      accounts: [],
+      categories: [
+        { id: 'cat-1', name: 'Salário & Pro-labore', type: 'income', icon: 'wallet', color: '#10b981' },
+        { id: 'cat-2', name: 'Investimentos & Dividendos', type: 'income', icon: 'trending-up', color: '#06b6d4' },
+        { id: 'cat-3', name: 'Alimentação & Mercado', type: 'expense', icon: 'shopping-cart', color: '#f59e0b' },
+        { id: 'cat-4', name: 'Moradia & Aluguel', type: 'expense', icon: 'home', color: '#ef4444' },
+        { id: 'cat-5', name: 'Transporte & Veículo', type: 'expense', icon: 'car', color: '#6366f1' },
+        { id: 'cat-6', name: 'Lazer & Viagens', type: 'expense', icon: 'coffee', color: '#ec4899' },
+        { id: 'cat-7', name: 'Saúde & Cuidados', type: 'expense', icon: 'activity', color: '#14b8a6' },
+        { id: 'cat-8', name: 'Transferência Interna', type: 'transfer', icon: 'repeat', color: '#8b5cf6' }
+      ],
+      transactions: [],
+      schedules: [],
+      assets: [],
+      budgets: [],
+      goals: [],
+      vaults: [],
+      costCenters: [],
+      sideHustles: [],
+      coupleSettlements: [],
+      notificationsHistory: [],
+      couple: {
+        enabled: true,
+        partner1: { name: 'Você', monthlyIncome: 6000, color: '#3b82f6', pixKey: '', avatar: 'user' },
+        partner2: { name: 'Parceiro(a)', monthlyIncome: 4000, color: '#ec4899', pixKey: '', avatar: 'heart' },
+        splitMode: 'proportional',
+        proportionalRatio: { p1: 60, p2: 40 },
+        fixedQuotaAmount: 2000,
+        jointHouseAccountName: 'Despesas do Lar'
+      },
+      firePlanning: {
+        currentAge: 32,
+        targetAge: 55,
+        desiredMonthlyIncome: 10000,
+        safeWithdrawalRate: 5.0,
+        monthlyContribution: 2500,
+        includePhysicalAssets: false
+      },
+      syncMeta: {
+        deviceId: genId('dev'),
+        lastSyncAt: null,
+        lastModifiedAt: Date.now(),
+        deletedIds: {}
+      },
+      settings: {
+        currency: 'BRL',
+        theme: 'auto',
+        startDayOfMonth: 1,
+        notifications: {
+          enabled: true,
+          daysBefore: 3,
+          dueTime: '09:00',
+          alertOverdue: true,
+          alertCards: true,
+          bankReader: true
+        }
+      }
+    };
+
+    await this.save();
+    return { success: true, state: this.state };
   }
 
   async init() {
@@ -377,6 +562,9 @@ class FinanceService {
       }
       if (!this.state.coupleSettlements) {
         this.state.coupleSettlements = [];
+      }
+      if (!Array.isArray(this.state.notificationsHistory)) {
+        this.state.notificationsHistory = [];
       }
       if (!this.state.syncMeta) {
         this.state.syncMeta = {
@@ -5498,6 +5686,15 @@ class FinanceService {
           if (rTime > lTime) {
             map.set(rItem.id, { ...lItem, ...rItem });
             if (statKeyUpdated) stats[statKeyUpdated]++;
+          } else if (rTime === lTime) {
+            // Em empate de timestamp, preserva modificações legítimas (ex: status pago, comprovantes e anotações preenchidas)
+            const prefersRemote = (rItem.status === 'paid' && lItem.status !== 'paid') ||
+                                  (!lItem.notes && rItem.notes) ||
+                                  (rItem.receiptUrl && !lItem.receiptUrl);
+            if (prefersRemote) {
+              map.set(rItem.id, { ...lItem, ...rItem });
+              if (statKeyUpdated) stats[statKeyUpdated]++;
+            }
           }
         } else {
           // Verifica se há duplicata semântica (ex: mesma conta ou transação criada sem mesmo ID)
