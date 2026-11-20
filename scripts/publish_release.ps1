@@ -127,11 +127,13 @@ function Upload-ReleaseAsset([string]$filePath, [string]$contentType) {
 
 # 3. Upload dos Instaladores Desktop Windows
 Write-Host "`n[2/3] Processando upload dos Instaladores Desktop Windows..." -ForegroundColor Yellow
+Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador_Valore_Financeiro_$currentVersion.exe" "application/octet-stream"
 Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador_Valore_Financeiro_$cleanVer.exe" "application/octet-stream"
 Upload-ReleaseAsset "E:\Gestor Financeiro\Instalador\Instalador Valore Financeiro.exe" "application/octet-stream"
 
 # 4. Upload dos APKs Android
 Write-Host "`n[3/3] Processando upload dos APKs Mobile Android..." -ForegroundColor Yellow
+Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore_$currentVersion.apk" "application/vnd.android.package-archive"
 Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore_$cleanVer.apk" "application/vnd.android.package-archive"
 Upload-ReleaseAsset "E:\Gestor Financeiro\Android\Valore.apk" "application/vnd.android.package-archive"
 
