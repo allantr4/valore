@@ -1,18 +1,17 @@
 {
-  "version": "1.3.11",
+  "version": "1.3.12",
   "releaseDate": "2026-11-20",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.11 - Central Unificada de Configurações e Reset Total Seguro",
+  "title": "Valore v1.3.12 - Sincronização em Tempo Real da Central de Notificações",
   "notes": [
-    "Central de Configurações Unificada: nova tela dedicada reunindo perfis de usuários, parâmetros, sincronização Wi-Fi, backups e preferências visuais.",
-    "Módulo de Perfis & Finanças a Dois: chave de ativação rápida, seleção de dispositivo e divisão de despesas centralizadas.",
-    "Zona de Perigo com Reset Total: recurso para zerar e apagar todos os dados com trava de segurança dupla (exige digitar RESETAR e gera backup preventivo automático).",
-    "Atalhos Rápidos de Exportação: exportação em 1 clique para JSON e planilhas Excel (.xlsx) na tela de configurações.",
-    "Aprimoramentos de Navegação: acesso direto pelo menu lateral desktop e pela gaveta mobile."
+    "Sincronização em Tempo Real de Badges: eliminação total de contadores fantasmas no sininho do cabeçalho ao esvaziar ou resetar pendências.",
+    "Reatividade Bidirecional: recálculo instantâneo de alertas ao abrir/fechar o drawer, quitar contas e sincronizar.",
+    "Limpeza Profunda no Reset Total: eliminação de caches locais de leitura de notificações.",
+    "Central de Configurações Unificada: gerenciamento integrado de perfis, backups, tema, notificações e banco de dados."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.11.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.11.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.12.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.12.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 41,
-  "releaseNotes": "Valore v1.3.11 - Central Unificada de Configurações e Reset Total Seguro."
+  "versionCode": 42,
+  "releaseNotes": "Valore v1.3.12 - Sincronização em Tempo Real da Central de Notificações."
 }

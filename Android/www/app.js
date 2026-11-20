@@ -7303,6 +7303,8 @@ function refreshAllViewsAfterSync() {
   if (currentTab === 'forecast') try { renderForecastView(); } catch (_) {}
   if (currentTab === 'freedom') try { renderFreedomView(); } catch (_) {}
   if (currentTab === 'couple') try { renderCoupleView(); } catch (_) {}
+  if (currentTab === 'settings') try { renderSettingsView(); } catch (_) {}
+  try { if (window.updateHeaderNotificationBadge) window.updateHeaderNotificationBadge(); } catch (_) {}
   if (window.lucide) lucide.createIcons();
 }
 
@@ -13634,6 +13636,9 @@ window.openNotificationCenter = function(defaultTab = 'all') {
     backdrop.classList.add('open');
     drawer.setAttribute('aria-hidden', 'false');
     window.renderNotificationCenter();
+    if (typeof window.updateHeaderNotificationBadge === 'function') {
+      window.updateHeaderNotificationBadge();
+    }
   }
 };
 
@@ -13644,6 +13649,9 @@ window.closeNotificationCenter = function() {
     drawer.classList.remove('open');
     backdrop.classList.remove('open');
     drawer.setAttribute('aria-hidden', 'true');
+    if (typeof window.updateHeaderNotificationBadge === 'function') {
+      window.updateHeaderNotificationBadge();
+    }
   }
 };
 
@@ -13782,6 +13790,11 @@ window.renderNotificationCenter = function() {
   if (elCountCards) elCountCards.textContent = countCards;
   if (elCountBank) elCountBank.textContent = countBank;
 
+  // Garante que a badge do cabeçalho e da sidebar acompanhem instantaneamente a contagem real
+  if (typeof window.updateHeaderNotificationBadge === 'function') {
+    window.updateHeaderNotificationBadge();
+  }
+
   // Filtra itens para a aba ativa
   let displayed = allNotifs;
   if (currentNotificationCenterTab !== 'all') {
@@ -13905,8 +13918,8 @@ window.updateHeaderNotificationBadge = function() {
   const settings = (typeof finance !== 'undefined' && finance.getNotificationSettings) ? finance.getNotificationSettings() : { enabled: true };
 
   if (!settings.enabled) {
-    if (badgeHeader) badgeHeader.style.display = 'none';
-    if (badgeSidebar) badgeSidebar.style.display = 'none';
+    if (badgeHeader) { badgeHeader.style.display = 'none'; badgeHeader.textContent = '0'; }
+    if (badgeSidebar) { badgeSidebar.style.display = 'none'; badgeSidebar.textContent = '0'; }
     return;
   }
 
@@ -13924,8 +13937,14 @@ window.updateHeaderNotificationBadge = function() {
       badgeSidebar.style.display = 'inline-flex';
     }
   } else {
-    if (badgeHeader) badgeHeader.style.display = 'none';
-    if (badgeSidebar) badgeSidebar.style.display = 'none';
+    if (badgeHeader) {
+      badgeHeader.style.display = 'none';
+      badgeHeader.textContent = '0';
+    }
+    if (badgeSidebar) {
+      badgeSidebar.style.display = 'none';
+      badgeSidebar.textContent = '0';
+    }
   }
 };
 
@@ -15040,6 +15059,16 @@ function setupSettingsViewControls() {
 
         // 1. Zera a base através do Core Financeiro
         await finance.resetAllData();
+        try { localStorage.removeItem('valore_read_notif_ids'); } catch (_) {}
+
+        // Força zeração visual imediata das badges
+        const bHead = document.getElementById('headerNotificationBadge');
+        const bSide = document.getElementById('sidebarNotificationBadge');
+        if (bHead) { bHead.style.display = 'none'; bHead.textContent = '0'; }
+        if (bSide) { bSide.style.display = 'none'; bSide.textContent = '0'; }
+        if (typeof window.updateHeaderNotificationBadge === 'function') {
+          window.updateHeaderNotificationBadge();
+        }
 
         closeResetModal();
         showToast('⚠️ Aplicativo resetado com sucesso! A base está totalmente limpa.', 'warning', 6000);
