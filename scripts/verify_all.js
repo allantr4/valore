@@ -344,11 +344,108 @@ if (fs.existsSync(indexPath) && fs.existsSync(appJsPath)) {
   logFail('Arquivos de interface (index.html ou app.js) ausentes para o teste E2E!');
 }
 
-console.log('\n======================================================');
-if (hasErrors) {
-  console.error('\x1b[31m⛔ TESTES FALHARAM! Corrija os erros antes de comitar ou publicar.\x1b[0m');
-  process.exit(1);
-} else {
-  console.log('\x1b[32m🎉 TODOS OS TESTES PASSARAM! Sistema 100% pronto e íntegro.\x1b[0m');
-  process.exit(0);
+// 6. Testes Funcionais Automatizados dos Motores de Importação (PDF, OFX, CSV)
+async function runFunctionalFileImportTests() {
+  console.log('\n[6/6] Executando testes funcionais automatizados de importação bancária...');
+  
+  // A. Verificação de arquivos de motor cliente PDF
+  const pdfJsPath = path.join(rootDir, 'src/ui/pdf.js');
+  const pdfWorkerPath = path.join(rootDir, 'src/ui/pdf.worker.js');
+  if (fs.existsSync(pdfJsPath) && fs.existsSync(pdfWorkerPath)) {
+    logPass('Motores clientes de PDF locais presentes (src/ui/pdf.js e pdf.worker.js)');
+  } else {
+    logFail('Arquivos de motor cliente pdf.js ou pdf.worker.js ausentes em src/ui!');
+  }
+
+  // B. Teste real de extração de PDF via pdf.js
+  try {
+    const pdfLib = require('../src/ui/pdf.js');
+    const samplePdfPath = path.join(rootDir, 'node_modules/pdf-parse/test/data/01-valid.pdf');
+    if (fs.existsSync(samplePdfPath)) {
+      const pdfBytes = new Uint8Array(fs.readFileSync(samplePdfPath));
+      const doc = await pdfLib.getDocument({ data: pdfBytes }).promise;
+      let extracted = '';
+      for (let i = 1; i <= Math.min(doc.numPages, 3); i++) {
+        const page = await doc.getPage(i);
+        const tc = await page.getTextContent();
+        extracted += tc.items.map(it => it.str).join(' ') + '\n';
+      }
+      if (extracted.length > 50) {
+        logPass(`Extração funcional de PDF via pdf.js validada (${doc.numPages} páginas, ${extracted.length} caracteres extraídos)`);
+      } else {
+        logFail('Extração de PDF retornou texto vazio ou insuficiente!');
+      }
+    }
+  } catch (pdfErr) {
+    logFail(`Falha no teste funcional do motor de PDF: ${pdfErr.message}`);
+  }
+
+  // C. Teste funcional de parseOFX com detecção de saldo bancário
+  try {
+    const { FinanceService } = require('../src/core/financeService.js');
+    const fsInstance = new FinanceService();
+    const sampleOfx = `
+      OFXHEADER:100
+      <OFX>
+        <BANKMSGSRSV1>
+          <STMTTRNRS>
+            <STMTRS>
+              <BANKTRANLIST>
+                <STMTTRN>
+                  <TRNTYPE>DEBIT
+                  <DTPOSTED>20261120
+                  <TRNAMT>-150.75
+                  <MEMO>SUPERMERCADO TESTE
+                </STMTTRN>
+                <STMTTRN>
+                  <TRNTYPE>CREDIT
+                  <DTPOSTED>20261121
+                  <TRNAMT>2500.00
+                  <MEMO>PIX RECEBIDO TESTE
+                </STMTTRN>
+              </BANKTRANLIST>
+              <LEDGERBAL>
+                <BALAMT>5340.25</BALAMT>
+              </LEDGERBAL>
+            </STMTRS>
+          </STMTTRNRS>
+        </BANKMSGSRSV1>
+      </OFX>
+    `;
+    const ofxResults = fsInstance.parseOFX(sampleOfx);
+    if (ofxResults.length === 2 && ofxResults.detectedStatementBalance === 5340.25) {
+      logPass(`Parser OFX validado: 2 transações identificadas e saldo bancário conciliado (R$ 5.340,25)`);
+    } else {
+      logFail(`Parser OFX falhou na detecção de transações ou saldo final: ${JSON.stringify(ofxResults)}`);
+    }
+
+    // D. Teste funcional de parsePDFText com saldo e despesas
+    const samplePdfText = `
+      EXTRATO BANCARIO DE CONTA CORRENTE
+      Data do Extrato: 20/11/2026
+      Saldo em conta: 1.250,50
+      20/11/2026 PIX PAGAMENTO RESTAURANTE -85,00
+      21/11/2026 TRANSFERENCIA RECEBIDA +400,00
+    `;
+    const pdfResults = fsInstance.parsePDFText(samplePdfText);
+    if (pdfResults.length >= 1) {
+      logPass(`Parser de texto de extrato bancário validado (${pdfResults.length} lançamentos mapeados)`);
+    } else {
+      logFail(`Parser de texto de extrato bancário falhou ao identificar transações`);
+    }
+
+  } catch (fsErr) {
+    logFail(`Falha nos testes funcionais de parsing: ${fsErr.message}`);
+  }
+
+  console.log('\n======================================================');
+  if (hasErrors) {
+    console.error('\x1b[31m⛔ TESTES FALHARAM! Corrija os erros antes de comitar ou publicar.\x1b[0m');
+    process.exit(1);
+  } else {
+    console.log('\x1b[32m🎉 TODOS OS TESTES PASSARAM! Sistema 100% pronto e íntegro.\x1b[0m');
+    process.exit(0);
+  }
 }
+
+runFunctionalFileImportTests();

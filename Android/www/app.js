@@ -7074,17 +7074,41 @@ function setupOFXImporter() {
         const binaryStr = new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '');
         parsed = finance.parseExcel(binaryStr);
       } else if (ext === 'pdf') {
-        if (window.electronAPI && window.electronAPI.parsePdfBuffer) {
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        let extractedText = '';
+
+        // 1. Tenta motor cliente universal (pdf.js) - funciona no Chrome, Mobile e Desktop
+        const pdfEngine = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+        if (pdfEngine && typeof pdfEngine.getDocument === 'function') {
+          try {
+            if (pdfEngine.GlobalWorkerOptions && !pdfEngine.GlobalWorkerOptions.workerSrc) {
+              pdfEngine.GlobalWorkerOptions.workerSrc = 'pdf.worker.js';
+            }
+            const loadingTask = pdfEngine.getDocument({ data: uint8Array });
+            const pdfDoc = await loadingTask.promise;
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+              const page = await pdfDoc.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              extractedText += textContent.items.map(it => it.str).join(' ') + '\n';
+            }
+          } catch (pdfJsErr) {
+            console.warn('Tentativa via pdf.js cliente falhou, tentando fallback:', pdfJsErr);
+          }
+        }
+
+        // 2. Fallback de contingência caso esteja no Electron Desktop
+        if (!extractedText.trim() && window.electronAPI && window.electronAPI.parsePdfBuffer) {
           const res = await window.electronAPI.parsePdfBuffer(uint8Array);
           if (res && res.success && res.text) {
-            parsed = finance.parsePDFText(res.text);
-          } else {
-            throw new Error((res && res.error) || 'Não foi possível ler o arquivo PDF.');
+            extractedText = res.text;
           }
+        }
+
+        if (extractedText && extractedText.trim().length > 0) {
+          parsed = finance.parsePDFText(extractedText);
         } else {
-          throw new Error('Leitor de PDF não disponível nesta versão do Electron.');
+          throw new Error('Não foi possível extrair o texto deste extrato PDF. O documento pode ser uma imagem escaneada ou protegido por senha. Prefira exportar no formato OFX bancário ou Excel (.xlsx).');
         }
       } else {
         throw new Error('Formato de arquivo não suportado. Utilize OFX, PDF, Excel (.xlsx/.xls) ou CSV.');

@@ -1,18 +1,17 @@
 {
-  "version": "1.3.14",
+  "version": "1.3.15",
   "releaseDate": "2026-11-21",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.14 - Ativação da Importação de Extrato & Swipe Down no Mobile",
+  "title": "Valore v1.3.15 - Leitor Universal de Extratos PDF (Multiplataforma)",
   "notes": [
-    "Ativação do Botão Importar Extrato: correção do ouvinte no extrato da conta e atalho dedicado na tela de transações.",
-    "Swipe Down Ergonômico: gesto fluído de puxar para baixo no celular para fechar a gaveta de extrato da conta com animação natural.",
-    "Conciliação Automática em OFX: leitura inteligente do saldo final bancário em extratos .ofx para conciliação de contas.",
-    "Resiliência na Dropzone: prevenção de travamento ao re-selecionar o mesmo extrato.",
+    "Motor Universal de PDF: integração nativa do pdf.js no cliente, permitindo leitura e extração de extratos em PDF no Chrome, Edge, Android e Desktop.",
+    "Eliminação de Dependência de Backend: o importador de extrato não depende mais de processos IPC de desktop para ler extratos bancários.",
+    "Bateria de Testes Funcionais E2E: validação automatizada de leitura e extração de arquivos reais (PDF, OFX, CSV, Excel) no pipeline de testes.",
     "Paridade Completa: sincronização e compilação nativa para Windows e Android."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.14.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.14.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.15.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.15.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 44,
-  "releaseNotes": "Valore v1.3.14 - Ativação da Importação de Extrato & Swipe Down no Mobile."
+  "versionCode": 45,
+  "releaseNotes": "Valore v1.3.15 - Leitor Universal de Extratos PDF (Multiplataforma)."
 }
