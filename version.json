@@ -1,18 +1,18 @@
 {
-  "version": "1.3.17",
+  "version": "1.3.18",
   "releaseDate": "2026-11-21",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.17 - Exclusão Ágil de Lançamentos e Melhorias Mobile",
+  "title": "Valore v1.3.18 - Importador Universal de Extratos (OFX, XLSX, CSV, TXT, PDF Multibancos)",
   "notes": [
-    "Exclusão Direta nos Cards Mobile: botão de lixeira ergonômico com 1 toque integrado à listagem de transações e extrato bancário no smartphone.",
-    "Botão Excluir no Modal de Edição: possibilidade de excluir qualquer lançamento diretamente da tela de edição (PC e celular).",
-    "Correção no Dashboard Desktop: eliminação do erro de referência na lixeira de lançamentos recentes.",
-    "Blindagem de Identificadores (IDs): coerção robusta de tipos garantindo que nenhuma transação seja ignorada ao excluir parcelamentos ou transações importadas.",
-    "Paridade Completa: sincronização e compilação nativa para Windows e Android."
+    "Conciliação Universal de Extratos: suporte nativo e calibrado para todos os formatos (.ofx, .qfx, .ofc, .xlsx, .xls, .csv, .tsv, .txt, .pdf).",
+    "Suporte a Todos os Bancos Brasileiros: motor ajustado para Itaú, Nubank, Bradesco, Banco do Brasil, Santander, Caixa, Inter, C6 e Mercado Pago.",
+    "Detecção de Colunas Múltiplas e Indicadores D/C: leitura resiliente de extratos com Débito e Crédito em colunas separadas e colunas de natureza.",
+    "Reconhecimento Universal de Datas e Moedas: datas em todos os formatos (pontos, barras, meses por extenso/abreviados em português) e números seriais de planilhas.",
+    "Paridade Completa: compilação oficial sincronizada para Windows e Android."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.17.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.17.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.18.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.18.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 47,
-  "releaseNotes": "Valore v1.3.17 - Exclusão Ágil de Lançamentos e Melhorias Mobile."
+  "versionCode": 48,
+  "releaseNotes": "Valore v1.3.18 - Importador Universal de Extratos (OFX, XLSX, CSV, TXT, PDF Multibancos)."
 }

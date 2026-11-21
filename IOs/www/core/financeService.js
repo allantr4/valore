@@ -439,7 +439,7 @@ class FinanceService {
     }
   }
 
-  getAppVersion() { return "1.3.17";
+  getAppVersion() { return "1.3.18";
   }
 
   getAppBuildDate() {
@@ -3768,12 +3768,12 @@ class FinanceService {
     };
   }
 
-  // --- PARSER OFX / EXCEL / CSV / PDF (CONCILIAÇÃO BANCÁRIA) ---
+  // --- PARSER OFX / EXCEL / CSV / PDF (CONCILIAÇÃO BANCÁRIA UNIVERSAL MULTIBANCOS) ---
   parseOFX(ofxContent) {
     const transactions = [];
     if (!ofxContent || typeof ofxContent !== 'string') return transactions;
 
-    const stmtRegex = /<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>|<\/BANKTRANLIST>))/gi;
+    const stmtRegex = /<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|(?=<STMTTRN>|<\/BANKTRANLIST>|<\/STMTRS>|$))/gi;
     let match;
 
     while ((match = stmtRegex.exec(ofxContent)) !== null) {
@@ -3783,9 +3783,20 @@ class FinanceService {
       const amountMatch = block.match(/<TRNAMT>\s*([-\d.,]+)/i);
       const memoMatch = block.match(/<MEMO>\s*([^<\r\n]+)/i);
       const nameMatch = block.match(/<NAME>\s*([^<\r\n]+)/i);
+      const checkNumMatch = block.match(/<CHECKNUM>\s*([^<\r\n]+)/i);
+      const refNumMatch = block.match(/<REFNUM>\s*([^<\r\n]+)/i);
 
       if (amountMatch) {
-        let cleanAmt = amountMatch[1].trim().replace(',', '.');
+        let cleanAmt = amountMatch[1].trim();
+        if (cleanAmt.includes(',') && !cleanAmt.includes('.')) {
+          cleanAmt = cleanAmt.replace(',', '.');
+        } else if (cleanAmt.includes(',') && cleanAmt.includes('.')) {
+          if (cleanAmt.indexOf('.') < cleanAmt.indexOf(',')) {
+            cleanAmt = cleanAmt.replace(/\./g, '').replace(',', '.');
+          } else {
+            cleanAmt = cleanAmt.replace(/,/g, '');
+          }
+        }
         const rawAmount = parseFloat(cleanAmt);
         if (isNaN(rawAmount)) continue;
 
@@ -3798,7 +3809,11 @@ class FinanceService {
           dateStr = `${rawDate.substring(0, 4)}-${rawDate.substring(4, 6)}-${rawDate.substring(6, 8)}`;
         }
 
-        const desc = (memoMatch && memoMatch[1].trim()) || (nameMatch && nameMatch[1].trim()) || 'Lançamento OFX';
+        let desc = (memoMatch && memoMatch[1].trim()) || 
+                   (nameMatch && nameMatch[1].trim()) || 
+                   (checkNumMatch && `Doc: ${checkNumMatch[1].trim()}`) || 
+                   (refNumMatch && `Ref: ${refNumMatch[1].trim()}`) || 
+                   'Lançamento OFX';
 
         transactions.push({
           description: desc,
@@ -3812,7 +3827,16 @@ class FinanceService {
     // Detecção automática do saldo final da conta constante no extrato OFX (<LEDGERBAL> ou <AVAILBAL>)
     const balMatch = ofxContent.match(/<(?:LEDGERBAL|AVAILBAL)>[\s\S]*?<BALAMT>\s*([-\d.,]+)/i);
     if (balMatch && balMatch[1]) {
-      const cleanBal = balMatch[1].trim().replace(',', '.');
+      let cleanBal = balMatch[1].trim();
+      if (cleanBal.includes(',') && !cleanBal.includes('.')) {
+        cleanBal = cleanBal.replace(',', '.');
+      } else if (cleanBal.includes(',') && cleanBal.includes('.')) {
+        if (cleanBal.indexOf('.') < cleanBal.indexOf(',')) {
+          cleanBal = cleanBal.replace(/\./g, '').replace(',', '.');
+        } else {
+          cleanBal = cleanBal.replace(/,/g, '');
+        }
+      }
       const parsedBal = parseFloat(cleanBal);
       if (!isNaN(parsedBal)) {
         transactions.detectedStatementBalance = Math.round(parsedBal * 100) / 100;
@@ -3837,20 +3861,31 @@ class FinanceService {
     return this._normalizeExtractedRows(rows);
   }
 
-  // Parser para CSV (.csv)
+  // Parser para CSV e TSV (.csv, .tsv, .txt)
   parseCSV(csvText) {
+    if (!csvText || typeof csvText !== 'string') return [];
     const lines = csvText.split(/\r?\n/).filter(line => line.trim() !== '');
     if (lines.length === 0) return [];
 
-    // Detecção de delimitador (, ou ;)
-    const sample = lines.slice(0, 5).join('\n');
-    const commaCount = (sample.match(/,/g) || []).length;
+    // Detecção universal de delimitador (, ; \t ou |)
+    const sample = lines.slice(0, 10).join('\n');
+    const tabCount = (sample.match(/\t/g) || []).length;
     const semicolonCount = (sample.match(/;/g) || []).length;
-    const delimiter = semicolonCount > commaCount ? ';' : ',';
+    const pipeCount = (sample.match(/\|/g) || []).length;
+    const commaCount = (sample.match(/,/g) || []).length;
+
+    let delimiter = ',';
+    if (tabCount > semicolonCount && tabCount > commaCount && tabCount > pipeCount) {
+      delimiter = '\t';
+    } else if (semicolonCount >= commaCount && semicolonCount >= pipeCount) {
+      delimiter = ';';
+    } else if (pipeCount > commaCount) {
+      delimiter = '|';
+    }
 
     const rows = lines.map(line => {
       // Divide respeitando aspas
-      const regex = new RegExp(`(?:^|${delimiter})(?:"([^"]*(?:""[^"]*)*)"|([^"${delimiter}]*))`, 'g');
+      const regex = new RegExp(`(?:^|\\${delimiter})(?:"([^"]*(?:""[^"]*)*)"|([^"\\${delimiter}]*))`, 'g');
       const cells = [];
       let m;
       while ((m = regex.exec(line)) !== null) {
@@ -3863,35 +3898,65 @@ class FinanceService {
     return this._normalizeExtractedRows(rows);
   }
 
-  // Normalização de linhas tabulares de Excel ou CSV
+  // Normalização universal de linhas tabulares de Excel ou CSV para todos os bancos
   _normalizeExtractedRows(rows) {
     const transactions = [];
     if (!rows || rows.length === 0) return transactions;
 
-    // Localizar índices das colunas
     let dateIdx = -1;
     let descIdx = -1;
     let amountIdx = -1;
+    let debitIdx = -1;
+    let creditIdx = -1;
+    let indicatorIdx = -1;
     let headerFound = false;
     let startIndex = 0;
+    let detectedStatementBalance = null;
 
-    for (let i = 0; i < Math.min(rows.length, 10); i++) {
-      const row = rows[i].map(c => String(c || '').toLowerCase().trim());
-      const d = row.findIndex(c => c.includes('data') || c.includes('date') || c.includes('dia'));
-      const desc = row.findIndex(c => c.includes('descri') || c.includes('hist') || c.includes('memo') || c.includes('lançamento') || c.includes('detalhe'));
-      const val = row.findIndex(c => c.includes('valor') || c.includes('amount') || c.includes('total') || c.includes('quantia'));
+    // Varre as primeiras 30 linhas procurando o cabeçalho real ou saldos bancários
+    for (let i = 0; i < Math.min(rows.length, 30); i++) {
+      const rawRow = rows[i];
+      if (!rawRow || !Array.isArray(rawRow)) continue;
 
-      if (d !== -1 && (desc !== -1 || val !== -1)) {
+      const rowStr = rawRow.map(c => String(c || '').trim()).join(' ').toLowerCase();
+
+      // Detecta saldo final em linhas isoladas de cabeçalho
+      if (rowStr.includes('saldo atual') || rowStr.includes('saldo em conta') || rowStr.includes('saldo disponível') || rowStr.includes('saldo final') || rowStr.includes('saldo do dia') || rowStr.includes('saldo consolidado')) {
+        const balMatch = rowStr.match(/(?:r\$\s*)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})/i);
+        if (balMatch) {
+          detectedStatementBalance = parseFloat(balMatch[1].replace(/\./g, '').replace(',', '.'));
+        }
+      }
+
+      const row = rawRow.map(c => String(c || '').toLowerCase().trim());
+
+      const d = row.findIndex(c => c === 'data' || c === 'date' || c === 'dia' || c.startsWith('dt') || c.includes('data mov') || c.includes('data lanç') || c.includes('data balancete'));
+      const desc = row.findIndex(c => c.includes('descri') || c.includes('hist') || c.includes('memo') || c.includes('lançamento') || c.includes('detalhe') || c.includes('transação') || c.includes('movimento') || c === 'título' || c === 'estabelecimento');
+      
+      // Procura colunas específicas de Débito e Crédito separadas (Bradesco, Santander, Caixa, Inter)
+      const deb = row.findIndex(c => c === 'débito' || c === 'debito' || c === 'deb' || c.includes('débito (r$)') || c.includes('debito (r$)') || c === 'saída' || c === 'saida' || c.includes('saída (r$)') || c === 'pagamento');
+      const cred = row.findIndex(c => c === 'crédito' || c === 'credito' || c === 'cred' || c.includes('crédito (r$)') || c.includes('credito (r$)') || c === 'entrada' || c.includes('entrada (r$)') || c === 'recebimento' || c === 'depósito' || c === 'deposito');
+      
+      // Coluna única de valor
+      const val = row.findIndex(c => c === 'valor' || c.startsWith('valor') || c === 'amount' || c === 'total' || c === 'quantia');
+      
+      // Coluna de indicador D/C
+      const ind = row.findIndex(c => c === 'd/c' || c === 'dc' || c === 'tipo' || c === 'sinal' || c === 'natureza');
+
+      if (d !== -1 && (desc !== -1 || val !== -1 || (deb !== -1 && cred !== -1))) {
         dateIdx = d;
         descIdx = desc !== -1 ? desc : (d === 0 ? 1 : 0);
-        amountIdx = val !== -1 ? val : (descIdx === 1 ? 2 : 1);
+        amountIdx = val;
+        debitIdx = deb;
+        creditIdx = cred;
+        indicatorIdx = ind;
         headerFound = true;
         startIndex = i + 1;
         break;
       }
     }
 
-    // Se não encontrou cabeçalho explícito, tenta deduzir pela primeira linha de dados
+    // Se não encontrou cabeçalho explícito, deduz posicionalmente
     if (!headerFound) {
       dateIdx = 0;
       descIdx = 1;
@@ -3899,20 +3964,63 @@ class FinanceService {
       startIndex = 0;
     }
 
+    // Se ainda não detectou saldo no cabeçalho, varre também as últimas 15 linhas (rodapé)
+    if (detectedStatementBalance === null) {
+      for (let i = Math.max(0, rows.length - 15); i < rows.length; i++) {
+        const rawRow = rows[i];
+        if (!rawRow || !Array.isArray(rawRow)) continue;
+        const rowStr = rawRow.map(c => String(c || '').trim()).join(' ').toLowerCase();
+        if (rowStr.includes('saldo atual') || rowStr.includes('saldo em conta') || rowStr.includes('saldo disponível') || rowStr.includes('saldo final') || rowStr.includes('saldo do dia') || rowStr.includes('saldo consolidado')) {
+          const balMatch = rowStr.match(/(?:r\$\s*)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})/i);
+          if (balMatch) {
+            detectedStatementBalance = parseFloat(balMatch[1].replace(/\./g, '').replace(',', '.'));
+            break;
+          }
+        }
+      }
+    }
+
     for (let i = startIndex; i < rows.length; i++) {
       const row = rows[i];
-      if (!row || row.length === 0) continue;
+      if (!row || !Array.isArray(row) || row.length === 0) continue;
 
       const rawDate = row[dateIdx];
       const rawDesc = row[descIdx];
-      const rawVal = row[amountIdx];
-
-      if (!rawDate && !rawVal) continue;
-
       const parsedDate = this._parseFlexibleDate(rawDate);
-      const parsedAmount = this._parseFlexibleAmount(rawVal);
+      if (!parsedDate) continue; // Pula linhas de rodapé ou metadados sem data válida
 
-      if (parsedDate && parsedAmount !== null && !isNaN(parsedAmount.absAmount) && parsedAmount.absAmount > 0) {
+      // Caso 1: Colunas separadas de Débito e Crédito (ex: Bradesco, Santander, BB)
+      if (debitIdx !== -1 && creditIdx !== -1) {
+        const rawDeb = row[debitIdx];
+        const rawCred = row[creditIdx];
+        const debAmt = this._parseFlexibleAmount(rawDeb);
+        const credAmt = this._parseFlexibleAmount(rawCred);
+
+        if (debAmt && debAmt.absAmount > 0) {
+          transactions.push({
+            date: parsedDate,
+            description: String(rawDesc || 'Lançamento Débito').trim() || 'Lançamento Débito',
+            amount: debAmt.absAmount,
+            type: 'expense'
+          });
+          continue;
+        } else if (credAmt && credAmt.absAmount > 0) {
+          transactions.push({
+            date: parsedDate,
+            description: String(rawDesc || 'Lançamento Crédito').trim() || 'Lançamento Crédito',
+            amount: credAmt.absAmount,
+            type: 'income'
+          });
+          continue;
+        }
+      }
+
+      // Caso 2: Coluna única de valor (com ou sem indicador D/C em coluna adjacente)
+      const rawVal = row[amountIdx !== -1 ? amountIdx : 2];
+      const rawInd = indicatorIdx !== -1 ? row[indicatorIdx] : null;
+      const parsedAmount = this._parseFlexibleAmount(rawVal, rawInd);
+
+      if (parsedAmount !== null && !isNaN(parsedAmount.absAmount) && parsedAmount.absAmount > 0) {
         transactions.push({
           date: parsedDate,
           description: String(rawDesc || 'Lançamento Importado').trim() || 'Lançamento Importado',
@@ -3922,21 +4030,25 @@ class FinanceService {
       }
     }
 
+    if (detectedStatementBalance !== null) {
+      transactions.detectedStatementBalance = detectedStatementBalance;
+    }
+
     return transactions;
   }
 
-  // Parser para Texto extraído de Extratos bancários em PDF
+  // Parser Universal para Texto extraído de Extratos bancários em PDF
   parsePDFText(pdfText) {
     const transactions = [];
     if (!pdfText || typeof pdfText !== 'string') return transactions;
 
     const lines = pdfText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    // Detecção automática do saldo final da conta constante no extrato (com suporte a kerning/espaçamento)
+    // Detecção automática do saldo final da conta constante no extrato (com suporte a kerning/espaçamento e todos os bancos)
     let detectedStatementBalance = null;
-    for (let i = 0; i < Math.min(lines.length, 35); i++) {
+    for (let i = 0; i < Math.min(lines.length, 45); i++) {
       const l = lines[i].toLowerCase();
-      if (l.includes('saldo em conta') || l.includes('saldo disponível') || l.includes('saldo atual') || l.includes('saldo final')) {
+      if (l.includes('saldo em conta') || l.includes('saldo disponível') || l.includes('saldo atual') || l.includes('saldo final') || l.includes('saldo contábil') || l.includes('disponível para saque')) {
         const combined = ((lines[i] || '') + ' ' + (lines[i+1] || '')).replace(/\s+/g, '');
         const m = combined.match(/(?:R\$)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})/i);
         if (m) {
@@ -3948,7 +4060,7 @@ class FinanceService {
     }
     if (detectedStatementBalance === null) {
       for (const l of lines) {
-        if (l.toLowerCase().includes('saldo do dia')) {
+        if (l.toLowerCase().includes('saldo do dia') || l.toLowerCase().includes('saldo final')) {
           const m = l.match(/(?:R\$\s*)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})$/);
           if (m) {
             const clean = m[1].replace(/\./g, '').replace(',', '.');
@@ -3964,17 +4076,36 @@ class FinanceService {
       const lower = line.toLowerCase();
 
       // Ignorar cabeçalhos, metadados e linhas de saldo diário
-      if (lower.includes('saldo anterior') || lower.includes('saldo final') || lower.includes('saldo do dia') || lower.includes('extrato de conta') || lower.includes('total de entradas') || lower.includes('total de saídas') || lower.includes('lançamentos futuros') || lower.includes('saídas futuras') || lower.startsWith('data lançamentos') || lower.includes('período de visualiza')) {
+      if (lower.includes('saldo anterior') || lower.includes('saldo final') || lower.includes('saldo do dia') || lower.includes('extrato de conta') || lower.includes('total de entradas') || lower.includes('total de saídas') || lower.includes('lançamentos futuros') || lower.includes('saídas futuras') || lower.startsWith('data lançamentos') || lower.includes('período de visualiza') || lower.startsWith('extrato consolidado')) {
         continue;
       }
 
       // Se a linha for apenas Data + Saldo do dia (ex: '19/11/2026 163,25' sem descrição), IGNORA
-      if (/^\d{2}[/-]\d{2}(?:[/-]\d{2,4})?\s+[+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}$/.test(line.trim())) {
+      if (/^\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?\s+[+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}$/.test(line.trim())) {
         continue;
       }
 
-      // 1. Extração prioritária: Linha que começa com data (DD/MM/AAAA ou DD/MM) e termina com valor monetário
-      const mainRegex = /^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/;
+      // 1. Extração prioritária A: Linha com dois valores no final (Valor da Transação + Saldo Acumulado - ex: Bradesco, Santander, Caixa)
+      const dualRegex = /^(\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{1,2}\s+(?:JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)(?:\s+\d{2,4})?)\s+(.*?)\s+([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)\s+([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})$/i;
+      const dMatch = line.match(dualRegex);
+      if (dMatch) {
+        const dateStr = this._parseFlexibleDate(dMatch[1]);
+        const desc = this._cleanTransactionDescription(dMatch[2]);
+        const amtObj = this._parseFlexibleAmount(dMatch[3]);
+
+        if (dateStr && amtObj && amtObj.absAmount > 0 && desc.length > 1) {
+          transactions.push({
+            date: dateStr,
+            description: desc,
+            amount: amtObj.absAmount,
+            type: amtObj.type
+          });
+          continue;
+        }
+      }
+
+      // 2. Extração prioritária B: Linha que começa com data (DD/MM/AAAA, DD.MM.AAAA ou DD MMM) e termina com valor monetário
+      const mainRegex = /^(\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{1,2}\s+(?:JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)(?:\s+\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/i;
       const mMatch = line.match(mainRegex);
       if (mMatch) {
         const dateStr = this._parseFlexibleDate(mMatch[1]);
@@ -3985,10 +4116,10 @@ class FinanceService {
         if (idx + 1 < lines.length) {
           const nextL = lines[idx + 1].trim();
           const nextLower = nextL.toLowerCase();
-          const isNextDate = /^\d{2}[/-]\d{2}/.test(nextL);
+          const isNextDate = /^(\d{1,2}[./-]\d{1,2}|\d{1,2}\s+[a-zA-Z]+)/.test(nextL);
           const isNextHeader = nextLower.startsWith('data lançamentos') || nextLower === 'lançamentos' || nextLower.includes('extrato') || nextLower.includes('período');
-          const isNextAmount = /^[+-]?(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}$/.test(nextL);
-          if (!isNextDate && !isNextHeader && !isNextAmount && nextL.length < 60 && !nextL.includes('R$')) {
+          const isNextAmount = /^[+-]?(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}/.test(nextL);
+          if (!isNextDate && !isNextHeader && !isNextAmount && nextL.length < 65 && !nextL.includes('R$')) {
             desc += ' ' + nextL;
             idx++; // Consome a linha de continuação
           }
@@ -4005,8 +4136,8 @@ class FinanceService {
         }
       }
 
-      // 2. Extração para linha que começa com data com separação de descrição e valor colados
-      const dateMatch = line.match(/^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)/);
+      // 3. Extração para linha que começa com data com separação de descrição e valor colados
+      const dateMatch = line.match(/^(\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{1,2}\s+(?:JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)(?:\s+\d{2,4})?)/i);
       if (dateMatch) {
         const dateStr = this._parseFlexibleDate(dateMatch[1]);
         const rest = line.substring(dateMatch[0].length).trim();
@@ -4060,8 +4191,8 @@ class FinanceService {
         }
       }
 
-      // 3. Fallback de linha única genérica (ex: '05/10/2026 TARIFA BANCARIA 12,00 D')
-      const fallbackRegex = /^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/;
+      // 4. Fallback de linha única genérica (ex: '05/10/2026 TARIFA BANCARIA 12,00 D')
+      const fallbackRegex = /^(\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{1,2}\s+[a-zA-Z]+(?:\s+\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/i;
       const fMatch = line.match(fallbackRegex);
       if (fMatch) {
         const dateStr = this._parseFlexibleDate(fMatch[1]);
@@ -4078,8 +4209,8 @@ class FinanceService {
         }
       }
 
-      // 4. Fallback para PDFs onde a data está em uma linha e o valor na linha seguinte
-      const singleDateMatch = line.match(/\b(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\b/);
+      // 5. Fallback para PDFs onde a data está em uma linha e o valor na linha seguinte
+      const singleDateMatch = line.match(/\b(\d{1,2}[./-]\d{1,2}(?:[./-]\d{2,4})?|\d{1,2}\s+(?:JAN|FEV|MAR|ABR|MAI|JUN|JUL|AGO|SET|OUT|NOV|DEZ)(?:\s+\d{2,4})?)\b/i);
       if (singleDateMatch && idx + 1 < lines.length) {
         const nextLine = lines[idx + 1];
         const nextAmtMatch = nextLine.match(/([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/);
@@ -4120,25 +4251,28 @@ class FinanceService {
     // 2. Remove pontuações ou marcadores iniciais
     d = d.replace(/^[-–—|•*#]\s*/, '');
 
-    // 3. Remove sufixos com datas redundantes anexadas ao final da descrição (ex: 'CPFL PAULIS13/10' ou 'T07/10' -> preserva contexto ou limpa data)
-    // d = d.replace(/\b\d{2}[/-]\d{2}(?:[/-]\d{2,4})?\b$/, '').trim();
-
-    // 4. Normaliza espaços múltiplos
+    // 3. Normaliza espaços múltiplos
     d = d.replace(/\s{2,}/g, ' ').trim();
 
     return d;
   }
 
-  // Utilitário para parse de datas flexíveis (DD/MM/AAAA, DD/MM, AAAA-MM-DD)
+  // Utilitário universal para parse de datas flexíveis de todos os bancos brasileiros
   _parseFlexibleDate(val) {
     if (!val) return null;
     if (val instanceof Date && !isNaN(val)) {
-      // Datas do Excel chegam como meia-noite UTC: usa componentes UTC nesse caso para não recuar 1 dia
       const isUtcMidnight = val.getUTCHours() === 0 && val.getUTCMinutes() === 0;
       return isUtcMidnight
         ? `${val.getUTCFullYear()}-${String(val.getUTCMonth() + 1).padStart(2, '0')}-${String(val.getUTCDate()).padStart(2, '0')}`
         : localDateStr(val);
     }
+    // Trata número serial do Excel (ex: 45230)
+    if (typeof val === 'number' && val > 30000 && val < 60000) {
+      const excelEpoch = new Date(1899, 11, 30);
+      const targetDate = new Date(excelEpoch.getTime() + val * 86400000);
+      return `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    }
+
     const str = String(val).trim();
     if (!str) return null;
 
@@ -4147,8 +4281,8 @@ class FinanceService {
       return str;
     }
 
-    // DD/MM/AAAA ou DD-MM-AAAA
-    const dmy = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    // DD/MM/AAAA ou DD-MM-AAAA ou DD.MM.AAAA
+    const dmy = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
     if (dmy) {
       const day = dmy[1].padStart(2, '0');
       const month = dmy[2].padStart(2, '0');
@@ -4156,8 +4290,8 @@ class FinanceService {
       return `${year}-${month}-${day}`;
     }
 
-    // DD/MM/AA
-    const dmyShort = str.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{2})$/);
+    // DD/MM/AA ou DD-MM-AA ou DD.MM.AA
+    const dmyShort = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{2})$/);
     if (dmyShort) {
       const day = dmyShort[1].padStart(2, '0');
       const month = dmyShort[2].padStart(2, '0');
@@ -4165,8 +4299,45 @@ class FinanceService {
       return `${year}-${month}-${day}`;
     }
 
-    // DD/MM (assume ano atual)
-    const dm = str.match(/^(\d{1,2})[/-](\d{1,2})$/);
+    // Mapeamento de meses em português (abreviados e completos)
+    const monthMap = {
+      'jan': '01', 'janeiro': '01',
+      'fev': '02', 'fevereiro': '02',
+      'mar': '03', 'marco': '03', 'março': '03',
+      'abr': '04', 'abril': '04',
+      'mai': '05', 'maio': '05',
+      'jun': '06', 'junho': '06',
+      'jul': '07', 'julho': '07',
+      'ago': '08', 'agosto': '08',
+      'set': '09', 'setembro': '09',
+      'out': '10', 'outubro': '10',
+      'nov': '11', 'novembro': '11',
+      'dez': '12', 'dezembro': '12'
+    };
+
+    // Formato textual com ano: "15 OUT 2026", "15 de Outubro de 2026", "15/OUT/2026", "15-OUT-2026"
+    const textMatchYear = str.match(/^(\d{1,2})\s*(?:de|\/|-|\s)\s*([a-zA-ZçÇáéíóúÁÉÍÓÚ]+)\s*(?:de|\/|-|\s)\s*(\d{4}|\d{2})$/i);
+    if (textMatchYear) {
+      const day = textMatchYear[1].padStart(2, '0');
+      const mKey = textMatchYear[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const mNum = monthMap[mKey] || monthMap[mKey.substring(0, 3)];
+      let y = textMatchYear[3];
+      if (y.length === 2) y = '20' + y;
+      if (mNum) return `${y}-${mNum}-${day}`;
+    }
+
+    // Formato textual sem ano: "15 OUT", "15/OUT", "15 de Outubro" -> assume ano atual
+    const textMatchNoYear = str.match(/^(\d{1,2})\s*(?:de|\/|-|\s)\s*([a-zA-ZçÇáéíóúÁÉÍÓÚ]+)$/i);
+    if (textMatchNoYear) {
+      const day = textMatchNoYear[1].padStart(2, '0');
+      const mKey = textMatchNoYear[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const mNum = monthMap[mKey] || monthMap[mKey.substring(0, 3)];
+      const y = new Date().getFullYear();
+      if (mNum) return `${y}-${mNum}-${day}`;
+    }
+
+    // DD/MM ou DD.MM ou DD-MM (assume ano atual)
+    const dm = str.match(/^(\d{1,2})[./-](\d{1,2})$/);
     if (dm) {
       const day = dm[1].padStart(2, '0');
       const month = dm[2].padStart(2, '0');
@@ -4177,13 +4348,19 @@ class FinanceService {
     return null;
   }
 
-  // Utilitário para parse de valores monetários flexíveis (com ou sem R$, sinal -, D/C)
-  _parseFlexibleAmount(val) {
+  // Utilitário universal para parse de valores monetários flexíveis (com ou sem R$, sinal -, D/C, parênteses)
+  _parseFlexibleAmount(val, indicator) {
     if (val === null || val === undefined) return null;
     if (typeof val === 'number') {
+      let isNegative = val < 0;
+      if (indicator) {
+        const ind = String(indicator).trim().toUpperCase();
+        if (ind === 'D' || ind.startsWith('DEB') || ind === '-') isNegative = true;
+        else if (ind === 'C' || ind.startsWith('CRED') || ind === '+') isNegative = false;
+      }
       return {
         absAmount: Math.round(Math.abs(val) * 100) / 100,
-        type: val < 0 ? 'expense' : 'income'
+        type: isNegative ? 'expense' : 'income'
       };
     }
 
@@ -4191,14 +4368,21 @@ class FinanceService {
     if (!str) return null;
 
     let isNegative = false;
-    if (str.includes('-') || str.toUpperCase().endsWith('D') || str.toUpperCase().includes('DEB')) {
-      isNegative = true;
-    } else if (str.toUpperCase().endsWith('C') || str.toUpperCase().includes('CRED') || str.includes('+')) {
-      isNegative = false;
+    // Se vier indicador explícito na chamada (ex: coluna separada de D/C do Banco do Brasil ou Caixa)
+    if (indicator) {
+      const ind = String(indicator).trim().toUpperCase();
+      if (ind === 'D' || ind.startsWith('DEB') || ind === '-') isNegative = true;
+      else if (ind === 'C' || ind.startsWith('CRED') || ind === '+') isNegative = false;
+    } else {
+      if (str.includes('-') || str.toUpperCase().endsWith('D') || str.toUpperCase().includes('DEB') || /^\(.*\)$/.test(str)) {
+        isNegative = true;
+      } else if (str.toUpperCase().endsWith('C') || str.toUpperCase().includes('CRED') || str.includes('+')) {
+        isNegative = false;
+      }
     }
 
     // Limpa caracteres não numéricos exceto , e .
-    let clean = str.replace(/[R$\s+DCdc-]/g, '');
+    let clean = str.replace(/[R$\s+DCdc()\-]/g, '');
     if (!clean) return null;
 
     // Trata formato brasileiro 1.234,56 vs americano 1,234.56

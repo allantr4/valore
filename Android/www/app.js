@@ -7084,12 +7084,20 @@ function setupOFXImporter() {
     try {
       let parsed = [];
 
-      if (ext === 'ofx') {
+      if (ext === 'ofx' || ext === 'qfx' || ext === 'ofc') {
         const text = await file.text();
         parsed = finance.parseOFX(text);
-      } else if (ext === 'csv') {
+      } else if (ext === 'csv' || ext === 'tsv') {
         const text = await file.text();
         parsed = finance.parseCSV(text);
+      } else if (ext === 'txt') {
+        const text = await file.text();
+        const sample = text.slice(0, 1000);
+        if (sample.includes('\t') || (sample.match(/;/g) || []).length >= 4) {
+          parsed = finance.parseCSV(text);
+        } else {
+          parsed = finance.parsePDFText(text);
+        }
       } else if (ext === 'xlsx' || ext === 'xls') {
         const arrayBuffer = await file.arrayBuffer();
         const binaryStr = new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '');
@@ -7151,7 +7159,7 @@ function setupOFXImporter() {
           throw new Error('Não foi possível extrair o texto deste extrato PDF. O documento pode ser uma imagem escaneada ou protegido por senha. Prefira exportar no formato OFX bancário ou Excel (.xlsx).');
         }
       } else {
-        throw new Error('Formato de arquivo não suportado. Utilize OFX, PDF, Excel (.xlsx/.xls) ou CSV.');
+        throw new Error('Formato de arquivo não suportado. Utilize OFX, PDF, Excel (.xlsx/.xls), CSV ou TXT.');
       }
 
       if (!parsed || parsed.length === 0) {

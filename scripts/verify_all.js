@@ -465,6 +465,46 @@ async function runFunctionalFileImportTests() {
       logFail(`Falta botão btnDeleteCurrentTx no HTML ou alias handleDeleteTransaction no app.js`);
     }
 
+    // G. Teste funcional universal: CSV Banco do Brasil (delimitador ponto e vírgula e coluna D/C)
+    const csvBB = 'Data;Historico;Documento;Valor;D/C\n20.10.2026;PIX TRANSF ELETRONICA;12345;250,00;C\n21.10.2026;COMPRA DEBITO PADARIA;67890;55,90;D\nSaldo Atual: R$ 3.450,00';
+    const csvBBRes = fsInstance.parseCSV(csvBB);
+    if (csvBBRes.length === 2 && csvBBRes[0].type === 'income' && csvBBRes[1].type === 'expense' && csvBBRes.detectedStatementBalance === 3450) {
+      logPass(`Parser CSV Banco do Brasil validado: 2 transações (D/C detectados) e saldo final de R$ 3.450,00 conciliado`);
+    } else {
+      logFail(`Parser CSV Banco do Brasil falhou: ${JSON.stringify(csvBBRes)}`);
+    }
+
+    // H. Teste funcional universal: Planilha Excel / Tabela Bradesco com Débito e Crédito em colunas separadas
+    const rowsBradesco = [
+      ['Extrato de Conta Corrente - Banco Bradesco'],
+      ['Agência: 1234', 'Conta: 56789'],
+      ['Data', 'Histórico', 'Docto', 'Débito (R$)', 'Crédito (R$)', 'Saldo (R$)'],
+      ['05/11/2026', 'TARIFA BANCARIA', '001', '12,50', '', '1.450,00'],
+      ['06/11/2026', 'TED RECEBIDA', '002', '', '1.500,00', '2.950,00']
+    ];
+    const bradRes = fsInstance._normalizeExtractedRows(rowsBradesco);
+    if (bradRes.length === 2 && bradRes[0].type === 'expense' && bradRes[0].amount === 12.5 && bradRes[1].type === 'income' && bradRes[1].amount === 1500) {
+      logPass(`Parser Tabular Bradesco validado: colunas separadas de Débito e Crédito classificadas com precisão`);
+    } else {
+      logFail(`Parser Tabular Bradesco falhou: ${JSON.stringify(bradRes)}`);
+    }
+
+    // I. Teste funcional universal: CSV Nubank com datas textuais e valores negativos
+    const csvNu = 'Data,Descricao,Valor\n15 OUT,Compra no débito - Padaria Real,-15.00\n16 OUT,Transferência recebida,250.00';
+    const nuRes = fsInstance.parseCSV(csvNu);
+    if (nuRes.length === 2 && nuRes[0].date.endsWith('-10-15') && nuRes[0].type === 'expense' && nuRes[1].type === 'income') {
+      logPass(`Parser CSV Nubank validado: datas textuais ('15 OUT') e sinais negativos normalizados`);
+    } else {
+      logFail(`Parser CSV Nubank falhou: ${JSON.stringify(nuRes)}`);
+    }
+
+    // J. Validação de suporte a todas as extensões no Dropzone de importação
+    if (indexHtmlContent.includes('accept=".ofx,.qfx,.ofc,.pdf,.xlsx,.xls,.csv,.tsv,.txt"')) {
+      logPass(`Suporte universal a extensões verificado no Dropzone do HTML (.ofx,.pdf,.xlsx,.xls,.csv,.txt,.tsv)`);
+    } else {
+      logFail(`Extensões do importFileInput incompletas no HTML`);
+    }
+
   } catch (fsErr) {
     logFail(`Falha nos testes funcionais de parsing: ${fsErr.message}`);
   }
