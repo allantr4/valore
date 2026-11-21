@@ -439,7 +439,7 @@ class FinanceService {
     }
   }
 
-  getAppVersion() { return "1.3.15";
+  getAppVersion() { return "1.3.16";
   }
 
   getAppBuildDate() {
@@ -3930,13 +3930,13 @@ class FinanceService {
 
     const lines = pdfText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-    // Detecção automática do saldo final da conta constante no extrato
+    // Detecção automática do saldo final da conta constante no extrato (com suporte a kerning/espaçamento)
     let detectedStatementBalance = null;
-    for (let i = 0; i < Math.min(lines.length, 25); i++) {
-      const l = lines[i];
-      if (l.toLowerCase().includes('saldo em conta')) {
-        const target = l + ' ' + (lines[i+1] || '');
-        const m = target.match(/(?:R\$\s*)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})/);
+    for (let i = 0; i < Math.min(lines.length, 35); i++) {
+      const l = lines[i].toLowerCase();
+      if (l.includes('saldo em conta') || l.includes('saldo disponível') || l.includes('saldo atual') || l.includes('saldo final')) {
+        const combined = ((lines[i] || '') + ' ' + (lines[i+1] || '')).replace(/\s+/g, '');
+        const m = combined.match(/(?:R\$)?([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})/i);
         if (m) {
           const clean = m[1].replace(/\./g, '').replace(',', '.');
           detectedStatementBalance = parseFloat(clean);
@@ -3961,19 +3961,55 @@ class FinanceService {
       let line = lines[idx];
       const lower = line.toLowerCase();
 
-      // Ignorar cabeçalhos e saldos parciais/totais
-      if (lower.includes('saldo anterior') || lower.includes('saldo final') || lower.includes('saldo do dia') || lower.includes('extrato de conta') || lower.includes('total de entradas') || lower.includes('total de saídas')) {
+      // Ignorar cabeçalhos, metadados e linhas de saldo diário
+      if (lower.includes('saldo anterior') || lower.includes('saldo final') || lower.includes('saldo do dia') || lower.includes('extrato de conta') || lower.includes('total de entradas') || lower.includes('total de saídas') || lower.includes('lançamentos futuros') || lower.includes('saídas futuras') || lower.startsWith('data lançamentos') || lower.includes('período de visualiza')) {
         continue;
       }
 
-      // 1. Extração prioritária: Linha que começa com data (DD/MM/AAAA ou DD/MM)
+      // Se a linha for apenas Data + Saldo do dia (ex: '19/11/2026 163,25' sem descrição), IGNORA
+      if (/^\d{2}[/-]\d{2}(?:[/-]\d{2,4})?\s+[+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}$/.test(line.trim())) {
+        continue;
+      }
+
+      // 1. Extração prioritária: Linha que começa com data (DD/MM/AAAA ou DD/MM) e termina com valor monetário
+      const mainRegex = /^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/;
+      const mMatch = line.match(mainRegex);
+      if (mMatch) {
+        const dateStr = this._parseFlexibleDate(mMatch[1]);
+        let desc = this._cleanTransactionDescription(mMatch[2]);
+        const amtObj = this._parseFlexibleAmount(mMatch[3]);
+
+        // Verifica se a próxima linha é uma continuação textual da descrição (sem data nem valor)
+        if (idx + 1 < lines.length) {
+          const nextL = lines[idx + 1].trim();
+          const nextLower = nextL.toLowerCase();
+          const isNextDate = /^\d{2}[/-]\d{2}/.test(nextL);
+          const isNextHeader = nextLower.startsWith('data lançamentos') || nextLower === 'lançamentos' || nextLower.includes('extrato') || nextLower.includes('período');
+          const isNextAmount = /^[+-]?(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}$/.test(nextL);
+          if (!isNextDate && !isNextHeader && !isNextAmount && nextL.length < 60 && !nextL.includes('R$')) {
+            desc += ' ' + nextL;
+            idx++; // Consome a linha de continuação
+          }
+        }
+
+        if (dateStr && amtObj && amtObj.absAmount > 0 && desc.length > 1) {
+          transactions.push({
+            date: dateStr,
+            description: desc,
+            amount: amtObj.absAmount,
+            type: amtObj.type
+          });
+          continue;
+        }
+      }
+
+      // 2. Extração para linha que começa com data com separação de descrição e valor colados
       const dateMatch = line.match(/^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)/);
       if (dateMatch) {
         const dateStr = this._parseFlexibleDate(dateMatch[1]);
         const rest = line.substring(dateMatch[0].length).trim();
 
-        // Separação inteligente de descrição e valor colados:
-        // Caso A: Negativo explícito com sinal '-' (ex: 'PAGAMENTOCONTA SANASA-119,64' ou '...T06/10-710,03')
+        // Caso A: Negativo explícito com sinal '-' (ex: 'PAGAMENTOCONTA SANASA-119,64')
         const negMatch = rest.match(/^(.*?)(-[\d.]+(?:,\d{2})?)$/);
         if (negMatch) {
           const amtObj = this._parseFlexibleAmount(negMatch[2]);
@@ -3989,7 +4025,7 @@ class FinanceService {
           }
         }
 
-        // Caso B: Positivo colado em sufixo de data /MM (ex: 'PIX TRANSF Lucas M06/107.143,00' -> desc: '...M06/10', valor: '7.143,00')
+        // Caso B: Positivo colado em sufixo de data /MM (ex: 'PIX TRANSF Lucas M06/107.143,00')
         const slashColadaMatch = rest.match(/^(.*?\/\d{2})([+-]?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})$/);
         if (slashColadaMatch) {
           const amtObj = this._parseFlexibleAmount(slashColadaMatch[2]);
@@ -4005,7 +4041,7 @@ class FinanceService {
           }
         }
 
-        // Caso C: Positivo normal no final da linha (com ou sem espaço, ex: 'TED 104.0000.CAIXA E F 2.519,00' ou '...80,00')
+        // Caso C: Positivo normal no final da linha
         const posMatch = rest.match(/^(.*?)((?:\d{1,3}(?:\.\d{3})*|\d+),\d{2})$/);
         if (posMatch) {
           const amtObj = this._parseFlexibleAmount(posMatch[2]);
@@ -4022,7 +4058,7 @@ class FinanceService {
         }
       }
 
-      // 2. Fallback de linha única genérica (ex: '05/10/2026 TARIFA BANCARIA 12,00 D')
+      // 3. Fallback de linha única genérica (ex: '05/10/2026 TARIFA BANCARIA 12,00 D')
       const fallbackRegex = /^(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\s+(.*?)\s+([+-]?\s*(?:R\$\s*)?(?:\d{1,3}(?:\.\d{3})*|\d+),\d{2}\s*[-+DCdc]?)$/;
       const fMatch = line.match(fallbackRegex);
       if (fMatch) {
@@ -4040,7 +4076,7 @@ class FinanceService {
         }
       }
 
-      // 3. Fallback para PDFs onde a data está em uma linha e o valor na linha seguinte
+      // 4. Fallback para PDFs onde a data está em uma linha e o valor na linha seguinte
       const singleDateMatch = line.match(/\b(\d{2}[/-]\d{2}(?:[/-]\d{2,4})?)\b/);
       if (singleDateMatch && idx + 1 < lines.length) {
         const nextLine = lines[idx + 1];

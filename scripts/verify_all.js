@@ -419,19 +419,23 @@ async function runFunctionalFileImportTests() {
       logFail(`Parser OFX falhou na detecção de transações ou saldo final: ${JSON.stringify(ofxResults)}`);
     }
 
-    // D. Teste funcional de parsePDFText com saldo e despesas
+    // D. Teste funcional de parsePDFText com saldo e despesas (incluindo kerning de saldo e filtro de saldo diário)
     const samplePdfText = `
       EXTRATO BANCARIO DE CONTA CORRENTE
       Data do Extrato: 20/11/2026
-      Saldo em conta: 1.250,50
-      20/11/2026 PIX PAGAMENTO RESTAURANTE -85,00
-      21/11/2026 TRANSFERENCIA RECEBIDA +400,00
+      Saldo em conta
+      R $   1 6 3 , 2 5
+      19/11/2026 163,25
+      19/11/2026 COMPRA DÉBITO SUPERMERCADO -22,24
+      18/11/2026 185,49
+      18/11/2026 TED RECEBIDA CAIXA ECONOMICA 2.519,00
+      FEDERAL
     `;
     const pdfResults = fsInstance.parsePDFText(samplePdfText);
-    if (pdfResults.length >= 1) {
-      logPass(`Parser de texto de extrato bancário validado (${pdfResults.length} lançamentos mapeados)`);
+    if (pdfResults.length === 2 && pdfResults.detectedStatementBalance === 163.25 && pdfResults[1].description.includes('FEDERAL')) {
+      logPass(`Parser de texto de extrato bancário validado com kerning e multi-linhas: 2 lançamentos (incluindo descrição unificada) e saldo de R$ 163,25 detectado`);
     } else {
-      logFail(`Parser de texto de extrato bancário falhou ao identificar transações`);
+      logFail(`Parser de texto de extrato bancário falhou no teste avançado: ${JSON.stringify(pdfResults)}`);
     }
 
   } catch (fsErr) {

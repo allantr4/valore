@@ -7090,7 +7090,26 @@ function setupOFXImporter() {
             for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
               const page = await pdfDoc.getPage(pageNum);
               const textContent = await page.getTextContent();
-              extractedText += textContent.items.map(it => it.str).join(' ') + '\n';
+              
+              // Reconstrução espacial por coordenadas físicas (y decrescente, x crescente)
+              const linesMap = [];
+              (textContent.items || []).forEach(it => {
+                if (!it || !it.str) return;
+                const y = it.transform ? it.transform[5] : 0;
+                const x = it.transform ? it.transform[4] : 0;
+                let lineObj = linesMap.find(l => Math.abs(l.y - y) <= 3);
+                if (!lineObj) {
+                  lineObj = { y: y, items: [] };
+                  linesMap.push(lineObj);
+                }
+                lineObj.items.push({ x: x, str: it.str });
+              });
+              linesMap.sort((a, b) => b.y - a.y);
+              const pageLines = linesMap.map(l => {
+                l.items.sort((a, b) => a.x - b.x);
+                return l.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim();
+              });
+              extractedText += pageLines.join('\n') + '\n';
             }
           } catch (pdfJsErr) {
             console.warn('Tentativa via pdf.js cliente falhou, tentando fallback:', pdfJsErr);
