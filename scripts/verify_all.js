@@ -438,6 +438,33 @@ async function runFunctionalFileImportTests() {
       logFail(`Parser de texto de extrato bancário falhou no teste avançado: ${JSON.stringify(pdfResults)}`);
     }
 
+    // E. Teste funcional de exclusão de transação (deleteTransaction e paridade de IDs string/number)
+    fsInstance.storage = { save: async () => true, load: async () => null };
+    const testTx1 = await fsInstance.addTransaction({
+      description: 'Lançamento Teste Exclusão 1',
+      amount: 88.50,
+      type: 'expense',
+      categoryId: 'cat-3',
+      accountId: 'acc-1',
+      date: '2026-11-21'
+    });
+    const deleted1 = await fsInstance.deleteTransaction(testTx1.id);
+    const deleted2 = await fsInstance.deleteTransaction(String(testTx1.id));
+    if (deleted1 && !deleted2) {
+      logPass(`Exclusão de transação no Core validada com sucesso (respeitando coerção e unicidade)`);
+    } else {
+      logFail(`Falha na exclusão de transação no Core: deleted1=${deleted1}, deleted2=${deleted2}`);
+    }
+
+    // F. Validação de presença do botão de exclusão no modal e aliases globais
+    const indexHtmlContent = fs.readFileSync(path.join(rootDir, 'src/ui/index.html'), 'utf8');
+    const appJsContent = fs.readFileSync(path.join(rootDir, 'src/ui/app.js'), 'utf8');
+    if (indexHtmlContent.includes('id="btnDeleteCurrentTx"') && appJsContent.includes('window.handleDeleteTransaction = window.handleDeleteTx')) {
+      logPass(`Botão de exclusão no modal de transação e aliases globais validados na UI`);
+    } else {
+      logFail(`Falta botão btnDeleteCurrentTx no HTML ou alias handleDeleteTransaction no app.js`);
+    }
+
   } catch (fsErr) {
     logFail(`Falha nos testes funcionais de parsing: ${fsErr.message}`);
   }

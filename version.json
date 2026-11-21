@@ -1,18 +1,18 @@
 {
-  "version": "1.3.16",
+  "version": "1.3.17",
   "releaseDate": "2026-11-21",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.16 - Parser Inteligente de Extratos Bancários PDF (Itaú, Nubank, Bradesco)",
+  "title": "Valore v1.3.17 - Exclusão Ágil de Lançamentos e Melhorias Mobile",
   "notes": [
-    "Reconstrução Espacial de Linhas: motor de leitura de PDF agora agrupa textos pela coordenada física vertical e horizontal, preservando a estrutura exata do extrato bancário.",
-    "Compatibilidade Total com Extratos do Itaú: captura de 100% dos lançamentos com descrições unificadas e suporte a kerning de saldo.",
-    "Filtragem Inteligente de Saldo Diário: previne ruídos em descrições causados por linhas isoladas de saldo diário.",
-    "Bateria de Testes Funcionais E2E: validação automatizada de leitura e extração de extratos bancários reais no pipeline de testes.",
+    "Exclusão Direta nos Cards Mobile: botão de lixeira ergonômico com 1 toque integrado à listagem de transações e extrato bancário no smartphone.",
+    "Botão Excluir no Modal de Edição: possibilidade de excluir qualquer lançamento diretamente da tela de edição (PC e celular).",
+    "Correção no Dashboard Desktop: eliminação do erro de referência na lixeira de lançamentos recentes.",
+    "Blindagem de Identificadores (IDs): coerção robusta de tipos garantindo que nenhuma transação seja ignorada ao excluir parcelamentos ou transações importadas.",
     "Paridade Completa: sincronização e compilação nativa para Windows e Android."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.16.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.16.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.17.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.17.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 46,
-  "releaseNotes": "Valore v1.3.16 - Parser Inteligente de Extratos Bancários PDF (Itaú, Nubank, Bradesco)."
+  "versionCode": 47,
+  "releaseNotes": "Valore v1.3.17 - Exclusão Ágil de Lançamentos e Melhorias Mobile."
 }

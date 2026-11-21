@@ -1229,8 +1229,8 @@ function renderRecentTxCardHtml(tx) {
       <div class="recent-tx-card-right">
         <div class="recent-tx-value" style="color: ${valColor};">${formattedVal}</div>
         <div class="recent-tx-actions">
-          <button onclick="handleEditTransaction('${tx.id}')" class="btn-tx-action" title="Editar"><i data-lucide="edit-3"></i></button>
-          <button onclick="handleDeleteTransaction('${tx.id}')" class="btn-tx-action delete" title="Excluir"><i data-lucide="trash-2"></i></button>
+          <button onclick="handleEditTx('${tx.id}')" class="btn-tx-action" title="Editar"><i data-lucide="edit-3"></i></button>
+          <button onclick="handleDeleteTx('${tx.id}')" class="btn-tx-action delete" title="Excluir"><i data-lucide="trash-2"></i></button>
         </div>
       </div>
     </div>
@@ -1566,7 +1566,12 @@ function renderBankMobileTxCard(tx) {
         </div>
       </div>
       <div class="bank-mobile-tx-right">
-        <span class="bank-mobile-tx-amount ${amountClass}">${prefix}${formattedVal}</span>
+        <div style="display: flex; align-items: center; justify-content: flex-end; gap: 0.45rem;">
+          <span class="bank-mobile-tx-amount ${amountClass}">${prefix}${formattedVal}</span>
+          <button type="button" class="btn-action-icon mobile-tx-del-btn" onclick="event.stopPropagation(); handleDeleteTx('${tx.id}')" title="Excluir Lançamento" style="color: var(--danger); background: transparent; border: none; padding: 4px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;">
+            <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+          </button>
+        </div>
         ${tx.reconciled ? `<span style="font-size: 0.68rem; color: var(--success); font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"><i data-lucide="check" style="width: 10px; height: 10px;"></i> Conciliada</span>` : ''}
       </div>
     </div>
@@ -5553,6 +5558,8 @@ function setupModals() {
   btnOpenTx.addEventListener('click', () => {
     document.getElementById('txEditId').value = '';
     txForm.reset();
+    const btnDelCur = document.getElementById('btnDeleteCurrentTx');
+    if (btnDelCur) btnDelCur.style.display = 'none';
     lastEditedAmountField = 'installment';
     activeCalcTargetInputRef = null;
     if (txInstSelect) txInstSelect.value = '1';
@@ -5618,6 +5625,8 @@ function setupModals() {
     txModal.classList.remove('open');
     document.getElementById('txEditId').value = '';
     txForm.reset();
+    const btnDelCur = document.getElementById('btnDeleteCurrentTx');
+    if (btnDelCur) btnDelCur.style.display = 'none';
     lastEditedAmountField = 'installment';
     activeCalcTargetInputRef = null;
     if (txAmountInput) txAmountInput.value = '';
@@ -5631,6 +5640,17 @@ function setupModals() {
   };
   btnCloseTx.addEventListener('click', closeTx);
   btnCancelTx.addEventListener('click', closeTx);
+
+  const btnDeleteCurrentTx = document.getElementById('btnDeleteCurrentTx');
+  if (btnDeleteCurrentTx) {
+    btnDeleteCurrentTx.addEventListener('click', () => {
+      const editId = document.getElementById('txEditId').value;
+      if (editId) {
+        closeTx();
+        window.handleDeleteTx(editId);
+      }
+    });
+  }
 
   if (txInstSelect) txInstSelect.addEventListener('change', updateInstallmentHelperUI);
 
@@ -6916,7 +6936,8 @@ function setupModals() {
     btnConfirmDel.addEventListener('click', async () => {
       try {
         if (!txPendingDeletionId) return;
-        const tx = finance.state.transactions.find(t => t.id === txPendingDeletionId);
+        const cleanPendingId = String(txPendingDeletionId);
+        const tx = finance.state.transactions.find(t => String(t.id) === cleanPendingId);
         const isInstallment = tx && ((tx.installmentTotal && tx.installmentTotal > 1) || !!tx.installmentGroupId);
 
         const scopeRadio = document.querySelector('input[name="deleteInstallmentScope"]:checked');
@@ -6925,7 +6946,7 @@ function setupModals() {
         if (isInstallment && deleteScope === 'all') {
           await finance.deleteTransactionGroup(tx.installmentGroupId || tx.id);
         } else {
-          await finance.deleteTransaction(txPendingDeletionId);
+          await finance.deleteTransaction(cleanPendingId);
         }
 
         closeConfirmDeleteTxModal();
@@ -9203,13 +9224,14 @@ window.closeConfirmDeleteTxModal = function() {
 };
 
 window.handleDeleteTx = function(id) {
-  const tx = finance.state.transactions.find(t => t.id === id);
+  const cleanId = String(id);
+  const tx = finance.state.transactions.find(t => String(t.id) === cleanId);
   if (!tx) {
     console.warn('Transação não encontrada para exclusão:', id);
     return;
   }
 
-  txPendingDeletionId = id;
+  txPendingDeletionId = cleanId;
   const modal = document.getElementById('confirmDeleteTxModal');
   const msgEl = document.getElementById('confirmDeleteTxMessage');
   const instOpt = document.getElementById('confirmDeleteTxInstallmentOptions');
@@ -9242,7 +9264,7 @@ window.handleDeleteTx = function(id) {
       confirmText: 'Confirmar Exclusão'
     }).then((confirmed) => {
       if (confirmed) {
-        finance.deleteTransaction(id).then(() => {
+        finance.deleteTransaction(cleanId).then(() => {
           try { renderAccountsView(); } catch(e) {}
           if (selectedAccountId) {
             try { renderSelectedAccountDetails(); } catch(e) {}
@@ -9255,6 +9277,10 @@ window.handleDeleteTx = function(id) {
     });
   }
 };
+
+// Aliases para retrocompatibilidade total com chamadas em templates
+window.handleDeleteTransaction = window.handleDeleteTx;
+window.handleEditTransaction = window.handleEditTx;
 
 window.handlePaySchedule = async function(id) {
   const sch = finance.state.schedules.find(s => s.id === id);
@@ -10466,7 +10492,18 @@ window.handleEditTx = function(txId) {
 
   document.querySelector('#txModal h3').textContent = 'Editar Transação';
   document.querySelector('#txModal button[type="submit"]').textContent = 'Salvar Alterações';
+
+  const btnDel = document.getElementById('btnDeleteCurrentTx');
+  if (btnDel) {
+    btnDel.style.display = 'inline-flex';
+    btnDel.onclick = () => {
+      txModal.classList.remove('open');
+      window.handleDeleteTx(tx.id);
+    };
+  }
+
   txModal.classList.add('open');
+  if (window.lucide) lucide.createIcons({ root: txModal });
 };
 
 function formatCurrencyInput(val) {

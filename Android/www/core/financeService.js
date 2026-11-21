@@ -439,7 +439,7 @@ class FinanceService {
     }
   }
 
-  getAppVersion() { return "1.3.16";
+  getAppVersion() { return "1.3.17";
   }
 
   getAppBuildDate() {
@@ -2917,10 +2917,11 @@ class FinanceService {
   }
 
   async deleteTransaction(id) {
-    const idx = this.state.transactions.findIndex(t => t.id === id);
+    const cleanId = String(id);
+    const idx = this.state.transactions.findIndex(t => String(t.id) === cleanId);
     if (idx !== -1) {
       const tx = this.state.transactions[idx];
-      this._recordDeletion(id);
+      this._recordDeletion(tx.id || cleanId);
       if (tx.type === 'transfer') {
         this.updateAccountBalance(tx.fromAccountId, tx.amount, 'income', 'add');
         this.updateAccountBalance(tx.toAccountId, tx.amount, 'expense', 'add');
@@ -2937,7 +2938,8 @@ class FinanceService {
 
   async deleteTransactionGroup(groupId) {
     if (!groupId) return false;
-    const txsToDelete = this.state.transactions.filter(t => t.installmentGroupId === groupId || t.id === groupId);
+    const cleanGroupId = String(groupId);
+    const txsToDelete = this.state.transactions.filter(t => String(t.installmentGroupId) === cleanGroupId || String(t.id) === cleanGroupId);
     if (txsToDelete.length === 0) return false;
 
     txsToDelete.forEach(tx => {
@@ -2958,7 +2960,7 @@ class FinanceService {
       }
     });
 
-    this.state.transactions = this.state.transactions.filter(t => t.installmentGroupId !== groupId && t.id !== groupId);
+    this.state.transactions = this.state.transactions.filter(t => String(t.installmentGroupId) !== cleanGroupId && String(t.id) !== cleanGroupId);
     this.syncCreditCardBalances();
     await this.save();
     return true;

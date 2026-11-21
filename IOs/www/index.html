@@ -109,7 +109,7 @@
             <span class="toggle-label">Ajustes & Sistema</span>
           </div>
           <div class="sidebar-footer-toggle-right">
-            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.16</span>
+            <span class="sidebar-mini-badge" id="sidebarMiniBadge">v1.3.17</span>
             <i data-lucide="chevron-up" class="sidebar-footer-chevron" id="sidebarFooterChevron"></i>
           </div>
         </button>
@@ -161,7 +161,7 @@
           <div class="sidebar-version-pill" id="sidebarVersionPill" onclick="window.checkAppUpdates(true)" title="Clique para verificar atualizações online">
             <div style="display: flex; align-items: center; gap: 0.45rem;">
               <span class="version-dot" id="sidebarVersionDot">●</span>
-              <span class="version-number" id="sidebarVersionText">Valore v1.3.16</span>
+              <span class="version-number" id="sidebarVersionText">Valore v1.3.17</span>
             </div>
             <span class="version-badge" id="sidebarVersionBadge">Atualizado</span>
           </div>
@@ -1871,7 +1871,7 @@
             </div>
             <div style="display: flex; align-items: center; gap: 0.6rem;">
               <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 800; font-size: 0.76rem; padding: 0.25rem 0.65rem;">
-                Valore v1.3.16
+                Valore v1.3.17
               </span>
               <button type="button" class="btn btn-outline" onclick="window.checkAppUpdates(true)" style="font-size: 0.78rem; padding: 0.4rem 0.75rem;">
                 <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
@@ -2412,7 +2412,11 @@
           <input type="text" id="txNotes" class="form-control" placeholder="Notas ou detalhes adicionais" autocapitalize="sentences" autocorrect="on" spellcheck="true">
         </div>
 
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; margin-top: 1.5rem;">
+          <button type="button" class="btn btn-outline" id="btnDeleteCurrentTx" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4); margin-right: auto;">
+            <i data-lucide="trash-2" style="width: 15px; height: 15px;"></i>
+            <span>Excluir Lançamento</span>
+          </button>
           <button type="button" class="btn btn-outline" id="btnCancelTx">Cancelar</button>
           <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
         </div>
@@ -5202,8 +5206,8 @@
   <script src="jsQR.js"></script>
   <script src="xlsx.full.min.js" defer></script>
   <script src="pdf.js" defer></script>
-  <script src="core/storage.js"></script>
-  <script src="core/financeService.js"></script>
+  <script src="../core/storage.js"></script>
+  <script src="../core/financeService.js"></script>
   <script src="app.js"></script>
 
   <!-- Backdrop e Drawer da Central de Notificações Premium (v1.3.5) -->
