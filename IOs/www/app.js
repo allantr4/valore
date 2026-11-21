@@ -1553,9 +1553,8 @@ function renderBankMobileTxCard(tx) {
           <i data-lucide="${iconName}" style="width: 20px; height: 20px;"></i>
         </div>
         <div class="bank-mobile-tx-info">
-          <div class="bank-mobile-tx-title">
-            <span>${escapeHtml(cleanDescription)}</span>
-            ${tx.installmentTotal > 1 ? `<span class="badge" style="background: rgba(168,85,247,0.15); color: #a855f7; font-size: 0.65rem; padding: 0.08rem 0.35rem; border-radius: 4px;">${tx.installmentIndex}/${tx.installmentTotal}</span>` : ''}
+          <div class="bank-mobile-tx-title" title="${escapeHtml(cleanDescription)}">
+            ${escapeHtml(cleanDescription)}${tx.installmentTotal > 1 ? ` <span class="badge" style="background: rgba(168,85,247,0.15); color: #a855f7; font-size: 0.65rem; padding: 0.08rem 0.35rem; border-radius: 4px;">${tx.installmentIndex}/${tx.installmentTotal}</span>` : ''}
           </div>
           <div class="bank-mobile-tx-meta">
             <span style="color: ${cat.color || 'var(--text-muted)'}; font-weight: 600;">${cat.name}</span>
@@ -1669,11 +1668,18 @@ function renderTransactionsView() {
 
   if (filtered.length === 0) {
     currentTxDisplayLimit = 50;
-    if (search) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">Nenhuma movimentação localizada para <b>"${searchRaw}"</b>.<br><button type="button" class="btn btn-outline" style="margin-top: 0.75rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="document.getElementById('txSearchInput').value=''; currentTxDisplayLimit=50; renderTransactionsView();"><i data-lucide='x'></i> Limpar Busca</button></td></tr>`;
-      if (window.lucide) lucide.createIcons({ root: tbody });
-    } else {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">Nenhuma transação cadastrada${currentEntityFilter !== 'all' ? ` para este contexto (${currentEntityFilter.toUpperCase()})` : ''}.</td></tr>`;
+    const emptyMsg = search
+      ? `Nenhuma movimentação localizada para <b>"${escapeHtml(searchRaw)}"</b>.<br><button type="button" class="btn btn-outline" style="margin-top: 0.75rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem;" onclick="document.getElementById('txSearchInput').value=''; currentTxDisplayLimit=50; renderTransactionsView();"><i data-lucide='x'></i> Limpar Busca</button>`
+      : `Nenhuma transação cadastrada${currentEntityFilter !== 'all' ? ` para este contexto (${currentEntityFilter.toUpperCase()})` : ''}.`;
+
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem;">${emptyMsg}</td></tr>`;
+    const mobileList = document.getElementById('txBankMobileListContainer');
+    if (mobileList) {
+      mobileList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem; font-size: 0.85rem; line-height: 1.4;">${emptyMsg}</div>`;
+    }
+    if (window.lucide) {
+      lucide.createIcons({ root: tbody });
+      if (mobileList) lucide.createIcons({ root: mobileList });
     }
     return;
   }
@@ -4536,7 +4542,14 @@ function renderSelectedAccountDetails() {
         </td>
       </tr>
     `;
-    if (window.lucide) lucide.createIcons();
+    const accMobileList = document.getElementById('accBankMobileListContainer');
+    if (accMobileList) {
+      accMobileList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 2.5rem 1rem; font-size: 0.85rem; line-height: 1.4;">${emptyMsg}</div>`;
+    }
+    if (window.lucide) {
+      lucide.createIcons({ root: txTableBody });
+      if (accMobileList) lucide.createIcons({ root: accMobileList });
+    }
     return;
   }
 
@@ -6984,6 +6997,11 @@ function setupOFXImporter() {
   const feedback = document.getElementById('importFileFeedback');
   const previewContainer = document.getElementById('importPreviewContainer');
   const tableBody = document.getElementById('importPreviewTableBody');
+  const mobilePreviewContainer = document.getElementById('importMobilePreviewList');
+  const dropZoneFull = document.getElementById('importDropZoneFull');
+  const dropZoneCompact = document.getElementById('importDropZoneCompact');
+  const dropZoneCompactText = document.getElementById('importDropZoneCompactText');
+  let currentLoadedFileName = '';
   const selectAllCheckbox = document.getElementById('importSelectAll');
   const itemsCountBadge = document.getElementById('importItemsCountBadge');
   const duplicateWarning = document.getElementById('importDuplicateWarning');
@@ -7018,8 +7036,15 @@ function setupOFXImporter() {
     feedback.textContent = '';
     previewContainer.style.display = 'none';
     tableBody.innerHTML = '';
+    if (mobilePreviewContainer) mobilePreviewContainer.innerHTML = '';
+    if (dropZone) dropZone.classList.remove('collapsed-dropzone');
+    if (dropZoneFull && dropZoneCompact) {
+      dropZoneFull.style.display = 'flex';
+      dropZoneCompact.style.display = 'none';
+    }
     importedStagingTransactions = [];
     currentDetectedStatementBalance = null;
+    currentLoadedFileName = '';
     if (balanceSyncContainer) balanceSyncContainer.style.display = 'none';
     btnConfirm.disabled = true;
     btnConfirmText.textContent = 'Confirmar Importação (0)';
@@ -7183,7 +7208,8 @@ function setupOFXImporter() {
         if (balanceSyncContainer) balanceSyncContainer.style.display = 'none';
       }
 
-      renderPreviewTable(parsed);
+      currentLoadedFileName = fileName;
+      renderPreviewTable(parsed, fileName);
 
     } catch (err) {
       console.error('Erro ao processar arquivo de extrato:', err);
@@ -7194,9 +7220,17 @@ function setupOFXImporter() {
     }
   }
 
-  function renderPreviewTable(transactions) {
+  function renderPreviewTable(transactions, fileName) {
     const targetAccountId = accountSelect.value;
     const existingTxs = finance.state.transactions.filter(t => t.accountId === targetAccountId);
+
+    if (dropZone && dropZoneFull && dropZoneCompact && dropZoneCompactText) {
+      dropZoneFull.style.display = 'none';
+      dropZoneCompact.style.display = 'flex';
+      dropZoneCompactText.textContent = `${fileName || currentLoadedFileName || 'Extrato'} (${transactions.length} lançamentos)`;
+      dropZone.classList.add('collapsed-dropzone');
+      if (window.lucide) lucide.createIcons({ root: dropZone });
+    }
 
     let hasDuplicates = false;
 
@@ -7228,16 +7262,11 @@ function setupOFXImporter() {
 
     duplicateWarning.style.display = hasDuplicates ? 'inline-block' : 'none';
     tableBody.innerHTML = '';
+    if (mobilePreviewContainer) mobilePreviewContainer.innerHTML = '';
 
     const allCategories = finance.state.categories || [];
 
     importedStagingTransactions.forEach((item, index) => {
-      const tr = document.createElement('tr');
-      tr.style.borderBottom = '1px solid var(--border-color)';
-      if (item.isDuplicate) {
-        tr.style.background = 'rgba(245, 158, 11, 0.08)';
-      }
-
       const formattedAmount = item.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
       const isExpense = item.type === 'expense';
       const typeBadge = isExpense 
@@ -7259,6 +7288,13 @@ function setupOFXImporter() {
         catOptionsHtml += `<option value="${cat.id}" ${cat.id === item.categoryId ? 'selected' : ''}>${cat.name}</option>`;
       });
 
+      // 1. Linha Desktop
+      const tr = document.createElement('tr');
+      tr.style.borderBottom = '1px solid var(--border-color)';
+      if (item.isDuplicate) {
+        tr.style.background = 'rgba(245, 158, 11, 0.08)';
+      }
+
       tr.innerHTML = `
         <td style="padding: 0.45rem 0.75rem; text-align: center;">
           <input type="checkbox" class="staging-checkbox" data-index="${index}" ${item.selected ? 'checked' : ''}>
@@ -7279,27 +7315,63 @@ function setupOFXImporter() {
         <td style="padding: 0.45rem 0.75rem; text-align: center;">${statusBadge}</td>
       `;
       tableBody.appendChild(tr);
+
+      // 2. Card Touch Mobile
+      if (mobilePreviewContainer) {
+        const card = document.createElement('div');
+        card.className = `import-mobile-tx-card ${item.isDuplicate ? 'is-dup' : ''}`;
+        card.innerHTML = `
+          <input type="checkbox" class="staging-checkbox import-mobile-cb" data-index="${index}" ${item.selected ? 'checked' : ''}>
+          <div style="flex: 1; min-width: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.45rem;">
+              <div style="font-size: 0.84rem; font-weight: 700; color: var(--text-main); word-break: break-word; line-height: 1.25;">
+                ${escapeHtml(item.description)}
+              </div>
+              <div style="font-size: 0.85rem; font-weight: 700; white-space: nowrap; color: ${isExpense ? 'var(--danger)' : 'var(--success)'};">
+                ${isExpense ? '-' : '+'}${formattedAmount}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; margin-top: 0.45rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; color: var(--text-muted);">
+                <span>📅 ${formattedDate}</span>
+                ${typeBadge}
+                ${statusBadge}
+              </div>
+              <div style="flex: 1; min-width: 130px; max-width: 190px;">
+                <select class="form-control staging-category-select" data-index="${index}" style="padding: 0.2rem 0.4rem; font-size: 0.74rem; height: auto; width: 100%;">
+                  ${catOptionsHtml}
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+        mobilePreviewContainer.appendChild(card);
+      }
     });
 
     previewContainer.style.display = 'flex';
     updateSelectedCount();
 
-    // Eventos dos checkboxes individuais
-    const cbs = tableBody.querySelectorAll('.staging-checkbox');
+    // Eventos dos checkboxes individuais (sincronizados entre Desktop e Mobile)
+    const cbs = previewContainer.querySelectorAll('.staging-checkbox');
     cbs.forEach(cb => {
       cb.addEventListener('change', (e) => {
         const i = parseInt(e.target.dataset.index, 10);
         importedStagingTransactions[i].selected = e.target.checked;
+        const peers = previewContainer.querySelectorAll(`.staging-checkbox[data-index="${i}"]`);
+        peers.forEach(p => { p.checked = e.target.checked; });
         updateSelectedCount();
       });
     });
 
-    // Eventos de alteração individual de categoria
-    const selects = tableBody.querySelectorAll('.staging-category-select');
+    // Eventos de alteração individual de categoria (sincronizados entre Desktop e Mobile)
+    const selects = previewContainer.querySelectorAll('.staging-category-select');
     selects.forEach(sel => {
       sel.addEventListener('change', (e) => {
         const i = parseInt(e.target.dataset.index, 10);
         importedStagingTransactions[i].categoryId = e.target.value;
+        const peers = previewContainer.querySelectorAll(`.staging-category-select[data-index="${i}"]`);
+        peers.forEach(p => { p.value = e.target.value; });
       });
     });
   }
@@ -7318,8 +7390,8 @@ function setupOFXImporter() {
     selectAllCheckbox.addEventListener('change', (e) => {
       const isChecked = e.target.checked;
       importedStagingTransactions.forEach(t => t.selected = isChecked);
-      const cbs = tableBody.querySelectorAll('.staging-checkbox');
-      cbs.forEach(cb => cb.checked = isChecked);
+      const allCbs = previewContainer.querySelectorAll('.staging-checkbox');
+      allCbs.forEach(cb => cb.checked = isChecked);
       updateSelectedCount();
     });
   }
@@ -7333,7 +7405,7 @@ function setupOFXImporter() {
         amount: t.amount,
         type: t.type
       }));
-      renderPreviewTable(rawData);
+      renderPreviewTable(rawData, currentLoadedFileName);
     }
   });
 

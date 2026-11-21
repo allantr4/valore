@@ -1,18 +1,18 @@
 {
-  "version": "1.3.18",
+  "version": "1.3.19",
   "releaseDate": "2026-11-21",
   "minRequiredVersion": "1.0.0",
-  "title": "Valore v1.3.18 - Importador Universal de Extratos (OFX, XLSX, CSV, TXT, PDF Multibancos)",
+  "title": "Valore v1.3.19 - Otimizações Mobile, Importador Responsivo & Reconciliação Contábil",
   "notes": [
-    "Conciliação Universal de Extratos: suporte nativo e calibrado para todos os formatos (.ofx, .qfx, .ofc, .xlsx, .xls, .csv, .tsv, .txt, .pdf).",
-    "Suporte a Todos os Bancos Brasileiros: motor ajustado para Itaú, Nubank, Bradesco, Banco do Brasil, Santander, Caixa, Inter, C6 e Mercado Pago.",
-    "Detecção de Colunas Múltiplas e Indicadores D/C: leitura resiliente de extratos com Débito e Crédito em colunas separadas e colunas de natureza.",
-    "Reconhecimento Universal de Datas e Moedas: datas em todos os formatos (pontos, barras, meses por extenso/abreviados em português) e números seriais de planilhas.",
+    "Interface Mobile de Extrato: visualização de descrições longas em até 2 linhas confortáveis sem corte.",
+    "Importador de Extrato Responsivo no Mobile: visualização de seleção em cards touch otimizados para toque no celular.",
+    "Correção na Exclusão de Lançamentos: resolução do bug em que o último lançamento não desaparecia da tela mobile.",
+    "Reconciliação Contábil Anti-Saldo Fantasma: restauração precisa do saldo de contas sem resíduos após exclusões.",
     "Paridade Completa: compilação oficial sincronizada para Windows e Android."
   ],
-  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.18.exe",
-  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.18.apk",
+  "downloadUrlDesktop": "https://github.com/allantr4/valore/releases/latest/download/Instalador_Valore_Financeiro_1.3.19.exe",
+  "downloadUrlApk": "https://github.com/allantr4/valore/releases/latest/download/Valore_1.3.19.apk",
   "githubReleaseUrl": "https://github.com/allantr4/valore/releases",
-  "versionCode": 48,
-  "releaseNotes": "Valore v1.3.18 - Importador Universal de Extratos (OFX, XLSX, CSV, TXT, PDF Multibancos)."
+  "versionCode": 49,
+  "releaseNotes": "Valore v1.3.19 - Otimizações Mobile, Importador Responsivo & Reconciliação Contábil."
 }

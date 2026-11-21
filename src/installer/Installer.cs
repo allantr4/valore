@@ -77,7 +77,7 @@ namespace ValoreInstaller
         private Image appLogo = null;
         private bool isAutoUpdateMode = false;
         private string explicitDir = null;
-        private const string AppVersion = "1.3.18";
+        private const string AppVersion = "1.3.19";
 
         public InstallerForm(bool autoUpdate = false, string explicitInstallDir = null)
         {

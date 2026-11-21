@@ -439,8 +439,7 @@ class FinanceService {
     }
   }
 
-  getAppVersion() { return "1.3.18";
-  }
+  getAppVersion() { return '1.3.19'; }
 
   getAppBuildDate() {
     return 'Novembro/2026';
@@ -1324,6 +1323,7 @@ class FinanceService {
       bankId: data.bankId || 'other',
       type: data.type, // 'checking' | 'investment' | 'credit' | 'cash'
       balance: initialBalance,
+      initialBalance: initialBalance,
       limit: parseFloat(data.limit || 0),
       closingDay: parseInt(data.closingDay || 25),
       dueDay: parseInt(data.dueDay || 5),
@@ -1357,6 +1357,10 @@ class FinanceService {
     if (data.balance !== undefined && data.balance !== '') {
       const parsedVal = parseFloat(data.balance);
       account.balance = isCredit ? -Math.abs(parsedVal) : parsedVal;
+      account.initialBalance = account.balance;
+    }
+    if (data.initialBalance !== undefined && data.initialBalance !== '') {
+      account.initialBalance = parseFloat(data.initialBalance);
     }
     if (data.limit !== undefined && data.limit !== '') {
       account.limit = parseFloat(data.limit);
@@ -2929,6 +2933,27 @@ class FinanceService {
         this.updateAccountBalance(tx.accountId, tx.amount, tx.type, 'remove');
       }
       this.state.transactions.splice(idx, 1);
+
+      // Reconciliação contábil anti-saldo fantasma: se a conta não tiver mais nenhuma transação, restaura para o saldo inicial
+      const checkAndResetEmptyAccount = (accId) => {
+        if (!accId) return;
+        const remaining = this.state.transactions.filter(t => t.accountId === accId || t.fromAccountId === accId || t.toAccountId === accId);
+        if (remaining.length === 0) {
+          const acc = this.state.accounts.find(a => a.id === accId);
+          if (acc && acc.type !== 'credit') {
+            acc.balance = (typeof acc.initialBalance === 'number') ? acc.initialBalance : 0;
+            this._touchEntity(acc);
+          }
+        }
+      };
+
+      if (tx.type === 'transfer') {
+        checkAndResetEmptyAccount(tx.fromAccountId);
+        checkAndResetEmptyAccount(tx.toAccountId);
+      } else {
+        checkAndResetEmptyAccount(tx.accountId);
+      }
+
       this.syncCreditCardBalances();
       await this.save();
       return true;
@@ -2942,12 +2967,16 @@ class FinanceService {
     const txsToDelete = this.state.transactions.filter(t => String(t.installmentGroupId) === cleanGroupId || String(t.id) === cleanGroupId);
     if (txsToDelete.length === 0) return false;
 
+    const affectedAccountIds = new Set();
     txsToDelete.forEach(tx => {
       this._recordDeletion(tx.id);
       if (tx.type === 'transfer') {
+        if (tx.fromAccountId) affectedAccountIds.add(tx.fromAccountId);
+        if (tx.toAccountId) affectedAccountIds.add(tx.toAccountId);
         this.updateAccountBalance(tx.fromAccountId, tx.amount, 'income', 'add');
         this.updateAccountBalance(tx.toAccountId, tx.amount, 'expense', 'add');
       } else {
+        if (tx.accountId) affectedAccountIds.add(tx.accountId);
         const acc = this.state.accounts.find(a => a.id === tx.accountId);
         if (acc && acc.type === 'credit') {
           this.updateAccountBalance(tx.accountId, tx.amount, tx.type, 'remove');
@@ -2961,6 +2990,19 @@ class FinanceService {
     });
 
     this.state.transactions = this.state.transactions.filter(t => String(t.installmentGroupId) !== cleanGroupId && String(t.id) !== cleanGroupId);
+
+    // Reconciliação contábil anti-saldo fantasma nas contas afetadas
+    affectedAccountIds.forEach(accId => {
+      const remaining = this.state.transactions.filter(t => t.accountId === accId || t.fromAccountId === accId || t.toAccountId === accId);
+      if (remaining.length === 0) {
+        const acc = this.state.accounts.find(a => a.id === accId);
+        if (acc && acc.type !== 'credit') {
+          acc.balance = (typeof acc.initialBalance === 'number') ? acc.initialBalance : 0;
+          this._touchEntity(acc);
+        }
+      }
+    });
+
     this.syncCreditCardBalances();
     await this.save();
     return true;
@@ -2974,6 +3016,9 @@ class FinanceService {
       account.balance = round2((account.balance || 0) + (amount * factor));
     } else {
       account.balance = round2((account.balance || 0) - (amount * factor));
+    }
+    if (Math.abs(account.balance) < 0.0001) {
+      account.balance = 0;
     }
     this._touchEntity(account);
   }
