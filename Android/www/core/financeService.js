@@ -439,7 +439,7 @@ class FinanceService {
     }
   }
 
-  getAppVersion() { return "1.3.13";
+  getAppVersion() { return "1.3.14";
   }
 
   getAppBuildDate() {
@@ -3804,6 +3804,16 @@ class FinanceService {
           type: type,
           date: dateStr
         });
+      }
+    }
+
+    // Detecção automática do saldo final da conta constante no extrato OFX (<LEDGERBAL> ou <AVAILBAL>)
+    const balMatch = ofxContent.match(/<(?:LEDGERBAL|AVAILBAL)>[\s\S]*?<BALAMT>\s*([-\d.,]+)/i);
+    if (balMatch && balMatch[1]) {
+      const cleanBal = balMatch[1].trim().replace(',', '.');
+      const parsedBal = parseFloat(cleanBal);
+      if (!isNaN(parsedBal)) {
+        transactions.detectedStatementBalance = Math.round(parsedBal * 100) / 100;
       }
     }
 

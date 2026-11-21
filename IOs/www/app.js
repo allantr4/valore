@@ -960,6 +960,7 @@ async function initApp() {
   setupModals();
   setupSmartCategorySuggestions();
   setupOFXImporter();
+  setupAllMobileSheetSwipes();
   setupBackupManager();
   setupSettingsViewControls();
   setupCostCentersAndSideHustlesModals();
@@ -1357,53 +1358,65 @@ window.setVaultQuickMax = function() {
 window.openImportModalForAccount = function(accountId) {
   const btnOpen = document.getElementById('btnOpenImportModal');
   if (btnOpen) btnOpen.click();
+  const select = document.getElementById('importAccountSelect');
+  if (select && accountId) {
+    select.value = accountId;
+  }
   setTimeout(() => {
-    const select = document.getElementById('importAccountSelect');
-    if (select && accountId) {
-      select.value = accountId;
+    const s = document.getElementById('importAccountSelect');
+    if (s && accountId) {
+      s.value = accountId;
     }
-  }, 100);
+  }, 60);
 };
 
-// Implementação do Swipe Down no Bottom Sheet do Extrato
-function setupAccountDetailsSheetTouch() {
-  const sheet = document.getElementById('accountDetailsCard');
+// Implementação de Swipe Down ergonômico nos Bottom Sheets Mobile (Extrato da Conta, Centros de Custo, Renda Extra)
+function setupMobileSheetSwipe(sheetId, closeFn) {
+  const sheet = document.getElementById(sheetId);
   if (!sheet) return;
+
+  // Evita registrar múltiplos ouvintes se a função for chamada novamente
+  if (sheet.dataset.swipeInitialized === 'true') return;
+  sheet.dataset.swipeInitialized = 'true';
 
   let startY = 0;
   let currentY = 0;
   let isDragging = false;
 
-  const topBar = sheet.querySelector('.mobile-sheet-top-bar') || sheet;
-
-  topBar.addEventListener('touchstart', (e) => {
-    if (sheet.scrollTop > 10) return; // Só ativa arraste se o scroll estiver no topo
-    startY = e.touches[0].clientY;
+  const handleTouchStart = (e) => {
+    // Só inicia o arraste se o scroll vertical interno do sheet estiver no topo (<= 5px)
+    if (sheet.scrollTop > 5) return;
+    const touch = e.touches[0];
+    startY = touch.clientY;
+    currentY = touch.clientY;
     isDragging = true;
     sheet.style.transition = 'none';
-  }, { passive: true });
+  };
 
-  topBar.addEventListener('touchmove', (e) => {
+  const handleTouchMove = (e) => {
     if (!isDragging) return;
-    currentY = e.touches[0].clientY;
+    const touch = e.touches[0];
+    currentY = touch.clientY;
     const diff = currentY - startY;
     if (diff > 0) {
       sheet.style.transform = `translateY(${diff}px)`;
+    } else {
+      sheet.style.transform = '';
     }
-  }, { passive: true });
+  };
 
-  topBar.addEventListener('touchend', (e) => {
+  const handleTouchEnd = () => {
     if (!isDragging) return;
     isDragging = false;
     sheet.style.transition = 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)';
     const diff = currentY - startY;
-    if (diff > 90) {
-      // Swipe down concluído com sucesso: fecha o extrato
+    if (diff > 75) {
+      // Swipe down concluído com sucesso: fecha a gaveta
       sheet.style.transform = 'translateY(100%)';
       setTimeout(() => {
         sheet.style.transform = '';
         sheet.style.transition = '';
-        if (typeof closeAccountDetails === 'function') closeAccountDetails();
+        if (typeof closeFn === 'function') closeFn();
       }, 200);
     } else {
       // Volta para a posição normal
@@ -1413,7 +1426,41 @@ function setupAccountDetailsSheetTouch() {
         sheet.style.transition = '';
       }, 250);
     }
-  }, { passive: true });
+  };
+
+  // Escuta na barra superior móvel (grabber e header)
+  const topBar = sheet.querySelector('.mobile-sheet-top-bar');
+  if (topBar) {
+    topBar.addEventListener('touchstart', handleTouchStart, { passive: true });
+    topBar.addEventListener('touchmove', handleTouchMove, { passive: true });
+    topBar.addEventListener('touchend', handleTouchEnd, { passive: true });
+    topBar.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+  }
+
+  // Também escuta na linha de título para garantir facilidade de toque
+  const cardTitleRow = sheet.querySelector('.card-title-row');
+  if (cardTitleRow) {
+    cardTitleRow.addEventListener('touchstart', handleTouchStart, { passive: true });
+    cardTitleRow.addEventListener('touchmove', handleTouchMove, { passive: true });
+    cardTitleRow.addEventListener('touchend', handleTouchEnd, { passive: true });
+    cardTitleRow.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+  }
+}
+
+function setupAllMobileSheetSwipes() {
+  setupMobileSheetSwipe('accountDetailsCard', () => {
+    if (typeof closeAccountDetails === 'function') closeAccountDetails();
+  });
+  setupMobileSheetSwipe('costCenterDetailsCard', () => {
+    if (typeof closeCostCenterDetails === 'function') closeCostCenterDetails();
+  });
+  setupMobileSheetSwipe('sideHustleDetailsCard', () => {
+    if (typeof closeSideHustleDetails === 'function') closeSideHustleDetails();
+  });
+}
+
+function setupAccountDetailsSheetTouch() {
+  setupAllMobileSheetSwipes();
 }
 
 // Helper global para formatar cabeçalhos de data estilo extrato bancário
@@ -6976,7 +7023,10 @@ function setupOFXImporter() {
 
   // Drag & drop e clique no dropzone
   if (dropZone) {
-    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('click', () => {
+      if (fileInput) fileInput.value = '';
+      fileInput.click();
+    });
     dropZone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropZone.style.borderColor = 'var(--primary)';
@@ -9901,6 +9951,22 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCloseAccDetails.addEventListener('click', () => {
       closeAccountDetails();
     });
+  }
+
+  const btnImportStatementForAcc = document.getElementById('btnImportStatementForAccount');
+  if (btnImportStatementForAcc) {
+    btnImportStatementForAcc.addEventListener('click', () => {
+      if (selectedAccountId) {
+        window.openImportModalForAccount(selectedAccountId);
+      } else {
+        const btnOpen = document.getElementById('btnOpenImportModal');
+        if (btnOpen) btnOpen.click();
+      }
+    });
+  }
+
+  if (typeof setupAllMobileSheetSwipes === 'function') {
+    setupAllMobileSheetSwipes();
   }
 
   // --- MODAIS E CONTROLES DE COFRINHOS ESTILO MERCADO PAGO ---
